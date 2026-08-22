@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { stays } from '@/data/catalog';
+import { stays, tours, cruises } from '@/data/catalog';
 
 export const dynamic = 'force-static';
 
@@ -12,5 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === '' ? 1 : 0.8,
   }));
   const stayPages = stays.map((stay) => ({ url: `${base}/stay/${stay.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 }));
-  return [...staticPages, ...stayPages];
+  const tourPages = tours.map((tour) => ({ url: `${base}/tours/${tour.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 }));
+  const cruisePages = cruises.map((cruise) => ({ url: `${base}/cruises/${cruise.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 }));
+  return [...staticPages, ...stayPages, ...tourPages, ...cruisePages];
 }
