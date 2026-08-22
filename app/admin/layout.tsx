@@ -1,3 +1,4 @@
+import type {Metadata} from 'next';
 import './admin.css';
 import './bookings.css';
 import './cms.css';
@@ -7,5 +8,7 @@ import './product-v2.css';
 import './product-manager.css';
 import './units.css';
 import {AdminDeleteEnhancer} from '@/components/AdminDeleteEnhancer';
+
+export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
 
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminDeleteEnhancer/>{children}</>}
