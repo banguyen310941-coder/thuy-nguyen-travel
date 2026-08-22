@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useEffect,useRef} from 'react';
+import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 
 const nav = [
   ['Trang chủ', '/'],
@@ -17,6 +18,8 @@ const nav = [
 export function Header() {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const settings=useSiteSettings();
+  const phone=formatPhone(settings.hotline);
 
   const closeMobileMenu = () => {
     if (menuRef.current) menuRef.current.open = false;
@@ -44,8 +47,8 @@ export function Header() {
     <header className="site-header mock-header">
       <div className="mock-contactbar">
         <div className="container mock-contactbar-inner">
-          <div className="mock-mini-contact"><span>☎ 0969 973 949</span><span>✉ info@thuynguyentravel.com</span></div>
-          <div className="mock-top-actions"><a href="https://zalo.me/0969973949" target="_blank" rel="noreferrer">Zalo</a><a href="tel:0969973949">Gọi ngay</a></div>
+          <div className="mock-mini-contact"><span>☎ {phone}</span><span>✉ {settings.email}</span></div>
+          <div className="mock-top-actions"><a href={`https://zalo.me/${settings.zalo}`} target="_blank" rel="noreferrer">Zalo</a><a href={`tel:${settings.hotline}`}>Gọi ngay</a></div>
         </div>
       </div>
 
@@ -54,11 +57,11 @@ export function Header() {
           <summary className="mock-mobile-icon" aria-label="Mở menu">☰</summary>
           <nav className="mobile-menu-panel" aria-label="Menu điện thoại">
             {nav.map(([label, href]) => <Link key={label} href={href} onClick={closeMobileMenu}>{label}</Link>)}
-            <a href="tel:0969973949" onClick={closeMobileMenu}>☎ Gọi 0969 973 949</a>
-            <a href="https://zalo.me/0969973949" target="_blank" rel="noreferrer" onClick={closeMobileMenu}>Zalo tư vấn</a>
+            <a href={`tel:${settings.hotline}`} onClick={closeMobileMenu}>☎ Gọi {phone}</a>
+            <a href={`https://zalo.me/${settings.zalo}`} target="_blank" rel="noreferrer" onClick={closeMobileMenu}>Zalo tư vấn</a>
           </nav>
         </details>
-        <Link className="mock-mobile-logo" href="/" aria-label="Thúy Nguyên Travel" onClick={closeMobileMenu}>
+        <Link className="mock-mobile-logo" href="/" aria-label={settings.brand} onClick={closeMobileMenu}>
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
           <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong></span>
         </Link>
@@ -66,11 +69,11 @@ export function Header() {
       </div>
 
       <div className="container mock-brand-row">
-        <Link className="mock-logo" href="/" aria-label="Thúy Nguyên Travel">
+        <Link className="mock-logo" href="/" aria-label={settings.brand}>
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
           <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong><small>Khám phá thế giới · Trải nghiệm khác biệt</small></span>
         </Link>
-        <div className="mock-brand-tools"><Link href="/search" className="mock-search-mini" aria-label="Mở tìm kiếm">⌕ Tìm kiếm...</Link><a href="tel:0969973949" className="mock-hotline">☎ 0969 973 949</a></div>
+        <div className="mock-brand-tools"><Link href="/search" className="mock-search-mini" aria-label="Mở tìm kiếm">⌕ Tìm kiếm...</Link><a href={`tel:${settings.hotline}`} className="mock-hotline">☎ {phone}</a></div>
       </div>
       <div className="mock-nav-wrap">
         <nav className="container mock-nav" aria-label="Điều hướng chính">
