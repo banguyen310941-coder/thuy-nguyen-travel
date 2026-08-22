@@ -20,6 +20,10 @@ function code(){const d=new Date();const y=d.getFullYear();const m=String(d.getM
 
 app.get('/api/health',async(_req,res)=>{try{await pool.query('SELECT 1');res.json({ok:true,service:'thuy-nguyen-travel-booking-api'});}catch{res.status(500).json({ok:false,error:'Database unavailable'});}});
 
+app.get('/api/site-settings/:key',async(req,res)=>{const key=String(req.params.key||'').trim();if(!key)return res.status(400).json({error:'Missing key'});const [rows]=await pool.execute('SELECT setting_value,updated_at FROM site_settings WHERE setting_key=?',[key]);if(!rows[0])return res.status(404).json({error:'Setting not found'});let value=rows[0].setting_value;try{if(typeof value==='string')value=JSON.parse(value);}catch{}res.json({key,value,updatedAt:rows[0].updated_at});});
+
+app.put('/api/site-settings/:key',adminOnly,async(req,res)=>{const key=String(req.params.key||'').trim();if(!key)return res.status(400).json({error:'Missing key'});const value=req.body?.value;if(value===undefined)return res.status(400).json({error:'value is required'});await pool.execute('INSERT INTO site_settings (setting_key,setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),updated_at=CURRENT_TIMESTAMP',[key,JSON.stringify(value)]);res.json({ok:true,key,value});});
+
 app.post('/api/bookings',async(req,res)=>{
   const body=req.body||{};const customerName=String(body.customerName||'').trim();const phone=String(body.phone||'').trim();const product=String(body.product||'').trim();const kind=String(body.kind||'dịch vụ').trim();
   if(!customerName||!phone||!product)return res.status(400).json({error:'customerName, phone and product are required'});
