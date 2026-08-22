@@ -16,7 +16,7 @@ function serviceFromRoute(pathname:string,typeParam:string|null):Service{
   if(pathname.startsWith('/tours')) return 'tour';
   if(pathname.startsWith('/cruises')) return 'cruise';
   if(pathname.startsWith('/stay')){
-    if(typeParam==='villa') return 'villa';
+    if(typeParam==='villa'||typeParam==='resort') return 'villa';
     if(typeParam==='hotel') return 'hotel';
   }
   return 'all';
