@@ -22,9 +22,7 @@ export function Header() {
     if (menuRef.current) menuRef.current.open = false;
   };
 
-  useEffect(() => {
-    closeMobileMenu();
-  }, [pathname]);
+  useEffect(() => { closeMobileMenu(); }, [pathname]);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -64,7 +62,7 @@ export function Header() {
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
           <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong></span>
         </Link>
-        <Link className="mock-mobile-icon" href="/stay" aria-label="Tìm kiếm" onClick={closeMobileMenu}>⌕</Link>
+        <Link className="mock-mobile-icon" href="/search" aria-label="Tìm kiếm" onClick={closeMobileMenu}>⌕</Link>
       </div>
 
       <div className="container mock-brand-row">
@@ -72,7 +70,7 @@ export function Header() {
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
           <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong><small>Khám phá thế giới · Trải nghiệm khác biệt</small></span>
         </Link>
-        <div className="mock-brand-tools"><span className="mock-search-mini">Tìm kiếm...</span><a href="tel:0969973949" className="mock-hotline">☎ 0969 973 949</a></div>
+        <div className="mock-brand-tools"><Link href="/search" className="mock-search-mini" aria-label="Mở tìm kiếm">⌕ Tìm kiếm...</Link><a href="tel:0969973949" className="mock-hotline">☎ 0969 973 949</a></div>
       </div>
       <div className="mock-nav-wrap">
         <nav className="container mock-nav" aria-label="Điều hướng chính">
