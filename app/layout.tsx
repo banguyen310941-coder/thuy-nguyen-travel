@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './home.css';
 import './mockup.css';
+import './mobile-v2.css';
 import { SiteChrome } from '@/components/SiteChrome';
 
 export const metadata: Metadata = {
