@@ -2,11 +2,19 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useMemo,useState } from 'react';
 import { tours } from '@/data/catalog';
 
 export function TourCatalog(){
   const params=useSearchParams();
   const q=(params.get('q')||'').toLowerCase();
-  const filtered=tours.filter(item=>!q||`${item.name} ${item.route} ${item.category} ${item.summary}`.toLowerCase().includes(q));
-  return <><div className="sub-toolbar"><div><b>{filtered.length} hành trình phù hợp</b><br/><span>{q?`Từ khóa: ${params.get('q')}`:'Tour gia đình · Tour đoàn · Tour ghép'}</span></div><div className="sub-filter-row"><span className="sub-chip active">Tất cả</span><span className="sub-chip">Trung Quốc</span><span className="sub-chip">Trong nước</span></div></div><div className="catalog-grid">{filtered.map(item=><article className="catalog-card" key={item.slug}><div className="catalog-image" style={{backgroundImage:`url(${item.image})`}}/><div className="catalog-body"><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>📍 {item.route}</p><p>{item.summary}</p><div className="catalog-actions"><Link className="main" href={`/tours/${item.slug}`}>Xem chi tiết</Link><a className="secondary" href="https://zalo.me/0969973949">Zalo →</a></div></div></article>)}</div>{!filtered.length&&<div className="empty-results"><b>Chưa tìm thấy tour phù hợp</b><p>Thử đổi điểm đến hoặc liên hệ hotline để được thiết kế tour riêng.</p></div>}</>
+  const departure=(params.get('departure')||'').toLowerCase();
+  const [category,setCategory]=useState('all');
+  const filtered=useMemo(()=>tours.filter(item=>{
+    const matchQ=!q||`${item.name} ${item.route} ${item.category} ${item.summary}`.toLowerCase().includes(q);
+    const matchDeparture=!departure||(item.departureFrom||'').toLowerCase().includes(departure);
+    const matchCategory=category==='all'||(category==='china'&&item.category==='Tour Trung Quốc')||(category==='domestic'&&item.category==='Tour trong nước');
+    return matchQ&&matchDeparture&&matchCategory;
+  }),[q,departure,category]);
+  return <><div className="sub-toolbar"><div><b>{filtered.length} hành trình phù hợp</b><br/><span>{q?`Điểm đến/từ khóa: ${params.get('q')}`:'Tour gia đình · Tour đoàn · Tour ghép'}{departure?` · Khởi hành: ${params.get('departure')}`:''}</span></div><div className="sub-filter-row"><button type="button" className={`sub-chip ${category==='all'?'active':''}`} onClick={()=>setCategory('all')}>Tất cả</button><button type="button" className={`sub-chip ${category==='china'?'active':''}`} onClick={()=>setCategory('china')}>Trung Quốc</button><button type="button" className={`sub-chip ${category==='domestic'?'active':''}`} onClick={()=>setCategory('domestic')}>Trong nước</button></div></div><div className="catalog-grid">{filtered.map(item=><article className="catalog-card" key={item.slug}><div className="catalog-image" style={{backgroundImage:`url(${item.image})`}}/><div className="catalog-body"><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>📍 {item.route}</p><p>{item.summary}</p>{item.departureFrom&&<p><b>Khởi hành:</b> {item.departureFrom}</p>}<div className="catalog-actions"><Link className="main" href={`/tours/${item.slug}`}>Xem chi tiết</Link><a className="secondary" href="https://zalo.me/0969973949">Zalo →</a></div></div></article>)}</div>{!filtered.length&&<div className="empty-results"><b>Chưa tìm thấy tour phù hợp</b><p>Thử đổi điểm đến, nơi khởi hành hoặc chọn lại nhóm tour.</p></div>}</>
 }
