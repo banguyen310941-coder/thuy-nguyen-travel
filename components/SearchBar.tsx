@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 const services = [
   ['all','Tất cả'],['tour','Tour du lịch'],['villa','Villa & Resort'],['hotel','Khách sạn'],['cruise','Du thuyền']
@@ -22,7 +22,7 @@ function serviceFromRoute(pathname:string,typeParam:string|null):Service{
   return 'all';
 }
 
-export function SearchBar() {
+function SearchBarInner() {
   const router = useRouter();
   const pathname=usePathname();
   const searchParams=useSearchParams();
@@ -113,9 +113,7 @@ export function SearchBar() {
         <label className="mock-search-field"><span>◷</span><div><small>Thời lượng</small><select name="duration" defaultValue={searchParams.get('duration')||''}><option value="">Tất cả hành trình</option><option value="day">Trong ngày</option><option value="2n1d">2 ngày 1 đêm</option><option value="3n2d">3 ngày 2 đêm</option></select></div></label>
       </>}
 
-      {service==='all'&&<>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày dự kiến</small><input name="start" type="date" min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></div></label>
-      </>}
+      {service==='all'&&<label className="mock-search-field"><span>▣</span><div><small>Ngày dự kiến</small><input name="start" type="date" min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></div></label>}
 
       <div className="mock-search-field guest-picker" ref={guestRef}><span>♙</span><div><small>{isCruise?'Khách & cabin':isStay?'Khách & phòng':'Số khách'}</small><button className="guest-trigger" type="button" onClick={()=>setGuestOpen(v=>!v)}>{adults} NL · {children} TE{isStay?` · ${rooms} phòng`:isCruise?` · ${cabins} cabin`:''}</button>{guestOpen&&<div className="guest-popover"><Counter label="Người lớn" value={adults} min={1} onChange={setAdults}/><Counter label="Trẻ em" value={children} onChange={setChildren}/>{isStay&&<Counter label="Phòng" value={rooms} min={1} onChange={setRooms}/>} {isCruise&&<Counter label="Cabin" value={cabins} min={1} onChange={setCabins}/>}<button type="button" className="guest-done" onClick={()=>setGuestOpen(false)}>Xong</button></div>}</div></div>
       <button className="mock-search-button" type="submit">{isTour?'Tìm tour':isCruise?'Tìm du thuyền':isStay?'Tìm phòng':'Tìm tất cả'}</button>
@@ -124,4 +122,8 @@ export function SearchBar() {
     <div className="search-mode-hint">{isTour?'Tìm đúng tour theo điểm đến, nơi khởi hành và ngày đi.':service==='villa'?'Chỉ hiển thị Villa & Resort phù hợp.':service==='hotel'?'Chỉ hiển thị Khách sạn/Resort phù hợp.':isCruise?'Tìm theo vịnh, ngày đi và thời lượng hành trình.':'Tìm đồng thời Tour, Villa, Khách sạn và Du thuyền.'}</div>
     <div className="mock-search-benefits"><span>✓ Giá tốt nhất</span><span>✓ Tư vấn minh bạch</span><span>✓ Hỗ trợ 24/7</span><span>✓ Xác nhận nhanh</span></div>
   </div>;
+}
+
+export function SearchBar(){
+  return <Suspense fallback={<div className="mock-search-panel search-panel-v2"><div className="search-mode-hint">Đang tải bộ tìm kiếm...</div></div>}><SearchBarInner/></Suspense>;
 }
