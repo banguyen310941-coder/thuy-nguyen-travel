@@ -2,14 +2,17 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useMemo,useState } from 'react';
+import { useEffect,useMemo,useState } from 'react';
 import { tours } from '@/data/catalog';
 
 export function TourCatalog(){
   const params=useSearchParams();
   const q=(params.get('q')||'').toLowerCase();
   const departure=(params.get('departure')||'').toLowerCase();
-  const [category,setCategory]=useState('all');
+  const categoryParam=(params.get('category')||'all').toLowerCase();
+  const initialCategory=['china','domestic'].includes(categoryParam)?categoryParam:'all';
+  const [category,setCategory]=useState(initialCategory);
+  useEffect(()=>{setCategory(['china','domestic'].includes(categoryParam)?categoryParam:'all')},[categoryParam]);
   const filtered=useMemo(()=>tours.filter(item=>{
     const matchQ=!q||`${item.name} ${item.route} ${item.category} ${item.summary}`.toLowerCase().includes(q);
     const matchDeparture=!departure||(item.departureFrom||'').toLowerCase().includes(departure);
