@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AdminBookings } from '@/components/AdminBookings';
 import { AdminCustomers } from '@/components/AdminCustomers';
+import { AdminHomepageEditor } from '@/components/AdminHomepageEditor';
 
 const modules=[['▦','Tổng quan'],['◎','Khách hàng / CRM'],['▣','Đơn đặt dịch vụ'],['▤','Sản phẩm'],['✈','Tour du lịch'],['⌂','Villa & Resort'],['▥','Khách sạn'],['≋','Du thuyền'],['✎','Bài viết / Cẩm nang'],['▧','Media (Ảnh/Video)'],['⌂','Giao diện (Trang chủ)'],['⌕','Cấu hình SEO'],['⇩','Google Drive'],['⚙','Cài đặt']] as const;
 
@@ -25,54 +26,16 @@ export default function AdminPage(){
     </aside>
 
     <main className="admin-main">
-      <header className="admin-top">
-        <div><small>THÚY NGUYÊN TRAVEL / QUẢN TRỊ</small><h1>{active}</h1></div>
-        <div className="admin-top-actions"><label className="admin-global-search">⌕ <input placeholder="Tìm đơn, khách hàng, sản phẩm..."/></label><button className="admin-bell">🔔</button><div className="admin-user"><span>●</span><div><b>Quản trị viên</b><small>Đang hoạt động</small></div></div></div>
-      </header>
+      <header className="admin-top"><div><small>THÚY NGUYÊN TRAVEL / QUẢN TRỊ</small><h1>{active}</h1></div><div className="admin-top-actions"><label className="admin-global-search">⌕ <input placeholder="Tìm đơn, khách hàng, sản phẩm..."/></label><button className="admin-bell">🔔</button><div className="admin-user"><span>●</span><div><b>Quản trị viên</b><small>Đang hoạt động</small></div></div></div></header>
 
-      {active==='Tổng quan'&&<>
-        <div className="admin-welcome"><div><small>TỔNG QUAN HỆ THỐNG</small><h2>Xin chào, Thúy Nguyên Travel</h2><p>Theo dõi khách hàng, đơn hàng, doanh thu và nội dung website tại một nơi.</p></div><a href="/">Xem website ↗</a></div>
-
-        <div className="admin-stats dashboard">
-          <div className="stat-blue"><span>👤 Khách hàng</span><b>1.248</b><small>↑ 12% tháng này</small></div>
-          <div className="stat-orange"><span>🟠 Đơn hàng</span><b>356</b><small>24 đơn chờ xử lý</small></div>
-          <div className="stat-green"><span>💵 Doanh thu</span><b>486,7 tr</b><small>30 ngày gần nhất</small></div>
-          <div className="stat-purple"><span>🟣 Bài viết</span><b>42</b><small>36 bài đã xuất bản</small></div>
-        </div>
-
-        <div className="admin-dashboard-grid">
-          <section className="admin-panel chart-panel">
-            <div className="admin-panel-head"><div><h2>Doanh thu 30 ngày</h2><p>Biểu đồ tổng quan hiệu quả bán hàng</p></div><select><option>30 ngày</option><option>7 ngày</option></select></div>
-            <div className="fake-chart"><div className="chart-y"><span>500tr</span><span>400tr</span><span>300tr</span><span>200tr</span><span>100tr</span></div><svg viewBox="0 0 700 180" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1988e6" stopOpacity=".22"/><stop offset="100%" stopColor="#1988e6" stopOpacity="0"/></linearGradient></defs><polygon points="0,155 70,140 140,148 210,115 280,122 350,85 420,96 490,60 560,75 630,32 700,45 700,180 0,180" fill="url(#area)"/><polyline points="0,155 70,140 140,148 210,115 280,122 350,85 420,96 490,60 560,75 630,32 700,45"/></svg><div className="chart-x"><span>01</span><span>05</span><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span></div></div>
-          </section>
-
-          <section className="admin-panel recent-orders">
-            <div className="admin-panel-head"><div><h2>Đơn gần đây</h2><p>Cần chăm sóc và xác nhận</p></div><button onClick={()=>setActive('Đơn đặt dịch vụ')}>Xem tất cả</button></div>
-            <div className="recent-order-list">
-              <article><span className="order-avatar">O</span><div><b>Oceanami Villas</b><small>Nguyễn Minh Anh · 0969 123 456</small></div><em className="status-new">Mới</em></article>
-              <article><span className="order-avatar">A</span><div><b>Ambassador Hạ Long</b><small>Trần Quốc Huy · 0988 234 567</small></div><em className="status-contacting">Tư vấn</em></article>
-              <article><span className="order-avatar">B</span><div><b>Tour Bắc Kinh</b><small>Lê Thu Hà · 0912 345 678</small></div><em className="status-confirmed">Đã chốt</em></article>
-              <article><span className="order-avatar">N</span><div><b>NovaWorld Phan Thiết</b><small>Phạm Khánh Linh · 0905 998 877</small></div><em className="status-new">Mới</em></article>
-            </div>
-          </section>
-        </div>
-
-        <section className="admin-panel">
-          <div className="admin-panel-head"><div><h2>Sản phẩm nổi bật</h2><p>Những sản phẩm đang được quan tâm</p></div><button onClick={()=>setActive('Sản phẩm')}>Quản lý sản phẩm</button></div>
-          <div className="admin-product-list dashboard-products">{productCards.map(item=><article key={item.name}><img src={item.image} alt={item.name}/><div><b>{item.name}</b><span>{item.type} · {item.place}</span></div><em>{item.status}</em><button onClick={()=>setActive(item.type==='Du thuyền'?'Du thuyền':item.type==='Khách sạn'?'Khách sạn':'Villa & Resort')}>Quản lý</button></article>)}</div>
-        </section>
-      </>}
+      {active==='Tổng quan'&&<><div className="admin-welcome"><div><small>TỔNG QUAN HỆ THỐNG</small><h2>Xin chào, Thúy Nguyên Travel</h2><p>Theo dõi khách hàng, đơn hàng, doanh thu và nội dung website tại một nơi.</p></div><button onClick={()=>setActive('Giao diện (Trang chủ)')}>Chỉnh giao diện ↗</button></div><div className="admin-stats dashboard"><div className="stat-blue"><span>👤 Khách hàng</span><b>1.248</b><small>↑ 12% tháng này</small></div><div className="stat-orange"><span>🟠 Đơn hàng</span><b>356</b><small>24 đơn chờ xử lý</small></div><div className="stat-green"><span>💵 Doanh thu</span><b>486,7 tr</b><small>30 ngày gần nhất</small></div><div className="stat-purple"><span>🟣 Bài viết</span><b>42</b><small>36 bài đã xuất bản</small></div></div><div className="admin-dashboard-grid"><section className="admin-panel chart-panel"><div className="admin-panel-head"><div><h2>Doanh thu 30 ngày</h2><p>Biểu đồ tổng quan hiệu quả bán hàng</p></div><select><option>30 ngày</option><option>7 ngày</option></select></div><div className="fake-chart"><div className="chart-y"><span>500tr</span><span>400tr</span><span>300tr</span><span>200tr</span><span>100tr</span></div><svg viewBox="0 0 700 180" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1988e6" stopOpacity=".22"/><stop offset="100%" stopColor="#1988e6" stopOpacity="0"/></linearGradient></defs><polygon points="0,155 70,140 140,148 210,115 280,122 350,85 420,96 490,60 560,75 630,32 700,45 700,180 0,180" fill="url(#area)"/><polyline points="0,155 70,140 140,148 210,115 280,122 350,85 420,96 490,60 560,75 630,32 700,45"/></svg><div className="chart-x"><span>01</span><span>05</span><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span></div></div></section><section className="admin-panel recent-orders"><div className="admin-panel-head"><div><h2>Đơn gần đây</h2><p>Cần chăm sóc và xác nhận</p></div><button onClick={()=>setActive('Đơn đặt dịch vụ')}>Xem tất cả</button></div><div className="recent-order-list"><article><span className="order-avatar">O</span><div><b>Oceanami Villas</b><small>Nguyễn Minh Anh · 0969 123 456</small></div><em className="status-new">Mới</em></article><article><span className="order-avatar">A</span><div><b>Ambassador Hạ Long</b><small>Trần Quốc Huy · 0988 234 567</small></div><em className="status-contacting">Tư vấn</em></article><article><span className="order-avatar">B</span><div><b>Tour Bắc Kinh</b><small>Lê Thu Hà · 0912 345 678</small></div><em className="status-confirmed">Đã chốt</em></article><article><span className="order-avatar">N</span><div><b>NovaWorld Phan Thiết</b><small>Phạm Khánh Linh · 0905 998 877</small></div><em className="status-new">Mới</em></article></div></section></div><section className="admin-panel"><div className="admin-panel-head"><div><h2>Sản phẩm nổi bật</h2><p>Những sản phẩm đang được quan tâm</p></div><button onClick={()=>setActive('Sản phẩm')}>Quản lý sản phẩm</button></div><div className="admin-product-list dashboard-products">{productCards.map(item=><article key={item.name}><img src={item.image} alt={item.name}/><div><b>{item.name}</b><span>{item.type} · {item.place}</span></div><em>{item.status}</em><button onClick={()=>setActive(item.type==='Du thuyền'?'Du thuyền':item.type==='Khách sạn'?'Khách sạn':'Villa & Resort')}>Quản lý</button></article>)}</div></section></>}
 
       {active==='Khách hàng / CRM'&&<AdminCustomers/>}
       {active==='Đơn đặt dịch vụ'&&<AdminBookings/>}
       {['Sản phẩm','Tour du lịch','Villa & Resort','Khách sạn','Du thuyền'].includes(active)&&<Products title={active}/>} 
-
-      {active==='Giao diện (Trang chủ)'&&<section className="admin-panel"><div className="admin-panel-head"><div><h2>Chỉnh sửa trang chủ</h2><p>Banner, ô tìm kiếm, dịch vụ nổi bật, điểm đến và sản phẩm nổi bật.</p></div><button>Xem trước</button></div><div className="admin-form-row"><label>Tiêu đề chính<input defaultValue="Du lịch trọn gói – Nghỉ dưỡng đẳng cấp"/></label><label>Hotline<input defaultValue="0969 973 949"/></label></div><div className="admin-form-row"><label>Mô tả<input defaultValue="Vé · Tour · Villa · Resort · Du thuyền – Khám phá thế giới cùng chúng tôi!"/></label><label>Ảnh banner<input placeholder="Chọn từ thư viện media"/></label></div><div className="editor-actions"><button>Lưu nháp</button><button className="admin-primary">Lưu & xuất bản</button></div></section>}
-
+      {active==='Giao diện (Trang chủ)'&&<AdminHomepageEditor />}
       {active==='Media (Ảnh/Video)'&&<section className="admin-panel"><div className="admin-panel-head"><div><h2>Media / Ảnh & Video</h2><p>Thư viện dùng chung cho sản phẩm, banner và bài viết.</p></div><button>+ Tải media</button></div><div className="drive-drop"><b>Kéo thả ảnh hoặc video vào đây</b><span>JPG, PNG, WebP, MP4</span><button className="admin-primary">Chọn tệp</button></div></section>}
-
       {active==='Bài viết / Cẩm nang'&&<section className="admin-panel editor-panel"><div className="admin-panel-head"><div><h2>Trình soạn thảo bài viết</h2><p>Chỉnh sửa nội dung trực quan như Word.</p></div></div><div className="admin-form-row"><label>Tiêu đề<input placeholder="Nhập tiêu đề bài viết"/></label><label>Danh mục<select><option>Cẩm nang</option><option>Tour</option><option>Villa</option></select></label></div><div className="word-editor"><div className="editor-toolbar"><button><b>B</b></button><button><i>I</i></button><button>H2</button><button>H3</button><button>• Danh sách</button><button>🔗 Link</button><button>🖼 Ảnh</button><button>🎬 Video</button></div><div className="editor-canvas" contentEditable suppressContentEditableWarning><h2>Nội dung bài viết</h2><p>Bắt đầu nhập nội dung tại đây...</p></div></div><div className="editor-actions"><button>Lưu nháp</button><button className="admin-primary">Đăng bài</button></div></section>}
-
       {active==='Cấu hình SEO'&&<section className="admin-panel"><h2>Cấu hình SEO</h2><p>Title, meta description, schema, sitemap và Open Graph.</p><div className="admin-form-row"><label>SEO Title<input defaultValue="Thúy Nguyên Travel - Tour, Villa, Khách sạn & Du thuyền"/></label><label>Slug<input defaultValue="/"/></label></div></section>}
       {active==='Google Drive'&&<section className="admin-panel"><h2>Google Drive → Website</h2><p>Nhập dữ liệu sản phẩm từ thư mục Drive, chuẩn hóa rồi tạo bản nháp.</p><div className="drive-drop"><b>Kết nối nguồn sản phẩm</b><span>Ảnh · Word · Excel · PDF</span><button className="admin-primary">Kết nối Google Drive</button></div></section>}
       {active==='Cài đặt'&&<section className="admin-panel"><h2>Cài đặt hệ thống</h2><div className="admin-form-row"><label>Tên thương hiệu<input defaultValue="Thúy Nguyên Travel"/></label><label>Hotline<input defaultValue="0969973949"/></label></div><div className="admin-form-row"><label>Email<input defaultValue="info@thuynguyentravel.com"/></label><label>Zalo<input defaultValue="0969973949"/></label></div></section>}
