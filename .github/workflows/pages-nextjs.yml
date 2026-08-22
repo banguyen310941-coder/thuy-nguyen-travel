@@ -50,6 +50,7 @@ jobs:
             "out/cruises/index.html"
             "out/destinations/index.html"
             "out/guide/index.html"
+            "out/guide/read/index.html"
             "out/admin/index.html"
           )
           for file in "${routes[@]}"; do
