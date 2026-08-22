@@ -19,6 +19,16 @@ export function Header() {
           <div className="mock-top-actions"><a href="https://zalo.me/0969973949" target="_blank" rel="noreferrer">Zalo</a><a href="tel:0969973949">Gọi ngay</a></div>
         </div>
       </div>
+
+      <div className="mock-mobile-head container">
+        <a className="mock-mobile-icon" href="#mobile-services" aria-label="Mở dịch vụ">☰</a>
+        <Link className="mock-mobile-logo" href="/" aria-label="Thúy Nguyên Travel">
+          <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
+          <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong></span>
+        </Link>
+        <Link className="mock-mobile-icon" href="/stay" aria-label="Tìm kiếm">⌕</Link>
+      </div>
+
       <div className="container mock-brand-row">
         <Link className="mock-logo" href="/" aria-label="Thúy Nguyên Travel">
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
