@@ -6,5 +6,6 @@ import './editor-pro-v2.css';
 import './product-v2.css';
 import './product-manager.css';
 import './units.css';
+import {AdminDeleteEnhancer} from '@/components/AdminDeleteEnhancer';
 
-export default function AdminLayout({children}:{children:React.ReactNode}){return <>{children}</>}
+export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminDeleteEnhancer/>{children}</>}
