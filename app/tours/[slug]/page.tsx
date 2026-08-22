@@ -1,0 +1,48 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { tours } from '@/data/catalog';
+
+export function generateStaticParams() {
+  return tours.map((tour) => ({ slug: tour.slug }));
+}
+
+export default async function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const tour = tours.find((item) => item.slug === slug);
+  if (!tour) notFound();
+
+  return (
+    <div className="subpage">
+      <section className="sub-hero">
+        <div className="container">
+          <div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / <Link href="/tours">Tour du lịch</Link> / {tour.name}</div>
+          <div className="sub-hero-grid">
+            <div>
+              <span className="sub-kicker">{tour.category.toUpperCase()}</span>
+              <h1>{tour.name}</h1>
+              <p>{tour.summary}</p>
+            </div>
+            <div className="sub-hero-cta"><a className="solid" href="tel:0969973949">☎ Tư vấn tour</a><a className="outline" href="https://zalo.me/0969973949">Zalo</a></div>
+          </div>
+        </div>
+      </section>
+
+      <nav className="sub-nav"><div className="container sub-nav-inner"><a href="#overview">Tổng quan</a><a href="#schedule">Lịch trình</a><a href="#included">Bao gồm</a><a href="#policy">Chính sách</a><Link href="/tours">Tour khác</Link></div></nav>
+
+      <section className="sub-section white">
+        <div className="container detail-layout">
+          <main>
+            <div className="detail-gallery"><div className="gallery-main" style={{backgroundImage:`url(${tour.image})`}}/><div style={{backgroundImage:`url(${tour.image})`}}/><div style={{backgroundImage:`url(${tour.image})`}}/></div>
+            <section id="overview" className="detail-block"><h2>Tổng quan hành trình</h2><div className="amenity-grid"><div>🗓 {tour.duration}</div><div>📍 {tour.route}</div><div>🧳 {tour.category}</div><div>☎ Hỗ trợ 24/7</div></div><p>{tour.summary}</p></section>
+            <section id="schedule" className="detail-block"><h2>Lịch trình tham khảo</h2><div className="room-table"><div className="room-row"><div><b>Ngày 1</b><span>Khởi hành, đón khách và bắt đầu hành trình theo lịch xác nhận.</span></div></div><div className="room-row"><div><b>Ngày giữa hành trình</b><span>Tham quan các điểm chính theo tuyến {tour.route}.</span></div></div><div className="room-row"><div><b>Ngày cuối</b><span>Hoàn tất chương trình và kết thúc tour theo lịch bay/xe thực tế.</span></div></div></div></section>
+            <section id="included" className="detail-block"><h2>Dịch vụ dự kiến</h2><div className="amenity-grid"><div>✓ Xe đưa đón theo chương trình</div><div>✓ Khách sạn theo tiêu chuẩn tour</div><div>✓ Các bữa ăn theo lịch trình</div><div>✓ Hướng dẫn viên</div><div>✓ Vé tham quan theo chương trình</div><div>✓ Bảo hiểm du lịch theo gói</div></div></section>
+            <section id="policy" className="detail-block"><h2>Chính sách đặt tour</h2><div className="policy-grid"><div><b>Đặt cọc</b><p>Mức cọc được xác nhận theo ngày khởi hành và loại tour.</p></div><div><b>Hoàn hủy</b><p>Áp dụng theo điều kiện từng lịch khởi hành.</p></div><div><b>Trẻ em</b><p>Giá trẻ em phụ thuộc độ tuổi và chính sách dịch vụ.</p></div><div><b>Giá tour</b><p>Giá cuối cùng được xác nhận theo thời điểm đặt.</p></div></div></section>
+          </main>
+          <aside className="booking-box"><h3>Nhận báo giá tour</h3><label>Ngày dự kiến đi<input type="date"/></label><label>Số khách<select defaultValue="2"><option value="2">2 khách</option><option value="4">4 khách</option><option value="6">6 khách</option><option value="10">10+ khách</option></select></label><div className="booking-note">Gửi yêu cầu để nhận lịch khởi hành và mức giá chính xác.</div><a className="primary-button full" href="tel:0969973949">☎ 0969 973 949</a><a className="zalo-outline" href="https://zalo.me/0969973949">Chat Zalo</a></aside>
+        </div>
+      </section>
+
+      <section className="sub-section"><div className="container sub-cta"><div><h2>Cần tour riêng cho gia đình hoặc doanh nghiệp?</h2><p>Thúy Nguyên Travel có thể điều chỉnh tuyến, thời gian và tiêu chuẩn dịch vụ theo nhu cầu.</p></div><div className="sub-cta-actions"><a className="call" href="tel:0969973949">Gọi tư vấn</a><Link className="zalo" href="/tours">Xem tour khác</Link></div></div></section>
+    </div>
+  );
+}
