@@ -8,6 +8,12 @@ function currentModule(){return (document.querySelector('.admin-top h1')?.textCo
 
 export function AdminDeleteEnhancer(){
  useEffect(()=>{
+  const back=document.querySelector('.admin-back') as HTMLAnchorElement|null;
+  if(back){
+   const home=window.location.pathname.replace(/\/admin\/?(?:.*)?$/,'/')||'/';
+   back.href=home;
+  }
+
   const decorate=()=>{
    const module=currentModule();
    const isTour=module==='Tour du lịch';
