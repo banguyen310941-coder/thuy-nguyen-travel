@@ -26,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: package.json
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -38,8 +40,27 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
         run: npm run build
 
-      - name: Verify static export
-        run: test -f out/index.html && echo "Static export ready"
+      - name: Verify critical static routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          routes=(
+            "out/index.html"
+            "out/search/index.html"
+            "out/stay/index.html"
+            "out/tours/index.html"
+            "out/cruises/index.html"
+            "out/destinations/index.html"
+            "out/guide/index.html"
+            "out/admin/index.html"
+          )
+          for file in "${routes[@]}"; do
+            test -f "$file" || { echo "Missing exported route: $file"; exit 1; }
+            echo "OK: $file"
+          done
+          test -f out/sitemap.xml || { echo "Missing sitemap.xml"; exit 1; }
+          test -f out/robots.txt || { echo "Missing robots.txt"; exit 1; }
+          echo "Critical static export verified"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
