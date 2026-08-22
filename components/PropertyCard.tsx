@@ -2,18 +2,20 @@ import Link from 'next/link';
 import type { Stay } from '@/data/catalog';
 
 export function PropertyCard({ stay }: { stay: Stay }) {
+  const price = stay.type === 'Villa' ? '3.900.000đ/đêm' : stay.name.includes('Vinpearl') ? '2.500.000đ/đêm' : '2.200.000đ/đêm';
   return (
-    <article className="property-card">
-      <Link href={`/stay/${stay.slug}`} className="property-image" style={{ backgroundImage: `url(${stay.image})` }} aria-label={stay.name} />
-      <div className="property-body">
-        <div className="property-type">{stay.type}</div>
+    <article className="property-card mock-product-card">
+      <Link href={`/stay/${stay.slug}`} className="property-image mock-product-image" style={{ backgroundImage: `url(${stay.image})` }} aria-label={stay.name}>
+        <span className="mock-badge">{stay.type}</span>
+        <span className="mock-heart">♡</span>
+      </Link>
+      <div className="property-body mock-product-body">
         <Link href={`/stay/${stay.slug}`}><h3>{stay.name}</h3></Link>
         <p className="property-location">{stay.location}</p>
-        <p className="property-summary">{stay.summary}</p>
-        <div className="property-footer">
-          <div className="rating"><b>{stay.rating}</b><span>Rất tốt</span></div>
-          <div className="property-price">Liên hệ giá theo ngày</div>
-        </div>
+        <div className="mock-stars">★★★★★ <span>{stay.rating}/10</span></div>
+        <div className="mock-price-label">Giá tham khảo</div>
+        <div className="mock-price">Từ {price}</div>
+        <Link className="mock-detail-btn" href={`/stay/${stay.slug}`}>Xem chi tiết</Link>
       </div>
     </article>
   );
