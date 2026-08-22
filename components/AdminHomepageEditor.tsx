@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { defaultHomeCms, type HomeCmsData } from '@/components/HomeCmsHero';
 
@@ -33,7 +34,7 @@ export function AdminHomepageEditor(){
   const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={e=>change(name,e.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
 
   return <section className="admin-panel cms-home-editor">
-    <div className="admin-panel-head"><div><h2>Giao diện trang chủ</h2><p>Chỉnh từng khối giống WordPress: nội dung, ảnh, tiêu đề và bật/tắt hiển thị.</p></div><a className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</a></div>
+    <div className="admin-panel-head"><div><h2>Giao diện trang chủ</h2><p>Chỉnh từng khối giống WordPress: nội dung, ảnh, tiêu đề và bật/tắt hiển thị.</p></div><Link className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</Link></div>
 
     <div className="cms-editor-grid">
       <div className="cms-fields">
@@ -46,15 +47,10 @@ export function AdminHomepageEditor(){
         </div>
 
         <div className="cms-group"><h3>2. Dịch vụ nổi bật</h3><Toggle name="servicesEnabled" label="Hiển thị khối dịch vụ"/><label>Tiêu đề<input value={form.servicesTitle} onChange={e=>change('servicesTitle',e.target.value)}/></label><label>Mô tả<input value={form.servicesSubtitle} onChange={e=>change('servicesSubtitle',e.target.value)}/></label></div>
-
         <div className="cms-group"><h3>3. Điểm đến</h3><Toggle name="destinationsEnabled" label="Hiển thị điểm đến phổ biến"/><label>Tiêu đề<input value={form.destinationsTitle} onChange={e=>change('destinationsTitle',e.target.value)}/></label></div>
-
         <div className="cms-group"><h3>4. Sản phẩm nổi bật</h3><Toggle name="productsEnabled" label="Hiển thị sản phẩm nổi bật"/><label>Tiêu đề<input value={form.productsTitle} onChange={e=>change('productsTitle',e.target.value)}/></label></div>
-
         <div className="cms-group"><h3>5. Du thuyền</h3><Toggle name="cruisesEnabled" label="Hiển thị du thuyền nổi bật"/><label>Tiêu đề<input value={form.cruisesTitle} onChange={e=>change('cruisesTitle',e.target.value)}/></label><label>Mô tả<input value={form.cruisesSubtitle} onChange={e=>change('cruisesSubtitle',e.target.value)}/></label></div>
-
         <div className="cms-group"><h3>6. Tour du lịch</h3><Toggle name="toursEnabled" label="Hiển thị tour hot"/><label>Tiêu đề<input value={form.toursTitle} onChange={e=>change('toursTitle',e.target.value)}/></label></div>
-
         <div className="cms-group"><h3>7. CTA cuối trang</h3><Toggle name="ctaEnabled" label="Hiển thị khối tư vấn cuối trang"/><label>Nhãn nhỏ<input value={form.ctaEyebrow} onChange={e=>change('ctaEyebrow',e.target.value)}/></label><label>Tiêu đề<input value={form.ctaTitle} onChange={e=>change('ctaTitle',e.target.value)}/></label><label>Mô tả<textarea rows={2} value={form.ctaText} onChange={e=>change('ctaText',e.target.value)}/></label><div className="admin-form-row"><label>Hotline<input value={form.hotline} onChange={e=>change('hotline',e.target.value)}/></label><label>Zalo<input value={form.zalo} onChange={e=>change('zalo',e.target.value)}/></label></div></div>
 
         {API_BASE&&<label>Khóa quản trị API<input type="password" value={key} onChange={e=>{setKey(e.target.value);localStorage.setItem('tn_admin_api_key',e.target.value)}} placeholder="ADMIN_API_KEY"/></label>}
