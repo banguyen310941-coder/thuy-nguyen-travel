@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { stays } from '@/data/catalog';
 
+export const dynamic = 'force-static';
+
 const base = 'https://banguyen310941-coder.github.io/thuy-nguyen-travel';
 
 export default function sitemap(): MetadataRoute.Sitemap {
