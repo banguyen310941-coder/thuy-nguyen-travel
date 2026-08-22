@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AdminBookings } from '@/components/AdminBookings';
 
 const modules = ['Tổng quan','Khách hàng / CRM','Đơn đặt dịch vụ','Sản phẩm','Tour','Villa','Khách sạn','Du thuyền','Trang chủ','Album ảnh & video','Bài viết / Cẩm nang','SEO','Import Google Drive','Cài đặt'];
 
@@ -8,11 +9,6 @@ const crmRows = [
   ['Nguyễn Minh Anh','0968 123 456','Oceanami 3PN','Mới'],
   ['Trần Quốc Huy','0987 221 115','Ambassador Hạ Long','Đang tư vấn'],
   ['Lê Thu Hà','0912 889 337','Tour Bắc Kinh 5N4Đ','Đã chốt'],
-];
-const orderRows = [
-  ['TN-260822-01','Oceanami Villas','12/09/2026','4 khách','Chờ xác nhận'],
-  ['TN-260822-02','Ambassador I','20/09/2026','2 khách','Đã cọc'],
-  ['TN-260822-03','Tour Đà Nẵng - Hội An','02/10/2026','6 khách','Đang tư vấn'],
 ];
 const productRows = [
   ['Oceanami Villas & Beach Club','Villa','Phước Hải','Đang bán'],
@@ -43,7 +39,7 @@ export default function AdminPage(){
 
       {active==='Khách hàng / CRM' && <section className="admin-panel"><div className="admin-panel-head"><div><h2>Khách hàng & khách tiềm năng</h2><p>Lưu thông tin liên hệ, nhu cầu, nguồn khách và trạng thái tư vấn.</p></div></div><div className="admin-form-row"><label>Tìm khách<input placeholder="Tên, số điện thoại, sản phẩm quan tâm..."/></label><label>Trạng thái<select><option>Tất cả</option><option>Mới</option><option>Đang tư vấn</option><option>Đã chốt</option></select></label></div><DataTable rows={crmRows}/></section>}
 
-      {active==='Đơn đặt dịch vụ' && <section className="admin-panel"><div className="admin-panel-head"><div><h2>Đơn & yêu cầu đặt dịch vụ</h2><p>Theo dõi từ lúc khách gửi yêu cầu đến khi xác nhận và hoàn tất.</p></div></div><DataTable rows={orderRows}/></section>}
+      {active==='Đơn đặt dịch vụ' && <AdminBookings />}
 
       {['Sản phẩm','Tour','Villa','Khách sạn','Du thuyền'].includes(active) && <section className="admin-panel"><div className="admin-panel-head"><div><h2>{active}</h2><p>Quản lý nội dung, giá, ảnh, SEO, trạng thái hiển thị và liên kết đặt dịch vụ.</p></div></div><div className="admin-form-row"><label>Tìm sản phẩm<input placeholder="Nhập tên sản phẩm..."/></label><label>Trạng thái<select><option>Tất cả</option><option>Đang bán</option><option>Ẩn</option><option>Nháp</option></select></label></div><DataTable rows={productRows}/></section>}
 
