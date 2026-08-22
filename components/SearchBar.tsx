@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const services = [
   ['all','Tất cả'],['tour','Tour du lịch'],['villa','Villa & Resort'],['hotel','Khách sạn'],['cruise','Du thuyền']
@@ -12,15 +12,38 @@ function Counter({label,value,min=0,onChange}:{label:string;value:number;min?:nu
   return <div className="guest-counter"><span>{label}</span><div><button type="button" onClick={()=>onChange(Math.max(min,value-1))}>−</button><b>{value}</b><button type="button" onClick={()=>onChange(value+1)}>+</button></div></div>
 }
 
+function serviceFromRoute(pathname:string,typeParam:string|null):Service{
+  if(pathname.startsWith('/tours')) return 'tour';
+  if(pathname.startsWith('/cruises')) return 'cruise';
+  if(pathname.startsWith('/stay')){
+    if(typeParam==='villa') return 'villa';
+    if(typeParam==='hotel') return 'hotel';
+  }
+  return 'all';
+}
+
 export function SearchBar() {
   const router = useRouter();
+  const pathname=usePathname();
+  const searchParams=useSearchParams();
   const guestRef = useRef<HTMLDivElement>(null);
-  const [service, setService] = useState<Service>('all');
+  const routeService=serviceFromRoute(pathname,searchParams.get('type'));
+  const [service, setService] = useState<Service>(routeService);
   const [guestOpen,setGuestOpen]=useState(false);
-  const [adults,setAdults]=useState(2);
-  const [children,setChildren]=useState(0);
-  const [rooms,setRooms]=useState(1);
-  const [cabins,setCabins]=useState(1);
+  const [adults,setAdults]=useState(Number(searchParams.get('adults')||2));
+  const [children,setChildren]=useState(Number(searchParams.get('children')||0));
+  const [rooms,setRooms]=useState(Number(searchParams.get('rooms')||1));
+  const [cabins,setCabins]=useState(Number(searchParams.get('cabins')||1));
+  const [startDate,setStartDate]=useState(searchParams.get('checkin')||searchParams.get('date')||'');
+  const [endDate,setEndDate]=useState(searchParams.get('checkout')||'');
+  const [error,setError]=useState('');
+
+  const today=useMemo(()=>{
+    const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  },[]);
+
+  useEffect(()=>{ setService(routeService); setGuestOpen(false); },[routeService]);
 
   useEffect(()=>{
     const close=(e:MouseEvent)=>{if(guestRef.current&&!guestRef.current.contains(e.target as Node))setGuestOpen(false)};
@@ -33,16 +56,18 @@ export function SearchBar() {
 
   function submit(event:React.FormEvent<HTMLFormElement>){
     event.preventDefault();
+    setError('');
+    if(startDate&&startDate<today){setError('Ngày bắt đầu không thể ở trong quá khứ.');return;}
+    if(isStay&&startDate&&endDate&&endDate<=startDate){setError('Ngày trả phòng phải sau ngày nhận phòng.');return;}
+
     const form=new FormData(event.currentTarget);
     const q=String(form.get('destination')||'').trim();
-    const start=String(form.get('start')||'');
-    const end=String(form.get('end')||'');
     const departure=String(form.get('departure')||'');
     const duration=String(form.get('duration')||'');
     const params=new URLSearchParams();
     if(q)params.set('q',q);
-    if(start)params.set(isStay?'checkin':'date',start);
-    if(end&&isStay)params.set('checkout',end);
+    if(startDate)params.set(isStay?'checkin':'date',startDate);
+    if(endDate&&isStay)params.set('checkout',endDate);
     if(departure)params.set('departure',departure);
     if(duration)params.set('duration',duration);
     params.set('adults',String(adults));
@@ -59,39 +84,43 @@ export function SearchBar() {
     router.push(`${path}?${params.toString()}`);
   }
 
+  function switchService(next:Service){
+    setService(next); setGuestOpen(false); setError(''); setStartDate(''); setEndDate('');
+  }
+
   const destinationLabel=isTour?'Điểm đến / tên tour':isCruise?'Vịnh / tên du thuyền':isStay?'Điểm đến / tên chỗ nghỉ':'Bạn muốn tìm gì?';
   const destinationPlaceholder=isTour?'Trung Quốc, Đà Nẵng, Phú Quốc...':isCruise?'Hạ Long, Lan Hạ, Ambassador...':isStay?'Phan Thiết, Nha Trang, Phú Quốc...':'Tour, villa, khách sạn, du thuyền...';
 
   return <div className="mock-search-panel search-panel-v2">
     <div className="mock-search-tabs">
-      {services.map(([value,label])=><button type="button" key={value} className={service===value?'active':''} onClick={()=>{setService(value);setGuestOpen(false)}}>{label}</button>)}
+      {services.map(([value,label])=><button type="button" key={value} className={service===value?'active':''} onClick={()=>switchService(value)}>{label}</button>)}
     </div>
     <form className="mock-search-form booking-search-live search-form-v2" onSubmit={submit}>
-      <label className="mock-search-field mock-destination"><span>⌖</span><div><small>{destinationLabel}</small><input name="destination" placeholder={destinationPlaceholder} autoComplete="off"/></div></label>
+      <label className="mock-search-field mock-destination"><span>⌖</span><div><small>{destinationLabel}</small><input name="destination" defaultValue={searchParams.get('q')||''} placeholder={destinationPlaceholder} autoComplete="off"/></div></label>
 
       {isTour&&<>
-        <label className="mock-search-field"><span>✈</span><div><small>Khởi hành từ</small><select name="departure" defaultValue=""><option value="">Tất cả điểm khởi hành</option><option>Hà Nội</option><option>TP.HCM</option><option>Đà Nẵng</option></select></div></label>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày khởi hành</small><input name="start" type="date"/></div></label>
+        <label className="mock-search-field"><span>✈</span><div><small>Khởi hành từ</small><select name="departure" defaultValue={searchParams.get('departure')||''}><option value="">Tất cả điểm khởi hành</option><option>Hà Nội</option><option>TP.HCM</option><option>Đà Nẵng</option></select></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày khởi hành</small><input name="start" type="date" min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></div></label>
       </>}
 
       {isStay&&<>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày nhận phòng</small><input name="start" type="date"/></div></label>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày trả phòng</small><input name="end" type="date"/></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày nhận phòng</small><input name="start" type="date" min={today} value={startDate} onChange={e=>{setStartDate(e.target.value);if(endDate&&endDate<=e.target.value)setEndDate('')}}/></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày trả phòng</small><input name="end" type="date" min={startDate||today} value={endDate} onChange={e=>setEndDate(e.target.value)}/></div></label>
       </>}
 
       {isCruise&&<>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày đi</small><input name="start" type="date"/></div></label>
-        <label className="mock-search-field"><span>◷</span><div><small>Thời lượng</small><select name="duration" defaultValue=""><option value="">Tất cả hành trình</option><option value="day">Trong ngày</option><option value="2n1d">2 ngày 1 đêm</option><option value="3n2d">3 ngày 2 đêm</option></select></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày đi</small><input name="start" type="date" min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></div></label>
+        <label className="mock-search-field"><span>◷</span><div><small>Thời lượng</small><select name="duration" defaultValue={searchParams.get('duration')||''}><option value="">Tất cả hành trình</option><option value="day">Trong ngày</option><option value="2n1d">2 ngày 1 đêm</option><option value="3n2d">3 ngày 2 đêm</option></select></div></label>
       </>}
 
       {service==='all'&&<>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày bắt đầu</small><input name="start" type="date"/></div></label>
-        <label className="mock-search-field"><span>▣</span><div><small>Ngày kết thúc</small><input name="end" type="date"/></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày dự kiến</small><input name="start" type="date" min={today} value={startDate} onChange={e=>setStartDate(e.target.value)}/></div></label>
       </>}
 
       <div className="mock-search-field guest-picker" ref={guestRef}><span>♙</span><div><small>{isCruise?'Khách & cabin':isStay?'Khách & phòng':'Số khách'}</small><button className="guest-trigger" type="button" onClick={()=>setGuestOpen(v=>!v)}>{adults} NL · {children} TE{isStay?` · ${rooms} phòng`:isCruise?` · ${cabins} cabin`:''}</button>{guestOpen&&<div className="guest-popover"><Counter label="Người lớn" value={adults} min={1} onChange={setAdults}/><Counter label="Trẻ em" value={children} onChange={setChildren}/>{isStay&&<Counter label="Phòng" value={rooms} min={1} onChange={setRooms}/>} {isCruise&&<Counter label="Cabin" value={cabins} min={1} onChange={setCabins}/>}<button type="button" className="guest-done" onClick={()=>setGuestOpen(false)}>Xong</button></div>}</div></div>
       <button className="mock-search-button" type="submit">{isTour?'Tìm tour':isCruise?'Tìm du thuyền':isStay?'Tìm phòng':'Tìm tất cả'}</button>
     </form>
+    {error&&<div className="search-form-error" role="alert">{error}</div>}
     <div className="search-mode-hint">{isTour?'Tìm đúng tour theo điểm đến, nơi khởi hành và ngày đi.':service==='villa'?'Chỉ hiển thị Villa & Resort phù hợp.':service==='hotel'?'Chỉ hiển thị Khách sạn/Resort phù hợp.':isCruise?'Tìm theo vịnh, ngày đi và thời lượng hành trình.':'Tìm đồng thời Tour, Villa, Khách sạn và Du thuyền.'}</div>
     <div className="mock-search-benefits"><span>✓ Giá tốt nhất</span><span>✓ Tư vấn minh bạch</span><span>✓ Hỗ trợ 24/7</span><span>✓ Xác nhận nhanh</span></div>
   </div>;
