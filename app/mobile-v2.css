@@ -4,21 +4,28 @@
   body{background:#f6f9fc}
   .mock-contactbar,.mock-brand-row,.mock-nav-wrap{display:none!important}
   .mock-header{position:sticky;top:0;background:#fff!important;box-shadow:0 1px 10px rgba(4,58,111,.08)!important}
-  .mock-mobile-head{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px;height:72px}
-  .mock-mobile-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:#0a4d93;font-size:22px;font-weight:800;background:#f3f7fb}
+  .mock-mobile-head{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px;height:72px;position:relative}
+  .mobile-menu{position:relative}
+  .mobile-menu summary{list-style:none;cursor:pointer}
+  .mobile-menu summary::-webkit-details-marker{display:none}
+  .mobile-menu-panel{position:absolute;left:0;top:48px;width:min(280px,82vw);background:#fff;border:1px solid #dce8f4;border-radius:14px;box-shadow:0 18px 40px rgba(3,45,83,.18);padding:10px;display:grid;z-index:100}
+  .mobile-menu-panel a{padding:12px 13px;border-radius:9px;color:#0a4d93;font-size:13px;font-weight:800}
+  .mobile-menu-panel a:hover{background:#f0f6fb}
+  .mobile-menu-panel a:nth-last-child(-n+2){margin-top:5px;background:#0b68c7;color:#fff;text-align:center}
+  .mock-mobile-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:#0a4d93;font-size:22px;font-weight:800;background:#f3f7fb;border:0}
   .mock-mobile-logo{display:flex;justify-content:center;align-items:center;gap:5px;min-width:0}
   .mock-mobile-logo .mock-logo-art{width:52px;height:38px;transform:scale(.76);transform-origin:center}
   .mock-mobile-logo .mock-logo-text b{font-size:12px;line-height:1}
   .mock-mobile-logo .mock-logo-text strong{font-size:15px;line-height:1}
 
-  .mock-hero{min-height:535px;background-position:62% center}
+  .mock-hero{min-height:auto!important;background-position:62% center;padding-bottom:26px}
   .mock-hero-overlay{background:linear-gradient(180deg,rgba(3,45,83,.48),rgba(3,49,86,.23) 42%,rgba(3,43,79,.5))}
-  .mock-hero-content{padding-top:34px;text-align:center}
+  .mock-hero-content{padding-top:34px;padding-bottom:0;text-align:center}
   .mock-eyebrow{font-size:9px;letter-spacing:1.5px}
   .mock-hero h1{font-size:24px;line-height:1.18;max-width:330px;margin:8px auto 6px;text-shadow:0 2px 8px rgba(0,31,65,.35)}
   .mock-hero-content>p:not(.mock-eyebrow){font-size:11px;line-height:1.5;max-width:340px;margin:0 auto;color:#f1f7fb;padding:0 8px;position:relative;z-index:2}
   .mock-hero-note{display:none}
-  .mock-hero-search{top:170px}
+  .mock-hero-search{position:static!important;left:auto!important;right:auto!important;top:auto!important;margin-top:18px}
 
   .mock-search-panel{width:100%;max-width:360px;margin:0 auto;text-align:left}
   .mock-search-tabs{margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;overflow:visible}
@@ -87,8 +94,6 @@
   .mock-mobile-logo .mock-logo-art{width:46px;transform:scale(.7)}
   .mock-mobile-logo .mock-logo-text b{font-size:11px}
   .mock-mobile-logo .mock-logo-text strong{font-size:14px}
-  .mock-hero{min-height:520px}
-  .mock-hero-search{top:162px}
   .mock-search-panel{max-width:344px}
   .mock-hero h1{font-size:22px}
   .mock-search-tabs button{font-size:7px;padding:7px 2px}
