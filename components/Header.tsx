@@ -21,7 +21,14 @@ export function Header() {
       </div>
 
       <div className="mock-mobile-head container">
-        <a className="mock-mobile-icon" href="#mobile-services" aria-label="Mở dịch vụ">☰</a>
+        <details className="mobile-menu">
+          <summary className="mock-mobile-icon" aria-label="Mở menu">☰</summary>
+          <nav className="mobile-menu-panel" aria-label="Menu điện thoại">
+            {nav.map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}
+            <a href="tel:0969973949">☎ Gọi 0969 973 949</a>
+            <a href="https://zalo.me/0969973949" target="_blank" rel="noreferrer">Zalo tư vấn</a>
+          </nav>
+        </details>
         <Link className="mock-mobile-logo" href="/" aria-label="Thúy Nguyên Travel">
           <span className="mock-logo-art" aria-hidden="true"><i className="sun"/><i className="palm">✦</i><i className="wave one"/><i className="wave two"/></span>
           <span className="mock-logo-text"><b>THÚY NGUYÊN</b><strong>TRAVEL</strong></span>
