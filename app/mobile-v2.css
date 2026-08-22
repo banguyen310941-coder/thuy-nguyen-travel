@@ -11,14 +11,14 @@
   .mock-mobile-logo .mock-logo-text b{font-size:12px;line-height:1}
   .mock-mobile-logo .mock-logo-text strong{font-size:15px;line-height:1}
 
-  .mock-hero{min-height:505px;background-position:62% center}
+  .mock-hero{min-height:535px;background-position:62% center}
   .mock-hero-overlay{background:linear-gradient(180deg,rgba(3,45,83,.48),rgba(3,49,86,.23) 42%,rgba(3,43,79,.5))}
   .mock-hero-content{padding-top:34px;text-align:center}
   .mock-eyebrow{font-size:9px;letter-spacing:1.5px}
   .mock-hero h1{font-size:24px;line-height:1.18;max-width:330px;margin:8px auto 6px;text-shadow:0 2px 8px rgba(0,31,65,.35)}
-  .mock-hero-content>p:not(.mock-eyebrow){font-size:11px;line-height:1.45;max-width:320px;margin:0 auto;color:#f1f7fb}
+  .mock-hero-content>p:not(.mock-eyebrow){font-size:11px;line-height:1.5;max-width:340px;margin:0 auto;color:#f1f7fb;padding:0 8px;position:relative;z-index:2}
   .mock-hero-note{display:none}
-  .mock-hero-search{top:145px}
+  .mock-hero-search{top:170px}
 
   .mock-search-panel{width:100%;max-width:360px;margin:0 auto;text-align:left}
   .mock-search-tabs{margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;overflow:visible}
@@ -87,8 +87,8 @@
   .mock-mobile-logo .mock-logo-art{width:46px;transform:scale(.7)}
   .mock-mobile-logo .mock-logo-text b{font-size:11px}
   .mock-mobile-logo .mock-logo-text strong{font-size:14px}
-  .mock-hero{min-height:490px}
-  .mock-hero-search{top:138px}
+  .mock-hero{min-height:520px}
+  .mock-hero-search{top:162px}
   .mock-search-panel{max-width:344px}
   .mock-hero h1{font-size:22px}
   .mock-search-tabs button{font-size:7px;padding:7px 2px}
