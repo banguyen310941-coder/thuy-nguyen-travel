@@ -46,3 +46,22 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  product_type ENUM('tour','villa','hotel','cruise') NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  status ENUM('draft','published','hidden') NOT NULL DEFAULT 'draft',
+  place VARCHAR(255) NULL,
+  price_text VARCHAR(120) NULL,
+  sale_price_text VARCHAR(120) NULL,
+  cover_url TEXT NULL,
+  summary TEXT NULL,
+  data JSON NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_products_type_status (product_type,status),
+  KEY idx_products_updated_at (updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
