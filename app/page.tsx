@@ -2,89 +2,72 @@ import Link from 'next/link';
 import { SearchBar } from '@/components/SearchBar';
 import { PropertyCard } from '@/components/PropertyCard';
 import { cruises, destinations, stays, tours } from '@/data/catalog';
+import './home.css';
 
 export const metadata = {
-  title: 'Đặt tour, villa, khách sạn & du thuyền toàn quốc',
-  description: 'Thúy Nguyên Travel - tìm và đặt villa, khách sạn, resort, tour và du thuyền toàn quốc. Hotline 0969 973 949.'
+  title: 'Du lịch trọn gói - Nghỉ dưỡng đẳng cấp',
+  description: 'Thúy Nguyên Travel - Tour, Villa, Resort, Khách sạn và Du thuyền toàn quốc. Hotline 0969 973 949.'
 };
+
+const serviceCards = [
+  ['✈','Tour du lịch','Tour trong nước & quốc tế','/tours'],
+  ['🏡','Villa & Resort','Nghỉ dưỡng cao cấp','/stay?type=villa'],
+  ['🏨','Khách sạn','Đặt phòng toàn quốc','/stay?type=hotel'],
+  ['🛳','Du thuyền','Hải trình tuyệt vời','/cruises'],
+  ['🎁','Combo ưu đãi','Giá tốt · Tiết kiệm','/stay'],
+];
 
 export default function HomePage() {
   return (
     <>
-      <section className="hero hero-home">
-        <div className="container hero-grid">
-          <div>
-            <p className="eyebrow">THÚY NGUYÊN TRAVEL</p>
-            <h1>Đi đâu cũng có lựa chọn phù hợp.</h1>
-            <p className="hero-copy">Tìm villa, khách sạn, resort, tour và du thuyền trên toàn quốc với một hệ thống đặt dịch vụ thống nhất.</p>
-          </div>
-          <div className="hero-trust">
-            <b>0969 973 949</b>
-            <span>Tư vấn nhanh qua điện thoại & Zalo</span>
-          </div>
-        </div>
-      </section>
-      <section className="search-section"><div className="container"><SearchBar /></div></section>
-
-      <section className="section compact-section">
-        <div className="container service-shortcuts">
-          <Link href="/stay?type=villa"><span>🏡</span><b>Villa</b><small>Oceanami · NovaWorld</small></Link>
-          <Link href="/stay?type=hotel"><span>🏨</span><b>Khách sạn</b><small>Vinpearl · FLC</small></Link>
-          <Link href="/cruises"><span>🛳️</span><b>Du thuyền</b><small>Ambassador</small></Link>
-          <Link href="/tours"><span>🧳</span><b>Tour du lịch</b><small>Trong nước · Trung Quốc</small></Link>
+      <section className="mock-hero">
+        <div className="mock-hero-overlay" />
+        <div className="container mock-hero-content">
+          <p className="mock-eyebrow">THÚY NGUYÊN TRAVEL</p>
+          <h1>Du lịch trọn gói – Nghỉ dưỡng đẳng cấp</h1>
+          <p>Vé · Tour · Villa · Resort · Du thuyền – Khám phá thế giới cùng chúng tôi!</p>
+          <div className="mock-hero-note"><span>✈</span><div>Hành trình của bạn<br/><b>Bắt đầu từ một giấc mơ...</b></div></div>
+          <div className="mock-hero-search"><SearchBar /></div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="mock-section mock-services-section">
         <div className="container">
-          <div className="section-heading"><div><h2>Ưu đãi & gợi ý hôm nay</h2><p>Chọn nhanh dịch vụ phù hợp rồi gửi ngày đi để nhận giá thực tế.</p></div></div>
-          <div className="offer-grid">
-            <div className="offer-card"><div><span className="offer-kicker">KỲ NGHỈ GIA ĐÌNH</span><h3>Villa biển cho nhóm 6–10 khách</h3><p>Oceanami và NovaWorld Phan Thiết với nhiều lựa chọn số phòng ngủ.</p><Link className="primary-button" href="/stay?type=villa">Xem villa</Link></div></div>
-            <div className="offer-card offer-photo"><div><span className="offer-kicker">HẠ LONG & LAN HẠ</span><h3>Ambassador Cruise</h3><p>Hành trình trong ngày hoặc ngủ đêm trên vịnh.</p><Link className="light-button" href="/cruises">Xem du thuyền</Link></div></div>
-          </div>
+          <div className="mock-section-heading center"><h2>Khám phá dịch vụ nổi bật</h2><p>Lựa chọn trải nghiệm phù hợp với bạn</p></div>
+          <div className="mock-service-grid">{serviceCards.map(([icon,title,desc,href])=><Link href={href} className="mock-service-card" key={title}><span>{icon}</span><h3>{title}</h3><p>{desc}</p></Link>)}</div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="mock-section">
         <div className="container">
-          <div className="section-heading"><div><h2>Khám phá Việt Nam</h2><p>Những điểm đến có nhiều lựa chọn lưu trú và tour.</p></div><Link href="/destinations">Xem tất cả</Link></div>
-          <div className="destination-grid">
-            {destinations.map(([name, meta, image]) => (
-              <Link className="destination-card" href={`/stay?q=${encodeURIComponent(name)}`} key={name}>
-                <div className="destination-image" style={{ backgroundImage: `url(${image})` }} />
-                <div><h3>{name}</h3><p>{meta}</p></div>
-              </Link>
-            ))}
-          </div>
+          <div className="mock-section-heading"><div><h2>Điểm đến phổ biến</h2><div className="mock-pills"><span className="active">Trong nước</span><span>Quốc tế</span></div></div><Link href="/destinations">Xem tất cả →</Link></div>
+          <div className="mock-destination-grid">{destinations.slice(0,6).map(([name,meta,image])=><Link href={`/stay?q=${encodeURIComponent(name)}`} className="mock-destination-card" key={name}><div className="mock-destination-image" style={{backgroundImage:`linear-gradient(0deg,rgba(3,30,54,.72),rgba(3,30,54,0) 60%),url(${image})`}}><div><h3>{name}</h3><p>{meta}</p></div></div></Link>)}</div>
         </div>
       </section>
 
-      <section className="section soft-section">
+      <section className="mock-section mock-soft">
         <div className="container">
-          <div className="section-heading"><div><h2>Lưu trú nổi bật</h2><p>Villa, khách sạn và resort được đưa vào hệ thống đầu tiên.</p></div><Link href="/stay">Xem tất cả</Link></div>
-          <div className="property-grid">{stays.slice(0, 6).map((stay) => <PropertyCard stay={stay} key={stay.slug} />)}</div>
+          <div className="mock-section-heading"><div><h2>Sản phẩm nổi bật</h2><div className="mock-pills"><span className="active">Villa & Resort</span><span>Du thuyền</span><span>Khách sạn</span><span>Tour du lịch</span></div></div><Link href="/stay">Xem tất cả →</Link></div>
+          <div className="mock-product-grid">{stays.slice(0,5).map((stay)=><PropertyCard stay={stay} key={stay.slug}/>)}</div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="mock-section">
         <div className="container">
-          <div className="section-heading"><div><h2>Du thuyền Ambassador</h2><p>Hạ Long và Lan Hạ với lựa chọn trong ngày hoặc nghỉ đêm.</p></div><Link href="/cruises">Xem tất cả</Link></div>
-          <div className="experience-grid">{cruises.map((item)=><Link href="/cruises" className="experience-card" key={item.slug}><div className="experience-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.bay} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom && <b className="from-price">Từ {item.priceFrom}</b>}</div></Link>)}</div>
+          <div className="mock-section-heading"><div><h2>Du thuyền nổi bật</h2><p>Hạ Long & Lan Hạ</p></div><Link href="/cruises">Xem tất cả →</Link></div>
+          <div className="mock-tour-grid">{cruises.slice(0,3).map(item=><Link href="/cruises" className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom&&<b>Từ {item.priceFrom}</b>}</div></Link>)}</div>
         </div>
       </section>
 
-      <section className="section soft-section">
+      <section className="mock-section mock-soft">
         <div className="container">
-          <div className="section-heading"><div><h2>Tour được quan tâm</h2><p>Khởi tạo nhóm tour Trung Quốc và tour trong nước.</p></div><Link href="/tours">Xem tất cả</Link></div>
-          <div className="experience-grid">{tours.slice(0,3).map((item)=><Link href="/tours" className="experience-card" key={item.slug}><div className="experience-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p></div></Link>)}</div>
+          <div className="mock-section-heading"><div><h2>Tour du lịch hot</h2><div className="mock-pills"><span className="active">Tour Trung Quốc</span><span>Tour trong nước</span></div></div><Link href="/tours">Xem tất cả →</Link></div>
+          <div className="mock-tour-grid">{tours.slice(0,3).map(item=><Link href="/tours" className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p></div></Link>)}</div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container editorial-callout">
-          <div><span>CẨM NANG DU LỊCH</span><h2>Thông tin trước chuyến đi, viết để khách dễ quyết định hơn.</h2><p>Kinh nghiệm chọn villa, lịch trình điểm đến, tư vấn du thuyền, khách sạn và các bài SEO theo từng địa phương.</p></div>
-          <Link className="primary-button" href="/guide">Đọc cẩm nang</Link>
-        </div>
+      <section className="mock-section">
+        <div className="container mock-cta-strip"><div><span>THÚY NGUYÊN TRAVEL</span><h2>Khám phá thế giới, trải nghiệm khác biệt!</h2><p>Gọi ngay để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.</p></div><div><a href="tel:0969973949" className="mock-call-cta">☎ 0969 973 949</a><a href="https://zalo.me/0969973949" className="mock-zalo-cta">Zalo</a></div></div>
       </section>
     </>
   );
