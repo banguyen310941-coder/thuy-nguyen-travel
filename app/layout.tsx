@@ -6,6 +6,7 @@ import './mobile-v2.css';
 import './subpages.css';
 import './booking-live.css';
 import './tour-rich.css';
+import './product-detail-v2.css';
 import { SiteChrome } from '@/components/SiteChrome';
 
 export const viewport: Viewport = { width:'device-width', initialScale:1, maximumScale:5, viewportFit:'cover' };
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   title: { default:'Thúy Nguyên Travel', template:'%s | Thúy Nguyên Travel' },
   description:'Đặt villa, khách sạn, resort, tour và du thuyền toàn quốc. Hotline 0969 973 949.',
   openGraph:{title:'Thúy Nguyên Travel',description:'Tour, villa, khách sạn và du thuyền toàn quốc.',type:'website'},
-  other:{'x-ui-version':'tour-rich-v1-20260822'}
+  other:{'x-ui-version':'product-detail-v2-20260822'}
 };
 
-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="vi"><body data-ui-version="tour-rich-v1-20260822"><SiteChrome>{children}</SiteChrome></body></html>}
+export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="vi"><body data-ui-version="product-detail-v2-20260822"><SiteChrome>{children}</SiteChrome></body></html>}
