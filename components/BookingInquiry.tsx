@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
@@ -8,6 +8,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
   const [state,setState]=useState<'idle'|'sending'|'saved'|'fallback'>('idle');
   const [code,setCode]=useState('');
   const [message,setMessage]=useState('');
+  const [selectedUnit,setSelectedUnit]=useState('');
   const normalized=kind.toLowerCase();
   const isTour=normalized.includes('tour');
   const isCruise=normalized.includes('du thuyền')||normalized.includes('cruise');
@@ -15,6 +16,16 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
   const today=useMemo(()=>{
     const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
+  },[]);
+
+  useEffect(()=>{
+    const select=(event:Event)=>{
+      const detail=(event as CustomEvent<{code?:string;name?:string}>).detail||{};
+      const value=[detail.code,detail.name].filter(Boolean).join(' · ');
+      if(value)setSelectedUnit(value);
+    };
+    window.addEventListener('tn:select-unit',select as EventListener);
+    return()=>window.removeEventListener('tn:select-unit',select as EventListener);
   },[]);
 
   async function send(form:HTMLFormElement){
@@ -29,6 +40,8 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
     if(from&&from<today){setMessage('Ngày đi/nhận phòng không thể ở trong quá khứ.');return;}
     if(isStay&&from&&to&&to<=from){setMessage('Ngày trả phòng phải sau ngày nhận phòng.');return;}
 
+    const rawNote=String(data.get('note')||'').trim();
+    const note=[selectedUnit?`Căn/phòng/cabin đã chọn: ${selectedUnit}`:'',rawNote].filter(Boolean).join('\n');
     const payload={
       kind,
       product,
@@ -40,7 +53,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
       adults:Number(data.get('adults')||2),
       children:Number(data.get('children')||0),
       rooms:isTour?1:Number(data.get('rooms')||1),
-      note:String(data.get('note')||''),
+      note,
       source:'website'
     };
 
@@ -58,6 +71,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
         setCode(result.code||'');
         setState('saved');
         form.reset();
+        setSelectedUnit('');
         return;
       }catch(error){
         console.error(error);
@@ -69,6 +83,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
     const text=[
       `YÊU CẦU TƯ VẤN ${kind.toUpperCase()}`,
       `Sản phẩm: ${product}`,
+      selectedUnit?`Đang chọn: ${selectedUnit}`:'',
       `Khách hàng: ${payload.customerName}`,
       `Điện thoại: ${payload.phone}`,
       `Email: ${payload.email||'Không cung cấp'}`,
@@ -77,7 +92,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
       `Người lớn: ${payload.adults}`,
       `Trẻ em: ${payload.children}`,
       unitLabel?`${unitLabel}: ${payload.rooms}`:'',
-      `Ghi chú: ${payload.note||'Không có'}`,
+      `Ghi chú: ${rawNote||'Không có'}`,
     ].filter(Boolean).join('\n');
     try{navigator.clipboard?.writeText(text).catch(()=>{})}catch{}
     setState('fallback');
@@ -87,6 +102,7 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
 
   return <form className="inquiry-form" onSubmit={e=>{e.preventDefault();send(e.currentTarget)}}>
     <div className="inquiry-head"><small>YÊU CẦU ĐẶT DỊCH VỤ</small><h3>{product}</h3><p>{API_BASE?'Điền thông tin, đơn sẽ được gửi trực tiếp về hệ thống quản trị.':'Hiện website đang ở chế độ demo GitHub Pages; yêu cầu sẽ chuyển qua Zalo. Khi có hosting, form này sẽ lưu thẳng vào quản trị.'}</p></div>
+    {selectedUnit&&<div className="inquiry-selected"><span>Đang chọn</span><b>{selectedUnit}</b><button type="button" onClick={()=>setSelectedUnit('')}>Đổi</button></div>}
     <label>Họ và tên<input name="name" required autoComplete="name" placeholder="Nguyễn Văn A"/></label>
     <label>Số điện thoại<input name="phone" type="tel" inputMode="tel" required autoComplete="tel" placeholder="0969 973 949"/></label>
     <label>Email<input name="email" type="email" autoComplete="email" placeholder="email@example.com"/></label>
