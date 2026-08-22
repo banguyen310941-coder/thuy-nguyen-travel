@@ -17,14 +17,14 @@ export function StayCatalog(){
   const filtered=useMemo(()=>stays.filter(stay=>{
     const matchQ=!q||`${stay.name} ${stay.location} ${stay.summary}`.toLowerCase().includes(q);
     const t=stay.type.toLowerCase();
-    const matchType=type==='all'||(type==='villa'&&(t==='villa'||t==='resort'))||(type==='hotel'&&(t==='khách sạn'||t==='resort'))||(type==='resort'&&t==='resort');
+    const matchType=type==='all'||(type==='villa'&&t==='villa')||(type==='hotel'&&(t==='khách sạn'||t==='resort'))||(type==='resort'&&t==='resort');
     const matchRating=rating==='all'||stay.rating>=Number(rating);
     return matchQ&&matchType&&matchRating;
   }),[q,type,rating]);
 
   const checkin=params.get('checkin'); const checkout=params.get('checkout');
   const adults=params.get('adults')||'2'; const children=params.get('children')||'0'; const rooms=params.get('rooms')||'1';
-  const label=typeParam==='villa'?'Villa & Resort':typeParam==='hotel'?'Khách sạn & Resort':'Lưu trú toàn quốc';
+  const label=typeParam==='villa'?'Villa & Resort':typeParam==='hotel'?'Khách sạn & Resort':typeParam==='resort'?'Resort':'Lưu trú toàn quốc';
 
   return <>
     <div className="search-summary"><div><b>{q?`${label}: kết quả cho “${params.get('q')}”`:label}</b><span>{checkin&&checkout?`${checkin} → ${checkout} · `:''}{adults} người lớn · {children} trẻ em · {rooms} phòng</span></div><Link href="/">Đổi tìm kiếm</Link></div>
