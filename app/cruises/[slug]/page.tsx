@@ -1,42 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cruises } from '@/data/catalog';
+import { BookingInquiry } from '@/components/BookingInquiry';
 
-export function generateStaticParams() {
-  return cruises.map((cruise) => ({ slug: cruise.slug }));
-}
+export function generateStaticParams() { return cruises.map((cruise) => ({ slug: cruise.slug })); }
 
 export default async function CruiseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const cruise = cruises.find((item) => item.slug === slug);
   if (!cruise) notFound();
-
-  return (
-    <div className="subpage">
-      <section className="sub-hero">
-        <div className="container">
-          <div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / <Link href="/cruises">Du thuyền</Link> / {cruise.name}</div>
-          <div className="sub-hero-grid">
-            <div><span className="sub-kicker">DU THUYỀN CAO CẤP</span><h1>{cruise.name}</h1><p>{cruise.summary}</p></div>
-            <div className="sub-hero-cta"><a className="solid" href="tel:0969973949">☎ Kiểm tra cabin</a><a className="outline" href="https://zalo.me/0969973949">Zalo</a></div>
-          </div>
-        </div>
-      </section>
-
-      <nav className="sub-nav"><div className="container sub-nav-inner"><a href="#overview">Tổng quan</a><a href="#cabins">Cabin</a><a href="#experience">Trải nghiệm</a><a href="#policy">Chính sách</a><Link href="/cruises">Du thuyền khác</Link></div></nav>
-
-      <section className="sub-section white"><div className="container detail-layout">
-        <main>
-          <div className="detail-gallery"><div className="gallery-main" style={{backgroundImage:`url(${cruise.image})`}}/><div style={{backgroundImage:`url(${cruise.image})`}}/><div style={{backgroundImage:`url(${cruise.image})`}}/></div>
-          <section id="overview" className="detail-block"><h2>Thông tin hành trình</h2><div className="amenity-grid"><div>⚓ {cruise.bay}</div><div>🗓 {cruise.duration}</div><div>🛳 Ambassador</div><div>☎ Hỗ trợ 24/7</div></div><p>{cruise.summary}</p>{cruise.priceFrom&&<p><b>Giá tham khảo từ: {cruise.priceFrom}</b></p>}</section>
-          <section id="cabins" className="detail-block"><h2>Hạng cabin tham khảo</h2><div className="room-table"><div className="room-row"><div><b>Cabin tiêu chuẩn</b><span>Phù hợp 2 khách · xác nhận theo ngày khởi hành.</span></div><div><strong>Liên hệ giá</strong><a href="tel:0969973949">Kiểm tra cabin</a></div></div><div className="room-row"><div><b>Cabin cao cấp</b><span>Không gian rộng hơn · vị trí tốt hơn tùy tàu.</span></div><div><strong>Liên hệ giá</strong><a href="tel:0969973949">Kiểm tra cabin</a></div></div><div className="room-row"><div><b>Suite</b><span>Dành cho khách cần trải nghiệm cao cấp.</span></div><div><strong>Liên hệ giá</strong><a href="tel:0969973949">Kiểm tra cabin</a></div></div></div></section>
-          <section id="experience" className="detail-block"><h2>Trải nghiệm nổi bật</h2><div className="amenity-grid"><div>✓ Ngắm cảnh vịnh</div><div>✓ Ẩm thực trên tàu</div><div>✓ Hoạt động theo lịch trình</div><div>✓ Không gian nghỉ dưỡng cao cấp</div><div>✓ Phù hợp gia đình/cặp đôi</div><div>✓ Hỗ trợ đặt xe & combo</div></div></section>
-          <section id="policy" className="detail-block"><h2>Chính sách</h2><div className="policy-grid"><div><b>Đặt cọc</b><p>Xác nhận theo hạng cabin và ngày đi.</p></div><div><b>Hoàn hủy</b><p>Theo điều kiện của hãng tại thời điểm đặt.</p></div><div><b>Trẻ em</b><p>Áp dụng theo độ tuổi và chính sách từng hành trình.</p></div><div><b>Phụ thu</b><p>Có thể áp dụng cuối tuần, lễ Tết hoặc dịch vụ riêng.</p></div></div></section>
-        </main>
-        <aside className="booking-box"><h3>Kiểm tra cabin</h3><label>Ngày đi<input type="date"/></label><label>Số khách<select defaultValue="2"><option value="2">2 khách</option><option value="4">4 khách</option><option value="6">6 khách</option><option value="8">8+ khách</option></select></label><div className="booking-note">Cabin và giá thay đổi theo ngày thực tế. Liên hệ để xác nhận nhanh.</div><a className="primary-button full" href="tel:0969973949">☎ 0969 973 949</a><a className="zalo-outline" href="https://zalo.me/0969973949">Chat Zalo</a></aside>
-      </div></section>
-
-      <section className="sub-section"><div className="container sub-cta"><div><h2>Muốn kết hợp du thuyền + khách sạn?</h2><p>Chúng tôi có thể tư vấn combo Hạ Long/Lan Hạ theo lịch đi và số khách.</p></div><div className="sub-cta-actions"><a className="call" href="tel:0969973949">Gọi tư vấn</a><Link className="zalo" href="/stay">Xem lưu trú</Link></div></div></section>
-    </div>
-  );
+  return <div className="subpage"><section className="sub-hero"><div className="container"><div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / <Link href="/cruises">Du thuyền</Link> / {cruise.name}</div><div className="sub-hero-grid"><div><span className="sub-kicker">DU THUYỀN CAO CẤP</span><h1>{cruise.name}</h1><p>{cruise.summary}</p></div><div className="sub-hero-cta"><a className="solid" href="tel:0969973949">☎ Kiểm tra cabin</a><a className="outline" href="https://zalo.me/0969973949">Zalo</a></div></div></div></section><nav className="sub-nav"><div className="container sub-nav-inner"><a href="#overview">Tổng quan</a><a href="#cabins">Cabin</a><a href="#experience">Trải nghiệm</a><a href="#policy">Chính sách</a><a href="#booking">Yêu cầu tư vấn</a><Link href="/cruises">Du thuyền khác</Link></div></nav><section className="sub-section white"><div className="container detail-layout"><main><div className="detail-gallery"><div className="gallery-main" style={{backgroundImage:`url(${cruise.image})`}}/><div style={{backgroundImage:`url(${cruise.image})`}}/><div style={{backgroundImage:`url(${cruise.image})`}}/></div><section id="overview" className="detail-block"><h2>Thông tin hành trình</h2><div className="amenity-grid"><div>⚓ {cruise.bay}</div><div>🗓 {cruise.duration}</div><div>🛳 Ambassador</div><div>☎ Hỗ trợ 24/7</div></div><p>{cruise.summary}</p>{cruise.priceFrom&&<p><b>Giá tham khảo từ: {cruise.priceFrom}</b></p>}</section><section id="cabins" className="detail-block"><h2>Hạng cabin tham khảo</h2><div className="room-table"><div className="room-row"><div><b>Cabin tiêu chuẩn</b><span>Phù hợp 2 khách · xác nhận theo ngày khởi hành.</span></div><div><strong>Liên hệ giá</strong><a href="#booking">Gửi yêu cầu</a></div></div><div className="room-row"><div><b>Cabin cao cấp</b><span>Không gian rộng hơn · vị trí tốt hơn tùy tàu.</span></div><div><strong>Liên hệ giá</strong><a href="#booking">Gửi yêu cầu</a></div></div><div className="room-row"><div><b>Suite</b><span>Dành cho khách cần trải nghiệm cao cấp.</span></div><div><strong>Liên hệ giá</strong><a href="#booking">Gửi yêu cầu</a></div></div></div></section><section id="experience" className="detail-block"><h2>Trải nghiệm nổi bật</h2><div className="amenity-grid"><div>✓ Ngắm cảnh vịnh</div><div>✓ Ẩm thực trên tàu</div><div>✓ Hoạt động theo lịch trình</div><div>✓ Không gian nghỉ dưỡng cao cấp</div><div>✓ Phù hợp gia đình/cặp đôi</div><div>✓ Hỗ trợ đặt xe & combo</div></div></section><section id="policy" className="detail-block"><h2>Chính sách</h2><div className="policy-grid"><div><b>Đặt cọc</b><p>Xác nhận theo hạng cabin và ngày đi.</p></div><div><b>Hoàn hủy</b><p>Theo điều kiện của hãng tại thời điểm đặt.</p></div><div><b>Trẻ em</b><p>Áp dụng theo độ tuổi và chính sách từng hành trình.</p></div><div><b>Phụ thu</b><p>Có thể áp dụng cuối tuần, lễ Tết hoặc dịch vụ riêng.</p></div></div></section></main><aside id="booking"><BookingInquiry product={cruise.name} kind="du thuyền"/></aside></div></section><section className="sub-section"><div className="container sub-cta"><div><h2>Muốn kết hợp du thuyền + khách sạn?</h2><p>Chúng tôi có thể tư vấn combo Hạ Long/Lan Hạ theo lịch đi và số khách.</p></div><div className="sub-cta-actions"><a className="call" href="tel:0969973949">Gọi tư vấn</a><Link className="zalo" href="/stay">Xem lưu trú</Link></div></div></section></div>
 }
