@@ -29,11 +29,11 @@ export function AdminDeleteEnhancer(){
      const name=(row.querySelector('.pm-info b')?.textContent||'').trim();
      if(!name)return;
      if(isTour){
-      const key='tn_cms_tours_v3';const alt='tn_cms_tours_v4';
-      const data=readArray(localStorage.getItem(alt)?alt:key);const item=data.find((x:any)=>x.name===name);
+      const key='tn_cms_tours_v3';
+      const data=readArray(key);const item=data.find((x:any)=>x.name===name);
       const days=Array.isArray(item?.days)?item.days.length:0;
       if(!window.confirm(`Xóa tour “${name}”${days?` và toàn bộ ${days} ngày lịch trình`:''}?`))return;
-      writeArray(localStorage.getItem(alt)?alt:key,data.filter((x:any)=>x.name!==name));location.reload();
+      writeArray(key,data.filter((x:any)=>x.name!==name));location.reload();
      }else{
       const key='tn_cms_products_v3_units';const data=readArray(key);const item=data.find((x:any)=>x.name===name);const units=Array.isArray(item?.units)?item.units.length:0;
       if(!window.confirm(`Xóa “${name}”${units?` và toàn bộ ${units} căn/phòng/cabin bên trong`:''}?`))return;
@@ -56,7 +56,7 @@ export function AdminDeleteEnhancer(){
    if(isTour&&tourHead&&!tourHead.querySelector('[data-admin-delete="editor"]')){
     const name=((tourHead.querySelector('h2')?.textContent||'').replace('Chỉnh sửa Tour','').trim())||'';
     const fallback=(document.querySelector('.tour-editor-grid input') as HTMLInputElement|null)?.value?.trim()||name;
-    if(fallback){const btn=document.createElement('button');btn.type='button';btn.textContent='Xóa Tour';btn.className='danger-action';btn.setAttribute('data-admin-delete','editor');btn.onclick=()=>{const key=localStorage.getItem('tn_cms_tours_v4')?'tn_cms_tours_v4':'tn_cms_tours_v3';const data=readArray(key);const item=data.find((x:any)=>x.name===fallback);const days=Array.isArray(item?.days)?item.days.length:0;if(!window.confirm(`Xóa tour “${fallback}”${days?` và ${days} ngày lịch trình`:''}?`))return;writeArray(key,data.filter((x:any)=>x.name!==fallback));location.reload()};tourHead.appendChild(btn)}
+    if(fallback){const btn=document.createElement('button');btn.type='button';btn.textContent='Xóa Tour';btn.className='danger-action';btn.setAttribute('data-admin-delete','editor');btn.onclick=()=>{const key='tn_cms_tours_v3';const data=readArray(key);const item=data.find((x:any)=>x.name===fallback);const days=Array.isArray(item?.days)?item.days.length:0;if(!window.confirm(`Xóa tour “${fallback}”${days?` và ${days} ngày lịch trình`:''}?`))return;writeArray(key,data.filter((x:any)=>x.name!==fallback));location.reload()};tourHead.appendChild(btn)}
    }
   };
   decorate();
