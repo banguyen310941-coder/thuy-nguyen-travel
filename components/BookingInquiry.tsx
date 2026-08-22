@@ -1,30 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind?:string}){
-  const [state,setState]=useState<'idle'|'sending'|'saved'|'fallback'|'error'>('idle');
+  const [state,setState]=useState<'idle'|'sending'|'saved'|'fallback'>('idle');
   const [code,setCode]=useState('');
+  const [message,setMessage]=useState('');
+  const normalized=kind.toLowerCase();
+  const isTour=normalized.includes('tour');
+  const isCruise=normalized.includes('du thuyền')||normalized.includes('cruise');
+  const isStay=!isTour&&!isCruise;
+  const today=useMemo(()=>{
+    const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  },[]);
 
   async function send(form:HTMLFormElement){
+    setMessage('');
     const data=new FormData(form);
+    const name=String(data.get('name')||'').trim();
+    const phone=String(data.get('phone')||'').replace(/\s+/g,'').trim();
+    const from=String(data.get('from')||'');
+    const to=String(data.get('to')||'');
+    if(name.length<2){setMessage('Vui lòng nhập họ tên đầy đủ.');return;}
+    if(!/^(0|\+84)\d{9,10}$/.test(phone)){setMessage('Số điện thoại chưa đúng định dạng Việt Nam.');return;}
+    if(from&&from<today){setMessage('Ngày đi/nhận phòng không thể ở trong quá khứ.');return;}
+    if(isStay&&from&&to&&to<=from){setMessage('Ngày trả phòng phải sau ngày nhận phòng.');return;}
+
     const payload={
       kind,
       product,
-      customerName:String(data.get('name')||''),
-      phone:String(data.get('phone')||''),
-      email:String(data.get('email')||''),
-      startDate:String(data.get('from')||'') || null,
-      endDate:String(data.get('to')||'') || null,
+      customerName:name,
+      phone,
+      email:String(data.get('email')||'').trim(),
+      startDate:from || null,
+      endDate:isStay?(to || null):null,
       adults:Number(data.get('adults')||2),
       children:Number(data.get('children')||0),
-      rooms:Number(data.get('rooms')||1),
+      rooms:isTour?1:Number(data.get('rooms')||1),
       note:String(data.get('note')||''),
       source:'website'
     };
 
+    let apiFailed=false;
     if(API_BASE){
       try{
         setState('sending');
@@ -41,38 +61,41 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
         return;
       }catch(error){
         console.error(error);
-        setState('error');
+        apiFailed=true;
       }
     }
 
+    const unitLabel=isCruise?'Số cabin':isStay?'Số phòng':'';
     const text=[
       `YÊU CẦU TƯ VẤN ${kind.toUpperCase()}`,
       `Sản phẩm: ${product}`,
       `Khách hàng: ${payload.customerName}`,
       `Điện thoại: ${payload.phone}`,
-      `Ngày đi/nhận: ${payload.startDate||''}`,
-      `Ngày về/trả: ${payload.endDate||''}`,
+      `Email: ${payload.email||'Không cung cấp'}`,
+      `Ngày đi/nhận: ${payload.startDate||'Chưa chọn'}`,
+      isStay?`Ngày trả: ${payload.endDate||'Chưa chọn'}`:'',
       `Người lớn: ${payload.adults}`,
       `Trẻ em: ${payload.children}`,
-      `Số phòng: ${payload.rooms}`,
-      `Ghi chú: ${payload.note}`,
-    ].join('\n');
-    try{await navigator.clipboard.writeText(text)}catch{}
+      unitLabel?`${unitLabel}: ${payload.rooms}`:'',
+      `Ghi chú: ${payload.note||'Không có'}`,
+    ].filter(Boolean).join('\n');
+    try{navigator.clipboard?.writeText(text).catch(()=>{})}catch{}
     setState('fallback');
-    window.open('https://zalo.me/0969973949','_blank','noopener,noreferrer');
+    setMessage(apiFailed?'Hệ thống lưu đơn chưa kết nối được. Nội dung yêu cầu đã được chuẩn bị và website sẽ chuyển sang Zalo.':'Nội dung yêu cầu đã được chuẩn bị. Website sẽ chuyển sang Zalo để gửi nhanh.');
+    window.location.assign('https://zalo.me/0969973949');
   }
 
   return <form className="inquiry-form" onSubmit={e=>{e.preventDefault();send(e.currentTarget)}}>
-    <div className="inquiry-head"><small>YÊU CẦU ĐẶT DỊCH VỤ</small><h3>{product}</h3><p>{API_BASE?'Điền thông tin, đơn sẽ được gửi trực tiếp về hệ thống quản trị.':'Form đã sẵn sàng kết nối hệ thống quản trị khi có hosting; hiện tại yêu cầu sẽ chuyển qua Zalo.'}</p></div>
-    <label>Họ và tên<input name="name" required placeholder="Nguyễn Văn A"/></label>
-    <label>Số điện thoại<input name="phone" type="tel" required placeholder="09xx xxx xxx"/></label>
-    <label>Email<input name="email" type="email" placeholder="email@example.com"/></label>
-    <div className="inquiry-two"><label>Ngày đi / nhận<input name="from" type="date"/></label><label>Ngày về / trả<input name="to" type="date"/></label></div>
-    <div className="inquiry-three"><label>Người lớn<input name="adults" type="number" min="1" defaultValue="2"/></label><label>Trẻ em<input name="children" type="number" min="0" defaultValue="0"/></label><label>Số phòng<input name="rooms" type="number" min="1" defaultValue="1"/></label></div>
-    <label>Ghi chú<textarea name="note" rows={3} placeholder="Hạng phòng, tuổi trẻ em, yêu cầu riêng..."/></label>
-    <button className="inquiry-submit" type="submit" disabled={state==='sending'}>{state==='sending'?'Đang gửi...':state==='saved'?`Đã gửi · ${code}`:state==='fallback'?'Đã mở Zalo':'Gửi yêu cầu đặt dịch vụ'}</button>
+    <div className="inquiry-head"><small>YÊU CẦU ĐẶT DỊCH VỤ</small><h3>{product}</h3><p>{API_BASE?'Điền thông tin, đơn sẽ được gửi trực tiếp về hệ thống quản trị.':'Hiện website đang ở chế độ demo GitHub Pages; yêu cầu sẽ chuyển qua Zalo. Khi có hosting, form này sẽ lưu thẳng vào quản trị.'}</p></div>
+    <label>Họ và tên<input name="name" required autoComplete="name" placeholder="Nguyễn Văn A"/></label>
+    <label>Số điện thoại<input name="phone" type="tel" inputMode="tel" required autoComplete="tel" placeholder="0969 973 949"/></label>
+    <label>Email<input name="email" type="email" autoComplete="email" placeholder="email@example.com"/></label>
+    <div className={isStay?'inquiry-two':'inquiry-one'}><label>{isStay?'Ngày nhận phòng':isTour?'Ngày khởi hành':'Ngày đi'}<input name="from" type="date" min={today}/></label>{isStay&&<label>Ngày trả phòng<input name="to" type="date" min={today}/></label>}</div>
+    <div className="inquiry-three"><label>Người lớn<input name="adults" type="number" min="1" defaultValue="2"/></label><label>Trẻ em<input name="children" type="number" min="0" defaultValue="0"/></label>{!isTour&&<label>{isCruise?'Số cabin':'Số phòng'}<input name="rooms" type="number" min="1" defaultValue="1"/></label>}</div>
+    <label>Ghi chú<textarea name="note" rows={3} placeholder={isTour?'Điểm đón, yêu cầu ăn uống, tuổi trẻ em...':isCruise?'Hạng cabin, tuổi trẻ em, yêu cầu riêng...':'Hạng phòng/căn, tuổi trẻ em, yêu cầu riêng...'}/></label>
+    {message&&<p className={state==='fallback'?'inquiry-warning':'inquiry-error'}>{message}</p>}
+    <button className="inquiry-submit" type="submit" disabled={state==='sending'||state==='saved'}>{state==='sending'?'Đang gửi...':state==='saved'?`Đã gửi · ${code}`:state==='fallback'?'Chuyển sang Zalo':'Gửi yêu cầu đặt dịch vụ'}</button>
     {state==='saved'&&<p className="inquiry-success">✓ Đơn đã được ghi nhận. Mã yêu cầu: <b>{code}</b>. Nhân viên sẽ liên hệ lại.</p>}
-    {state==='error'&&<p className="inquiry-error">Không kết nối được hệ thống lưu đơn. Yêu cầu đã chuyển sang phương án Zalo.</p>}
     <a className="inquiry-call" href="tel:0969973949">☎ Gọi 0969 973 949</a>
   </form>
 }
