@@ -7,6 +7,7 @@ import './editor-pro-v2.css';
 import './product-v2.css';
 import './product-manager.css';
 import './units.css';
+import './utility.css';
 import {AdminDeleteEnhancer} from '@/components/AdminDeleteEnhancer';
 
 export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
