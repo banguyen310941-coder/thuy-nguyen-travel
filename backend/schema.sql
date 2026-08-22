@@ -65,3 +65,34 @@ CREATE TABLE IF NOT EXISTS products (
   KEY idx_products_type_status (product_type,status),
   KEY idx_products_updated_at (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_units (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  product_id BIGINT UNSIGNED NOT NULL,
+  unit_code VARCHAR(120) NULL,
+  unit_name VARCHAR(255) NOT NULL,
+  unit_kind ENUM('villa','room','cabin','option') NOT NULL DEFAULT 'room',
+  bedrooms VARCHAR(80) NULL,
+  beds VARCHAR(160) NULL,
+  capacity VARCHAR(160) NULL,
+  area VARCHAR(80) NULL,
+  view_name VARCHAR(160) NULL,
+  meal_plan VARCHAR(160) NULL,
+  weekday_price VARCHAR(120) NULL,
+  weekend_price VARCHAR(120) NULL,
+  holiday_price VARCHAR(120) NULL,
+  extra_adult VARCHAR(120) NULL,
+  extra_child VARCHAR(120) NULL,
+  amenities TEXT NULL,
+  images JSON NULL,
+  status ENUM('available','hold','soldout','hidden') NOT NULL DEFAULT 'available',
+  note TEXT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_product_units_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  KEY idx_product_units_product (product_id),
+  KEY idx_product_units_status (status),
+  KEY idx_product_units_code (unit_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
