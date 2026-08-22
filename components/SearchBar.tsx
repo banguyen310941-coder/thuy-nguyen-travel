@@ -3,49 +3,38 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+const services = [
+  ['all','Tất cả'],['tour','Tour du lịch'],['villa','Villa & Resort'],['hotel','Khách sạn'],['cruise','Du thuyền']
+];
+
 export function SearchBar() {
   const router = useRouter();
-  const [service, setService] = useState('stay');
+  const [service, setService] = useState('all');
 
   return (
-    <form className="booking-search booking-search-pro" onSubmit={(event) => {
-      event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const destination = String(form.get('destination') || '').trim();
-      const target = service === 'tour' ? '/tours' : service === 'cruise' ? '/cruises' : '/stay';
-      router.push(destination ? `${target}?q=${encodeURIComponent(destination)}` : target);
-    }}>
-      <label className="search-field service-field">
-        <span>Dịch vụ</span>
-        <select value={service} onChange={(e) => setService(e.target.value)}>
-          <option value="stay">Lưu trú</option>
-          <option value="tour">Tour du lịch</option>
-          <option value="cruise">Du thuyền</option>
-        </select>
-      </label>
-      <label className="search-field search-destination">
-        <span>Điểm đến / tên sản phẩm</span>
-        <input name="destination" autoComplete="off" placeholder="Phan Thiết, Hạ Long, Oceanami..." />
-      </label>
-      <label className="search-field">
-        <span>{service === 'stay' ? 'Ngày nhận phòng' : 'Ngày đi'}</span>
-        <input name="checkin" type="date" />
-      </label>
-      <label className="search-field date-end">
-        <span>{service === 'stay' ? 'Ngày trả phòng' : 'Ngày về'}</span>
-        <input name="checkout" type="date" />
-      </label>
-      <label className="search-field search-guests">
-        <span>Khách & phòng</span>
-        <select name="guests" defaultValue="2-1">
-          <option value="2-1">2 người lớn · 1 phòng</option>
-          <option value="2-2">2 người lớn · 2 phòng</option>
-          <option value="4-2">4 người lớn · 2 phòng</option>
-          <option value="family">Gia đình có trẻ em</option>
-          <option value="group">Đoàn từ 10 khách</option>
-        </select>
-      </label>
-      <button className="search-button" type="submit">TÌM KIẾM</button>
-    </form>
+    <div className="mock-search-panel">
+      <div className="mock-search-tabs">
+        {services.map(([value,label]) => <button type="button" key={value} className={service===value?'active':''} onClick={()=>setService(value)}>{label}</button>)}
+      </div>
+      <form className="mock-search-form" onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const destination = String(form.get('destination') || '').trim();
+        let target = '/stay';
+        if(service==='tour') target='/tours';
+        if(service==='cruise') target='/cruises';
+        if(service==='villa') target='/stay?type=villa';
+        if(service==='hotel') target='/stay?type=hotel';
+        if(destination) target += (target.includes('?')?'&':'?') + `q=${encodeURIComponent(destination)}`;
+        router.push(target);
+      }}>
+        <label className="mock-search-field mock-destination"><span>⌖</span><div><small>Điểm đến</small><input name="destination" placeholder="Nhập địa điểm..." /></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày đi</small><input name="checkin" type="date" /></div></label>
+        <label className="mock-search-field"><span>▣</span><div><small>Ngày về</small><input name="checkout" type="date" /></div></label>
+        <label className="mock-search-field"><span>♙</span><div><small>Khách & phòng</small><select name="guests" defaultValue="2-1"><option value="2-1">2 khách, 1 phòng</option><option value="4-2">4 khách, 2 phòng</option><option value="family">Gia đình</option><option value="group">Đoàn 10+ khách</option></select></div></label>
+        <button className="mock-search-button" type="submit">Tìm kiếm</button>
+      </form>
+      <div className="mock-search-benefits"><span>✓ Giá tốt nhất</span><span>✓ Thanh toán an toàn</span><span>✓ Hỗ trợ 24/7</span><span>✓ Xác nhận nhanh</span></div>
+    </div>
   );
 }
