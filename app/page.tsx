@@ -55,14 +55,14 @@ export default function HomePage() {
       <section className="mock-section">
         <div className="container">
           <div className="mock-section-heading"><div><h2>Du thuyền nổi bật</h2><p>Hạ Long & Lan Hạ</p></div><Link href="/cruises">Xem tất cả →</Link></div>
-          <div className="mock-tour-grid">{cruises.slice(0,3).map(item=><Link href="/cruises" className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom&&<b>Từ {item.priceFrom}</b>}</div></Link>)}</div>
+          <div className="mock-tour-grid">{cruises.slice(0,3).map(item=><Link href={`/cruises/${item.slug}`} className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom&&<b>Từ {item.priceFrom}</b>}</div></Link>)}</div>
         </div>
       </section>
 
       <section className="mock-section mock-soft">
         <div className="container">
           <div className="mock-section-heading"><div><h2>Tour du lịch hot</h2><div className="mock-pills"><span className="active">Tour Trung Quốc</span><span>Tour trong nước</span></div></div><Link href="/tours">Xem tất cả →</Link></div>
-          <div className="mock-tour-grid">{tours.slice(0,3).map(item=><Link href="/tours" className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p></div></Link>)}</div>
+          <div className="mock-tour-grid">{tours.slice(0,3).map(item=><Link href={`/tours/${item.slug}`} className="mock-tour-card" key={item.slug}><div className="mock-tour-image" style={{backgroundImage:`url(${item.image})`}}/><div><small>{item.category} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p></div></Link>)}</div>
         </div>
       </section>
 
