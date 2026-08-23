@@ -3,7 +3,8 @@ import Link from 'next/link';
 import {GuideCmsList} from '@/components/GuideCmsList';
 import {ContactQuickLink} from '@/components/ContactQuickLink';
 
-export const metadata:Metadata={title:'Cẩm nang du lịch',description:'Cẩm nang chọn Tour, Villa, Khách sạn, Du thuyền và điểm đến cùng Thúy Nguyên Travel.',alternates:{canonical:'/guide'},openGraph:{title:'Cẩm nang du lịch | Thúy Nguyên Travel',description:'Kinh nghiệm chọn tour, lưu trú, du thuyền và điểm đến.',url:'/guide',type:'website'}};
+const canonical='https://banguyen310941-coder.github.io/thuy-nguyen-travel/guide';
+export const metadata:Metadata={title:'Cẩm nang du lịch',description:'Cẩm nang chọn Tour, Villa, Khách sạn, Du thuyền và điểm đến cùng Thúy Nguyên Travel.',alternates:{canonical},openGraph:{title:'Cẩm nang du lịch | Thúy Nguyên Travel',description:'Kinh nghiệm chọn tour, lưu trú, du thuyền và điểm đến.',url:canonical,type:'website'}};
 
 const posts = [
   ['Kinh nghiệm chọn villa cho gia đình','Phan Thiết','https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1000&q=85','/stay'],
