@@ -1,53 +1,12 @@
 'use client';
-
-import { useEffect, useMemo, useState } from 'react';
-
-type Booking={
-  id:number;code:string;kind:string;product:string;customer_name:string;phone:string;email?:string|null;
-  start_date?:string|null;end_date?:string|null;adults:number;children:number;rooms:number;note?:string|null;
-  status:'new'|'contacting'|'confirmed'|'completed'|'cancelled';admin_note?:string|null;created_at:string;
-};
-
-const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
-const labels:Record<Booking['status'],string>={new:'Mới',contacting:'Đang tư vấn',confirmed:'Đã xác nhận',completed:'Hoàn thành',cancelled:'Hủy'};
-
-export function AdminBookings(){
-  const [key,setKey]=useState('');
-  const [items,setItems]=useState<Booking[]>([]);
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState('');
-  const [q,setQ]=useState('');
-  const [status,setStatus]=useState('');
-
-  useEffect(()=>{setKey(localStorage.getItem('tn_admin_api_key')||'')},[]);
-
-  async function load(){
-    if(!API_BASE){setError('Chưa cấu hình NEXT_PUBLIC_API_BASE_URL. Khi có hosting, điền URL backend để đọc đơn thật.');return;}
-    if(!key){setError('Nhập khóa quản trị API trước khi tải đơn.');return;}
-    setLoading(true);setError('');
-    try{
-      const params=new URLSearchParams();if(q)params.set('q',q);if(status)params.set('status',status);
-      const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/bookings?${params.toString()}`,{headers:{'x-admin-key':key}});
-      if(!response.ok)throw new Error(response.status===401?'Khóa quản trị không đúng.':'Không tải được đơn.');
-      const data=await response.json();setItems(data.items||[]);localStorage.setItem('tn_admin_api_key',key);
-    }catch(e){setError(e instanceof Error?e.message:'Có lỗi xảy ra');}
-    finally{setLoading(false)}
-  }
-
-  async function update(id:number,next:Booking['status']){
-    if(!API_BASE||!key)return;
-    const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/bookings/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify({status:next})});
-    if(response.ok)setItems(list=>list.map(item=>item.id===id?{...item,status:next}:item));
-  }
-
-  const stats=useMemo(()=>({all:items.length,new:items.filter(i=>i.status==='new').length,confirmed:items.filter(i=>i.status==='confirmed').length}),[items]);
-
-  return <section className="admin-panel admin-bookings-live">
-    <div className="admin-panel-head"><div><h2>Đơn & yêu cầu đặt dịch vụ</h2><p>Form khách gửi từ website sẽ xuất hiện tại đây khi backend được bật trên hosting.</p></div></div>
-    <div className="admin-stats compact"><div><span>Tổng đơn đang tải</span><b>{stats.all}</b></div><div><span>Đơn mới</span><b>{stats.new}</b></div><div><span>Đã xác nhận</span><b>{stats.confirmed}</b></div></div>
-    <div className="admin-form-row"><label>Khóa quản trị API<input type="password" value={key} onChange={e=>setKey(e.target.value)} placeholder="ADMIN_API_KEY"/></label><label>Tìm đơn<input value={q} onChange={e=>setQ(e.target.value)} placeholder="Mã đơn, tên, SĐT, sản phẩm"/></label></div>
-    <div className="admin-form-row"><label>Trạng thái<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">Tất cả</option><option value="new">Mới</option><option value="contacting">Đang tư vấn</option><option value="confirmed">Đã xác nhận</option><option value="completed">Hoàn thành</option><option value="cancelled">Hủy</option></select></label><div className="admin-load-wrap"><button className="admin-primary" onClick={load}>{loading?'Đang tải...':'Tải danh sách đơn'}</button></div></div>
-    {error&&<p className="admin-api-note">{error}</p>}
-    {items.length>0&&<div className="admin-booking-list">{items.map(item=><article key={item.id} className="admin-booking-card"><div className="admin-booking-code"><b>{item.code}</b><span>{new Date(item.created_at).toLocaleString('vi-VN')}</span></div><div><strong>{item.customer_name}</strong><a href={`tel:${item.phone}`}>{item.phone}</a><small>{item.email||'Không có email'}</small></div><div><strong>{item.product}</strong><small>{item.kind}</small><span>{item.start_date||'—'} → {item.end_date||'—'}</span><span>{item.adults} NL · {item.children} TE · {item.rooms} phòng</span></div><div className="admin-booking-status"><select value={item.status} onChange={e=>update(item.id,e.target.value as Booking['status'])}><option value="new">Mới</option><option value="contacting">Đang tư vấn</option><option value="confirmed">Đã xác nhận</option><option value="completed">Hoàn thành</option><option value="cancelled">Hủy</option></select><span className={`status-${item.status}`}>{labels[item.status]}</span><a href={`https://zalo.me/${item.phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">Zalo khách</a></div>{item.note&&<p className="admin-booking-note">Ghi chú: {item.note}</p>}</article>)}</div>}
-  </section>
-}
+import {useEffect,useMemo,useState} from 'react';
+type Booking={id:number;code:string;kind:string;product:string;customer_name:string;phone:string;email?:string|null;start_date?:string|null;end_date?:string|null;adults:number;children:number;rooms:number;note?:string|null;status:'new'|'contacting'|'confirmed'|'completed'|'cancelled';admin_note?:string|null;created_at:string};
+const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';const LOCAL_KEY='tn_local_bookings_v1';const labels:Record<Booking['status'],string>={new:'Mới',contacting:'Đang tư vấn',confirmed:'Đã xác nhận',completed:'Hoàn thành',cancelled:'Hủy'};
+export function AdminBookings(){const[key,setKey]=useState('');const[items,setItems]=useState<Booking[]>([]);const[loading,setLoading]=useState(false);const[error,setError]=useState('');const[q,setQ]=useState('');const[status,setStatus]=useState('');const[source,setSource]=useState(API_BASE?'api':'local');
+ function loadLocal(){try{setItems(JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'));setError('')}catch{setItems([])}}
+ useEffect(()=>{setKey(localStorage.getItem('tn_admin_api_key')||'');if(!API_BASE)loadLocal();const refresh=()=>loadLocal();window.addEventListener('tn-bookings-updated',refresh);return()=>window.removeEventListener('tn-bookings-updated',refresh)},[]);
+ async function load(){if(source==='local'){loadLocal();return}if(!API_BASE){setError('Backend chưa được cấu hình. Hãy dùng dữ liệu bản demo trên thiết bị này.');return}if(!key){setError('Nhập khóa quản trị API trước khi tải đơn.');return}setLoading(true);setError('');try{const params=new URLSearchParams();if(q)params.set('q',q);if(status)params.set('status',status);const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/bookings?${params}`,{headers:{'x-admin-key':key}});if(!response.ok)throw new Error(response.status===401?'Khóa quản trị không đúng.':'Không tải được đơn.');const data=await response.json();setItems(data.items||[]);localStorage.setItem('tn_admin_api_key',key)}catch(e){setError(e instanceof Error?e.message:'Có lỗi xảy ra')}finally{setLoading(false)}}
+ async function update(id:number,next:Booking['status']){if(source==='local'){const list=items.map(i=>i.id===id?{...i,status:next}:i);setItems(list);localStorage.setItem(LOCAL_KEY,JSON.stringify(list));return}if(!API_BASE||!key)return;const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/bookings/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify({status:next})});if(response.ok)setItems(list=>list.map(item=>item.id===id?{...item,status:next}:item))}
+ function note(id:number,value:string){if(source!=='local')return;const list=items.map(i=>i.id===id?{...i,admin_note:value}:i);setItems(list);localStorage.setItem(LOCAL_KEY,JSON.stringify(list))}function remove(id:number){if(source!=='local'||!confirm('Xóa yêu cầu này?'))return;const list=items.filter(i=>i.id!==id);setItems(list);localStorage.setItem(LOCAL_KEY,JSON.stringify(list))}
+ const visible=useMemo(()=>items.filter(i=>(!status||i.status===status)&&(!q||`${i.code} ${i.customer_name} ${i.phone} ${i.product}`.toLowerCase().includes(q.toLowerCase()))),[items,q,status]);const stats=useMemo(()=>({all:items.length,new:items.filter(i=>i.status==='new').length,contacting:items.filter(i=>i.status==='contacting').length,confirmed:items.filter(i=>i.status==='confirmed').length}),[items]);
+ return <section className="admin-panel admin-bookings-live"><div className="admin-panel-head"><div><h2>Đơn & yêu cầu đặt dịch vụ</h2><p>Quản lý khách từ form website theo quy trình Mới → Đang tư vấn → Đã xác nhận → Hoàn thành.</p></div><button className="admin-primary" onClick={load}>{loading?'Đang tải...':'↻ Làm mới'}</button></div><div className="admin-stats compact"><div><span>Tổng yêu cầu</span><b>{stats.all}</b></div><div><span>Đơn mới</span><b>{stats.new}</b></div><div><span>Đang tư vấn</span><b>{stats.contacting}</b></div><div><span>Đã xác nhận</span><b>{stats.confirmed}</b></div></div><div className="admin-form-row"><label>Nguồn dữ liệu<select value={source} onChange={e=>{setSource(e.target.value);if(e.target.value==='local')setTimeout(loadLocal,0)}}><option value="local">Bản demo trên thiết bị</option>{API_BASE&&<option value="api">Backend / Database</option>}</select></label>{source==='api'&&<label>Khóa quản trị API<input type="password" value={key} onChange={e=>setKey(e.target.value)} placeholder="ADMIN_API_KEY"/></label>}<label>Tìm khách / mã đơn<input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tên, SĐT, sản phẩm..."/></label><label>Trạng thái<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">Tất cả</option><option value="new">Mới</option><option value="contacting">Đang tư vấn</option><option value="confirmed">Đã xác nhận</option><option value="completed">Hoàn thành</option><option value="cancelled">Hủy</option></select></label></div>{!API_BASE&&<p className="admin-api-note">Bản GitHub Pages đang lưu đơn trên trình duyệt để anh/chị thử toàn bộ quy trình. Khi có hosting, chỉ cần bật Backend / Database để dùng chung trên mọi thiết bị.</p>}{error&&<p className="admin-api-note">{error}</p>}<div className="admin-booking-list">{visible.map(item=><article key={item.id} className="admin-booking-card"><div className="admin-booking-code"><b>{item.code}</b><span>{new Date(item.created_at).toLocaleString('vi-VN')}</span></div><div><strong>{item.customer_name}</strong><a href={`tel:${item.phone}`}>☎ {item.phone}</a><small>{item.email||'Không có email'}</small></div><div><strong>{item.product}</strong><small>{item.kind}</small><span>{item.start_date||'—'} → {item.end_date||'—'}</span><span>{item.adults} NL · {item.children} TE · {item.rooms} phòng/cabin</span></div><div className="admin-booking-status"><select value={item.status} onChange={e=>update(item.id,e.target.value as Booking['status'])}>{Object.entries(labels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select><span className={`status-${item.status}`}>{labels[item.status]}</span><a href={`https://zalo.me/${item.phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">Zalo khách</a>{source==='local'&&<button className="danger-action" onClick={()=>remove(item.id)}>Xóa</button>}</div>{item.note&&<p className="admin-booking-note">Khách ghi chú: {item.note}</p>}{source==='local'&&<label className="admin-booking-note">Ghi chú nội bộ<textarea rows={2} value={item.admin_note||''} onChange={e=>note(item.id,e.target.value)} placeholder="VD: Đã gọi 18:30, khách cần 2 phòng..."/></label>}</article>)}{visible.length===0&&<div className="admin-empty-state"><b>Chưa có yêu cầu phù hợp</b><p>Hãy thử gửi một form đặt Tour/Phòng ngoài website, sau đó quay lại đây.</p></div>}</div></section>}
