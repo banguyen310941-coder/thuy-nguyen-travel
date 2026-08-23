@@ -8,8 +8,10 @@ export default [
     ignores: ['.next/**', 'out/**', 'node_modules/**', 'public/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@next/next/no-img-element': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@next/next/no-img-element': 'warn',
       'react/no-unescaped-entities': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
 ];
