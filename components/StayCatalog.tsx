@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { stays } from '@/data/catalog';
+import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 
 type CmsProduct={id:string;type:string;name:string;slug:string;place:string;price:string;status:string;summary:string;cover:string;rating:string;category:string;units?:unknown[]};
 
 export function StayCatalog(){
   const params=useSearchParams();
+  const settings=useSiteSettings();
   const q=(params.get('q')||'').toLowerCase();
   const typeParam=(params.get('type')||'').toLowerCase();
   const [type,setType]=useState(typeParam||'all');
@@ -16,7 +18,10 @@ export function StayCatalog(){
   const [cms,setCms]=useState<CmsProduct[]>([]);
 
   useEffect(()=>{ setType(typeParam||'all'); },[typeParam]);
-  useEffect(()=>{try{const raw=JSON.parse(localStorage.getItem('tn_cms_products_v3_units')||'[]') as CmsProduct[];const staticSlugs=new Set(stays.map(x=>x.slug));setCms(raw.filter(x=>x.status==='published'&&x.slug&&!staticSlugs.has(x.slug)&&(x.type==='Villa & Resort'||x.type==='Khách sạn')))}catch{setCms([])}},[]);
+  useEffect(()=>{
+    const load=()=>{try{const raw=JSON.parse(localStorage.getItem('tn_cms_products_v3_units')||'[]') as CmsProduct[];const staticSlugs=new Set(stays.map(x=>x.slug));setCms(raw.filter(x=>x.status==='published'&&x.slug&&!staticSlugs.has(x.slug)&&(x.type==='Villa & Resort'||x.type==='Khách sạn')))}catch{setCms([])}};
+    load();window.addEventListener('tn-products-updated',load);return()=>window.removeEventListener('tn-products-updated',load)
+  },[]);
 
   const filtered=useMemo(()=>stays.filter(stay=>{
     const matchQ=!q||`${stay.name} ${stay.location} ${stay.summary}`.toLowerCase().includes(q);
@@ -47,7 +52,7 @@ export function StayCatalog(){
       <div className="booking-results">
         {filtered.map(stay=><article className="booking-card" key={stay.slug}><img src={stay.image} alt={stay.name}/><div><span className="meta">{stay.type} · {stay.rating}/10</span><h3>{stay.name}</h3><p>📍 {stay.location}</p><p className="summary">{stay.summary}</p><Link className="view-link" href={`/stay/${stay.slug}`}>Xem tiện ích, phòng & chính sách →</Link></div><div className="booking-price"><small>Giá theo ngày</small><strong>Liên hệ giá tốt</strong><Link href={`/stay/${stay.slug}`}>Xem phòng</Link></div></article>)}
         {cmsFiltered.map(p=><article className="booking-card cms-public-card" key={p.id}><img src={p.cover||'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80'} alt={p.name}/><div><span className="meta">{p.type} · {p.rating?`${p.rating}/10`:'Mới từ CMS'}</span><h3>{p.name}</h3><p>📍 {p.place||'Đang cập nhật địa điểm'}</p><p className="summary">{p.summary||'Thông tin chi tiết đang được cập nhật từ hệ thống quản trị.'}</p><Link className="view-link" href={`/product?slug=${encodeURIComponent(p.slug)}`}>Xem căn/phòng, tiện ích & chính sách →</Link></div><div className="booking-price"><small>Giá từ</small><strong>{p.price||'Liên hệ giá tốt'}</strong><Link href={`/product?slug=${encodeURIComponent(p.slug)}`}>Xem chi tiết</Link></div></article>)}
-        {!total&&<div className="empty-results"><b>Chưa tìm thấy {label.toLowerCase()} phù hợp</b><p>Thử đổi điểm đến hoặc bộ lọc, hoặc gọi 0969 973 949 để chúng tôi tìm giúp.</p></div>}
+        {!total&&<div className="empty-results"><b>Chưa tìm thấy {label.toLowerCase()} phù hợp</b><p>Thử đổi điểm đến hoặc bộ lọc, hoặc gọi {formatPhone(settings.hotline)} để chúng tôi tìm giúp.</p><a href={`tel:${settings.hotline.replace(/\D/g,'')}`}>☎ Gọi tư vấn ngay</a></div>}
       </div>
     </div>
   </>;
