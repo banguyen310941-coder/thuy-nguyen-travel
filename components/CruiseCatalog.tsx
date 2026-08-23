@@ -2,20 +2,22 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useMemo,useState } from 'react';
+import { useEffect,useMemo,useState } from 'react';
 import { cruises } from '@/data/catalog';
+
+type CmsProduct={id:string;type:string;name:string;slug:string;place:string;duration:string;price:string;status:string;summary:string;cover:string;rating:string};
 
 export function CruiseCatalog(){
   const params=useSearchParams();
   const q=(params.get('q')||'').toLowerCase();
   const durationParam=(params.get('duration')||'').toLowerCase();
   const [bay,setBay]=useState('all');
-  const filtered=useMemo(()=>cruises.filter(item=>{
-    const matchQ=!q||`${item.name} ${item.bay} ${item.duration} ${item.summary}`.toLowerCase().includes(q);
-    const d=item.duration.toLowerCase();
-    const matchDuration=!durationParam||(durationParam==='day'&&(/trong ngày|tiếng/.test(d)))||(durationParam==='2n1d'&&(/2 ngày 1 đêm|2n1đ|2n1d/.test(d)))||(durationParam==='3n2d'&&(/3 ngày 2 đêm|3n2đ|3n2d/.test(d)));
-    const matchBay=bay==='all'||(bay==='halong'&&item.bay.toLowerCase().includes('hạ long'))||(bay==='lanha'&&item.bay.toLowerCase().includes('lan hạ'));
-    return matchQ&&matchDuration&&matchBay;
-  }),[q,durationParam,bay]);
-  return <><div className="sub-toolbar"><div><b>{filtered.length} hành trình phù hợp</b><br/><span>{q?`Vịnh/từ khóa: ${params.get('q')}`:'Trong ngày · 2N1Đ · Nghỉ đêm'}{durationParam?` · Thời lượng đã chọn`:''}</span></div><div className="sub-filter-row"><button type="button" className={`sub-chip ${bay==='all'?'active':''}`} onClick={()=>setBay('all')}>Tất cả</button><button type="button" className={`sub-chip ${bay==='halong'?'active':''}`} onClick={()=>setBay('halong')}>Hạ Long</button><button type="button" className={`sub-chip ${bay==='lanha'?'active':''}`} onClick={()=>setBay('lanha')}>Lan Hạ</button></div></div><div className="catalog-grid">{filtered.map(item=><article className="catalog-card" key={item.slug}><div className="catalog-image" style={{backgroundImage:`url(${item.image})`}}/><div className="catalog-body"><small>{item.bay} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom&&<p><b style={{color:'#f15a24'}}>Từ {item.priceFrom}</b></p>}<div className="catalog-actions"><Link className="main" href={`/cruises/${item.slug}`}>Xem chi tiết</Link><a className="secondary" href="https://zalo.me/0969973949">Zalo →</a></div></div></article>)}</div>{!filtered.length&&<div className="empty-results"><b>Chưa tìm thấy du thuyền phù hợp</b><p>Thử đổi vịnh, thời lượng hoặc ngày đi.</p></div>}</>
+  const [cms,setCms]=useState<CmsProduct[]>([]);
+  useEffect(()=>{try{const raw=JSON.parse(localStorage.getItem('tn_cms_products_v3_units')||'[]') as CmsProduct[];const staticSlugs=new Set(cruises.map(x=>x.slug));setCms(raw.filter(x=>x.status==='published'&&x.type==='Du thuyền'&&x.slug&&!staticSlugs.has(x.slug)))}catch{setCms([])}},[]);
+  const durationMatch=(duration:string)=>{const d=(duration||'').toLowerCase();return !durationParam||(durationParam==='day'&&(/trong ngày|tiếng/.test(d)))||(durationParam==='2n1d'&&(/2 ngày 1 đêm|2n1đ|2n1d/.test(d)))||(durationParam==='3n2d'&&(/3 ngày 2 đêm|3n2đ|3n2d/.test(d)))};
+  const bayMatch=(place:string)=>bay==='all'||(bay==='halong'&&(place||'').toLowerCase().includes('hạ long'))||(bay==='lanha'&&(place||'').toLowerCase().includes('lan hạ'));
+  const filtered=useMemo(()=>cruises.filter(item=>{const matchQ=!q||`${item.name} ${item.bay} ${item.duration} ${item.summary}`.toLowerCase().includes(q);return matchQ&&durationMatch(item.duration)&&bayMatch(item.bay)}),[q,durationParam,bay]);
+  const cmsFiltered=useMemo(()=>cms.filter(item=>{const matchQ=!q||`${item.name} ${item.place} ${item.duration} ${item.summary}`.toLowerCase().includes(q);return matchQ&&durationMatch(item.duration)&&bayMatch(item.place)}),[cms,q,durationParam,bay]);
+  const total=filtered.length+cmsFiltered.length;
+  return <><div className="sub-toolbar"><div><b>{total} hành trình phù hợp</b><br/><span>{q?`Vịnh/từ khóa: ${params.get('q')}`:'Trong ngày · 2N1Đ · Nghỉ đêm'}{durationParam?` · Thời lượng đã chọn`:''}</span></div><div className="sub-filter-row"><button type="button" className={`sub-chip ${bay==='all'?'active':''}`} onClick={()=>setBay('all')}>Tất cả</button><button type="button" className={`sub-chip ${bay==='halong'?'active':''}`} onClick={()=>setBay('halong')}>Hạ Long</button><button type="button" className={`sub-chip ${bay==='lanha'?'active':''}`} onClick={()=>setBay('lanha')}>Lan Hạ</button></div></div><div className="catalog-grid">{filtered.map(item=><article className="catalog-card" key={item.slug}><div className="catalog-image" style={{backgroundImage:`url(${item.image})`}}/><div className="catalog-body"><small>{item.bay} · {item.duration}</small><h3>{item.name}</h3><p>{item.summary}</p>{item.priceFrom&&<p><b style={{color:'#f15a24'}}>Từ {item.priceFrom}</b></p>}<div className="catalog-actions"><Link className="main" href={`/cruises/${item.slug}`}>Xem chi tiết</Link><a className="secondary" href="https://zalo.me/0969973949">Zalo →</a></div></div></article>)}{cmsFiltered.map(item=><article className="catalog-card cms-public-card" key={item.id}><div className="catalog-image" style={{backgroundImage:`url(${item.cover||'https://images.unsplash.com/photo-1544551763-46a013bb70d5e?auto=format&fit=crop&w=1000&q=85'})`}}/><div className="catalog-body"><small>{item.place||'Du thuyền'} · {item.duration||'Lịch trình linh hoạt'}</small><h3>{item.name}</h3><p>{item.summary||'Thông tin du thuyền được xuất bản từ hệ thống quản trị.'}</p><p><b style={{color:'#f15a24'}}>Từ {item.price||'Liên hệ'}</b></p><div className="catalog-actions"><Link className="main" href={`/product?slug=${encodeURIComponent(item.slug)}`}>Xem chi tiết</Link><a className="secondary" href="https://zalo.me/0969973949">Zalo →</a></div></div></article>)}</div>{!total&&<div className="empty-results"><b>Chưa tìm thấy du thuyền phù hợp</b><p>Thử đổi vịnh, thời lượng hoặc ngày đi.</p></div>}</>
 }
