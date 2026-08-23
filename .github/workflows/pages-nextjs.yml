@@ -33,16 +33,28 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Prepare CI logs
+        run: mkdir -p ci-logs
+
       - name: Lint source
-        run: npm run lint
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee ci-logs/lint.log
 
       - name: Typecheck source
-        run: npm run typecheck
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee ci-logs/typecheck.log
 
       - name: Build Next.js static site
+        shell: bash
         env:
           NEXT_TELEMETRY_DISABLED: 1
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee ci-logs/build.log
 
       - name: Verify critical static routes
         shell: bash
@@ -64,12 +76,21 @@ jobs:
             "out/404.html"
           )
           for file in "${routes[@]}"; do
-            test -f "$file" || { echo "Missing exported route: $file"; exit 1; }
-            echo "OK: $file"
+            test -f "$file" || { echo "Missing exported route: $file" | tee -a ci-logs/routes.log; exit 1; }
+            echo "OK: $file" | tee -a ci-logs/routes.log
           done
-          test -f out/sitemap.xml || { echo "Missing sitemap.xml"; exit 1; }
-          test -f out/robots.txt || { echo "Missing robots.txt"; exit 1; }
-          echo "Critical static export verified"
+          test -f out/sitemap.xml || { echo "Missing sitemap.xml" | tee -a ci-logs/routes.log; exit 1; }
+          test -f out/robots.txt || { echo "Missing robots.txt" | tee -a ci-logs/routes.log; exit 1; }
+          echo "Critical static export verified" | tee -a ci-logs/routes.log
+
+      - name: Upload CI diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-diagnostics-${{ github.run_id }}
+          path: ci-logs
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
