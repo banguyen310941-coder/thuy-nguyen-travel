@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { tours } from '@/data/catalog';
 import { BookingInquiry } from '@/components/BookingInquiry';
+import { ContactZaloButton } from '@/components/ContactZaloButton';
 
 export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
 
@@ -26,6 +27,6 @@ export default async function TourDetailPage({params}:{params:Promise<{slug:stri
    <section id="reviews" className="tour-content-card"><h2>Đánh giá</h2><div className="tour-review-summary"><strong>{tour.rating||8.8}</strong><div><b>Rất tốt</b><span>{tour.reviewCount||0} đánh giá</span></div></div><p>Phần đánh giá thật sẽ được nối với dữ liệu khách hàng khi backend được bật.</p></section>
    <section id="faq" className="tour-content-card"><h2>Hỏi đáp</h2><div className="tour-faq">{(tour.faq||[{q:'Làm sao nhận giá chính xác?',a:'Chọn ngày dự kiến và gửi yêu cầu để nhân viên xác nhận.'}]).map(item=><details key={item.q}><summary>{item.q}</summary><p>{item.a}</p></details>)}</div></section>
    <section id="similar" className="tour-content-card"><h2>Tour tương tự</h2><div className="tour-similar-grid">{tours.filter(t=>t.slug!==tour.slug).slice(0,3).map(t=><Link href={`/tours/${t.slug}`} key={t.slug}><div style={{backgroundImage:`url(${t.image})`}}/><b>{t.name}</b><span>{t.duration} · {t.priceFrom||'Liên hệ'}</span></Link>)}</div></section>
-  </main><aside className="tour-booking-sticky"><div className="tour-booking-price">{tour.oldPrice&&<del>{tour.oldPrice}</del>}<span>Giá từ</span><strong>{tour.priceFrom||'Liên hệ'}</strong></div><BookingInquiry product={tour.name} kind="tour"/><a className="tour-zalo-fast" href="https://zalo.me/0969973949">Zalo tư vấn</a></aside></section>
+  </main><aside className="tour-booking-sticky"><div className="tour-booking-price">{tour.oldPrice&&<del>{tour.oldPrice}</del>}<span>Giá từ</span><strong>{tour.priceFrom||'Liên hệ'}</strong></div><BookingInquiry product={tour.name} kind="tour"/><ContactZaloButton className="tour-zalo-fast" label="Zalo tư vấn"/></aside></section>
  </div>
 }
