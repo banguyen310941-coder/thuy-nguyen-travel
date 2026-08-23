@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "lint:staged": "lint-staged",
-    "verify": "npm run lint && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "15.5.2",
