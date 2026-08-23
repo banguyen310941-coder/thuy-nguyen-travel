@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { defaultHomeCms, type HomeCmsData } from '@/components/HomeCmsHero';
+import {AdminMediaPicker} from '@/components/AdminMediaLibrary';
 
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 
@@ -19,18 +20,19 @@ export function AdminHomepageEditor(){
   },[]);
 
   function change<K extends keyof HomeCmsData>(name:K,value:HomeCmsData[K]){setForm(v=>({...v,[name]:value}));}
+  const publishLocal=()=>{localStorage.setItem('tn_cms_homepage',JSON.stringify(form));window.dispatchEvent(new Event('tn-homepage-updated'));};
 
   async function save(){
-    localStorage.setItem('tn_cms_homepage',JSON.stringify(form));
+    publishLocal();
     if(API_BASE&&key){
       const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify({value:form})});
       if(response.ok){setMessage('Đã lưu & xuất bản lên website.');return;}
       setMessage('Đã lưu bản xem thử trên máy này; backend chưa lưu được.');return;
     }
-    setMessage('Đã lưu bản xem thử trên máy này. Mở trang chủ để xem thay đổi ngay.');
+    setMessage('Đã lưu & cập nhật giao diện trang chủ trên thiết bị này.');
   }
 
-  function reset(){setForm(defaultHomeCms);localStorage.removeItem('tn_cms_homepage');setMessage('Đã khôi phục nội dung mặc định trên máy này.');}
+  function reset(){setForm(defaultHomeCms);localStorage.removeItem('tn_cms_homepage');window.dispatchEvent(new Event('tn-homepage-updated'));setMessage('Đã khôi phục nội dung mặc định trên máy này.');}
   const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={e=>change(name,e.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
 
   return <section className="admin-panel cms-home-editor">
@@ -43,7 +45,7 @@ export function AdminHomepageEditor(){
           <label>Tiêu đề chính<textarea rows={2} value={form.title} onChange={e=>change('title',e.target.value)}/></label>
           <label>Mô tả banner<textarea rows={3} value={form.subtitle} onChange={e=>change('subtitle',e.target.value)}/></label>
           <div className="admin-form-row"><label>Dòng ghi chú<input value={form.noteTitle} onChange={e=>change('noteTitle',e.target.value)}/></label><label>Nội dung ghi chú<input value={form.noteText} onChange={e=>change('noteText',e.target.value)}/></label></div>
-          <label>Ảnh banner (URL)<input value={form.heroImage} onChange={e=>change('heroImage',e.target.value)}/></label>
+          <div><b className="field-label">Ảnh banner</b><AdminMediaPicker value={form.heroImage} onChange={v=>change('heroImage',v)} label="Chọn / tải ảnh banner"/></div>
         </div>
 
         <div className="cms-group"><h3>2. Dịch vụ nổi bật</h3><Toggle name="servicesEnabled" label="Hiển thị khối dịch vụ"/><label>Tiêu đề<input value={form.servicesTitle} onChange={e=>change('servicesTitle',e.target.value)}/></label><label>Mô tả<input value={form.servicesSubtitle} onChange={e=>change('servicesSubtitle',e.target.value)}/></label></div>
