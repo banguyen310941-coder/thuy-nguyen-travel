@@ -1,3 +1,4 @@
+import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
 import {stays} from '@/data/catalog';
@@ -6,6 +7,7 @@ import {PublishedUnits} from '@/components/PublishedUnits';
 import {ContactPhoneInline} from '@/components/ContactPhoneInline';
 
 export function generateStaticParams(){return stays.map(stay=>({slug:stay.slug}))}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const stay=stays.find(item=>item.slug===slug);if(!stay)return {title:'Lưu trú'};return {title:`${stay.name} - ${stay.location}`,description:stay.summary,alternates:{canonical:`/stay/${stay.slug}`},openGraph:{title:stay.name,description:stay.summary,images:[stay.image],type:'website'}}}
 
 export default async function StayDetailPage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;const stay=stays.find(item=>item.slug===slug);if(!stay)notFound();
