@@ -20,7 +20,12 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
   const isStay=!isTour&&!isCruise;
   const today=useMemo(()=>{const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`},[]);
 
-  useEffect(()=>{const select=(event:Event)=>{const detail=(event as CustomEvent<{code?:string;name?:string}>).detail||{};const value=[detail.code,detail.name].filter(Boolean).join(' · ');if(value)setSelectedUnit(value)};window.addEventListener('tn:select-unit',select as EventListener);return()=>window.removeEventListener('tn:select-unit',select as EventListener)},[]);
+  useEffect(()=>{
+    const select=(event:Event)=>{const detail=(event as CustomEvent<{code?:string;name?:string}>).detail||{};const value=[detail.code,detail.name].filter(Boolean).join(' · ');if(value)setSelectedUnit(value)};
+    window.addEventListener('tn:select-unit',select as EventListener);
+    try{const stored=JSON.parse(localStorage.getItem('tn_selected_unit')||'null');if(stored?.product===product){const value=[stored.code,stored.unit].filter(Boolean).join(' · ');if(value)setSelectedUnit(value);localStorage.removeItem('tn_selected_unit')}}catch{}
+    return()=>window.removeEventListener('tn:select-unit',select as EventListener)
+  },[product]);
 
   async function send(form:HTMLFormElement){
     setMessage('');
