@@ -15,6 +15,7 @@ import './utility.css';
 import './admin-mobile-fixes.css';
 import './media-picker.css';
 import './rate-calendar.css';
+import './connectivity.css';
 
 export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/>{children}</>}
