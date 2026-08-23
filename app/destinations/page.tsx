@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { destinations } from '@/data/catalog';
 import {ContactCtaGroup} from '@/components/ContactCtaGroup';
 
-export const metadata:Metadata={title:'Điểm đến nổi bật',description:'Khám phá điểm đến nổi bật cho Villa, Khách sạn, Tour và Du thuyền cùng Thúy Nguyên Travel.',alternates:{canonical:'/destinations'},openGraph:{title:'Điểm đến nổi bật | Thúy Nguyên Travel',description:'Chọn điểm đến và xem dịch vụ phù hợp nhất cho chuyến đi.',url:'/destinations',type:'website'}};
+const canonical='https://banguyen310941-coder.github.io/thuy-nguyen-travel/destinations';
+export const metadata:Metadata={title:'Điểm đến nổi bật',description:'Khám phá điểm đến nổi bật cho Villa, Khách sạn, Tour và Du thuyền cùng Thúy Nguyên Travel.',alternates:{canonical},openGraph:{title:'Điểm đến nổi bật | Thúy Nguyên Travel',description:'Chọn điểm đến và xem dịch vụ phù hợp nhất cho chuyến đi.',url:canonical,type:'website'}};
 
 function destinationHref(name:string){
   const n=name.toLowerCase();
