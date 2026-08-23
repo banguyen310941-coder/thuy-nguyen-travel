@@ -36,6 +36,9 @@ jobs:
       - name: Lint source
         run: npm run lint
 
+      - name: Typecheck source
+        run: npm run typecheck
+
       - name: Build Next.js static site
         env:
           NEXT_TELEMETRY_DISABLED: 1
@@ -57,6 +60,7 @@ jobs:
             "out/guide/index.html"
             "out/guide/read/index.html"
             "out/admin/index.html"
+            "out/checkout/index.html"
             "out/404.html"
           )
           for file in "${routes[@]}"; do
