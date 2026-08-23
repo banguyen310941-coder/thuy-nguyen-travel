@@ -54,6 +54,7 @@ jobs:
             "out/guide/index.html"
             "out/guide/read/index.html"
             "out/admin/index.html"
+            "out/404.html"
           )
           for file in "${routes[@]}"; do
             test -f "$file" || { echo "Missing exported route: $file"; exit 1; }
