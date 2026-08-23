@@ -1,0 +1,9 @@
+'use client';
+
+import {useEffect,useState} from 'react';
+import Link from 'next/link';
+import {ContactQuickLink} from '@/components/ContactQuickLink';
+
+type StaticPost={slug:string;title:string;category:string;excerpt:string;image:string;date:string;readTime:string;content:{heading:string;paragraphs:string[]}[]};
+type CmsArticle={id:string;title:string;slug:string;category:string;excerpt:string;cover:string;content:string;status:string;date:string};
+export function GuideArticleEditable({post}:{post:StaticPost}){const [cms,setCms]=useState<CmsArticle|null>(null);useEffect(()=>{const load=()=>{try{const items=JSON.parse(localStorage.getItem('tn_cms_articles_v3')||'[]') as CmsArticle[];setCms(items.find(x=>x.id===`seo_${post.slug}`&&x.status==='published')||null)}catch{setCms(null)}};load();window.addEventListener('tn-articles-updated',load);window.addEventListener('storage',load);return()=>{window.removeEventListener('tn-articles-updated',load);window.removeEventListener('storage',load)}},[post.slug]);const title=cms?.title||post.title;const category=cms?.category||post.category;const excerpt=cms?.excerpt||post.excerpt;const image=cms?.cover||post.image;const date=cms?.date||post.date;return <article className="public-article seo-static-article"><header><div className="article-meta"><span>{category}</span><span>{date}</span><span>{post.readTime}</span></div><h1>{title}</h1><p className="article-lead">{excerpt}</p></header><img className="article-cover" src={image} alt={title}/><div className="article-content">{cms?.content?<div dangerouslySetInnerHTML={{__html:cms.content}}/>:<><p><strong>Tóm tắt:</strong> {excerpt}</p>{post.content.map(s=><section key={s.heading}><h2>{s.heading}</h2>{s.paragraphs.map((x,i)=><p key={i}>{x}</p>)}</section>)}</>}</div><div className="article-actions"><Link href="/stay">Xem lưu trú</Link><Link href="/cruises">Xem du thuyền</Link><ContactQuickLink label="Nhận tư vấn"/></div></article>}
