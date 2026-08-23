@@ -3,53 +3,8 @@
 import { useEffect, useState } from 'react';
 import { SearchBar } from '@/components/SearchBar';
 
-export type HomeCmsData={
-  eyebrow:string;title:string;subtitle:string;noteTitle:string;noteText:string;heroImage:string;
-  servicesEnabled:boolean;servicesTitle:string;servicesSubtitle:string;
-  destinationsEnabled:boolean;destinationsTitle:string;
-  productsEnabled:boolean;productsTitle:string;
-  cruisesEnabled:boolean;cruisesTitle:string;cruisesSubtitle:string;
-  toursEnabled:boolean;toursTitle:string;
-  ctaEnabled:boolean;ctaEyebrow:string;ctaTitle:string;ctaText:string;hotline:string;zalo:string;
-};
-
-export const defaultHomeCms:HomeCmsData={
-  eyebrow:'THÚY NGUYÊN TRAVEL',
-  title:'Du lịch trọn gói – Nghỉ dưỡng đẳng cấp',
-  subtitle:'Vé · Tour · Villa · Resort · Du thuyền – Khám phá thế giới cùng chúng tôi!',
-  noteTitle:'Hành trình của bạn',
-  noteText:'Bắt đầu từ một giấc mơ...',
-  heroImage:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1900&q=88',
-  servicesEnabled:true,servicesTitle:'Khám phá dịch vụ nổi bật',servicesSubtitle:'Lựa chọn trải nghiệm phù hợp với bạn',
-  destinationsEnabled:true,destinationsTitle:'Điểm đến phổ biến',
-  productsEnabled:true,productsTitle:'Sản phẩm nổi bật',
-  cruisesEnabled:true,cruisesTitle:'Du thuyền nổi bật',cruisesSubtitle:'Hạ Long & Lan Hạ',
-  toursEnabled:true,toursTitle:'Tour du lịch hot',
-  ctaEnabled:true,ctaEyebrow:'THÚY NGUYÊN TRAVEL',ctaTitle:'Khám phá thế giới, trải nghiệm khác biệt!',ctaText:'Gọi ngay để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'
-};
-
+export type HomeCmsData={eyebrow:string;title:string;subtitle:string;noteTitle:string;noteText:string;heroImage:string;servicesEnabled:boolean;servicesTitle:string;servicesSubtitle:string;destinationsEnabled:boolean;destinationsTitle:string;productsEnabled:boolean;productsTitle:string;cruisesEnabled:boolean;cruisesTitle:string;cruisesSubtitle:string;toursEnabled:boolean;toursTitle:string;ctaEnabled:boolean;ctaEyebrow:string;ctaTitle:string;ctaText:string;hotline:string;zalo:string};
+export const defaultHomeCms:HomeCmsData={eyebrow:'THÚY NGUYÊN TRAVEL',title:'Du lịch trọn gói – Nghỉ dưỡng đẳng cấp',subtitle:'Vé · Tour · Villa · Resort · Du thuyền – Khám phá thế giới cùng chúng tôi!',noteTitle:'Hành trình của bạn',noteText:'Bắt đầu từ một giấc mơ...',heroImage:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1900&q=88',servicesEnabled:true,servicesTitle:'Khám phá dịch vụ nổi bật',servicesSubtitle:'Lựa chọn trải nghiệm phù hợp với bạn',destinationsEnabled:true,destinationsTitle:'Điểm đến phổ biến',productsEnabled:true,productsTitle:'Sản phẩm nổi bật',cruisesEnabled:true,cruisesTitle:'Du thuyền nổi bật',cruisesSubtitle:'Hạ Long & Lan Hạ',toursEnabled:true,toursTitle:'Tour du lịch hot',ctaEnabled:true,ctaEyebrow:'THÚY NGUYÊN TRAVEL',ctaTitle:'Khám phá thế giới, trải nghiệm khác biệt!',ctaText:'Gọi ngay để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'};
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
-
-export function useHomeCms(){
-  const [data,setData]=useState<HomeCmsData>(defaultHomeCms);
-  useEffect(()=>{
-    const local=localStorage.getItem('tn_cms_homepage');
-    if(local){try{setData({...defaultHomeCms,...JSON.parse(local)})}catch{}}
-    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(v?.value)setData({...defaultHomeCms,...v.value})}).catch(()=>{});}
-  },[]);
-  return data;
-}
-
-export function HomeCmsHero(){
-  const data=useHomeCms();
-  return <section className="mock-hero" style={{backgroundImage:`url(${data.heroImage})`}}>
-    <div className="mock-hero-overlay" />
-    <div className="container mock-hero-content">
-      <p className="mock-eyebrow">{data.eyebrow}</p>
-      <h1>{data.title}</h1>
-      <p>{data.subtitle}</p>
-      <div className="mock-hero-note"><span>✈</span><div>{data.noteTitle}<br/><b>{data.noteText}</b></div></div>
-      <div className="mock-hero-search"><SearchBar /></div>
-    </div>
-  </section>;
-}
+export function useHomeCms(){const [data,setData]=useState<HomeCmsData>(defaultHomeCms);useEffect(()=>{const loadLocal=()=>{try{const local=localStorage.getItem('tn_cms_homepage');setData(local?{...defaultHomeCms,...JSON.parse(local)}:defaultHomeCms)}catch{setData(defaultHomeCms)}};loadLocal();if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(v?.value)setData({...defaultHomeCms,...v.value})}).catch(()=>{})}window.addEventListener('tn-homepage-updated',loadLocal);window.addEventListener('storage',loadLocal);return()=>{window.removeEventListener('tn-homepage-updated',loadLocal);window.removeEventListener('storage',loadLocal)}},[]);return data;}
+export function HomeCmsHero(){const data=useHomeCms();return <section className="mock-hero" style={{backgroundImage:`url(${data.heroImage})`}}><div className="mock-hero-overlay"/><div className="container mock-hero-content"><p className="mock-eyebrow">{data.eyebrow}</p><h1>{data.title}</h1><p>{data.subtitle}</p><div className="mock-hero-note"><span>✈</span><div>{data.noteTitle}<br/><b>{data.noteText}</b></div></div><div className="mock-hero-search"><SearchBar/></div></div></section>}
