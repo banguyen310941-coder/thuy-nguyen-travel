@@ -1,0 +1,1 @@
+import type {Metadata} from 'next';import {BookingLookup} from '@/components/BookingLookup';export const metadata:Metadata={title:'Khu vực khách hàng',description:'Xem lịch sử yêu cầu đặt dịch vụ tại Thúy Nguyên Travel.',robots:{index:false,follow:false}};export default function Page(){return <BookingLookup account/>}
