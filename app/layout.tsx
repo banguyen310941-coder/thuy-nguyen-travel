@@ -5,6 +5,7 @@ import './mockup.css';
 import './mobile-v2.css';
 import './subpages.css';
 import './booking-live.css';
+import './checkout.css';
 import './tour-rich.css';
 import './product-detail-v2.css';
 import './units-public.css';
