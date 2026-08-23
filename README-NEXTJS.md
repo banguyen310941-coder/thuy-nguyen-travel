@@ -29,3 +29,5 @@ npm run dev
 npm run build
 ```
 Next.js xuất bản tĩnh ra thư mục `out/` để có thể preview bằng GitHub Pages. Backend/admin động sẽ cần môi trường server khi triển khai chính thức.
+
+> Stabilization checkpoint: 2026-08-23. Main was restored to the last known successful application revision; later work is preserved on `backup-before-stabilize-20260823` for controlled re-application.
