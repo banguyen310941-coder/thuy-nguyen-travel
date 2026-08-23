@@ -5,7 +5,8 @@ import { StayCatalog } from '@/components/StayCatalog';
 import {ContactCtaGroup} from '@/components/ContactCtaGroup';
 import Link from 'next/link';
 
-export const metadata:Metadata={title:'Villa, Resort & Khách sạn',description:'Đặt Villa, Resort và Khách sạn toàn quốc cùng Thúy Nguyên Travel. Tìm theo điểm đến, ngày ở và số khách.',alternates:{canonical:'/stay'},openGraph:{title:'Villa, Resort & Khách sạn | Thúy Nguyên Travel',description:'Tìm Villa, Resort và Khách sạn toàn quốc theo ngày ở và số khách.',url:'/stay',type:'website'}};
+const canonical='https://banguyen310941-coder.github.io/thuy-nguyen-travel/stay';
+export const metadata:Metadata={title:'Villa, Resort & Khách sạn',description:'Đặt Villa, Resort và Khách sạn toàn quốc cùng Thúy Nguyên Travel. Tìm theo điểm đến, ngày ở và số khách.',alternates:{canonical},openGraph:{title:'Villa, Resort & Khách sạn | Thúy Nguyên Travel',description:'Tìm Villa, Resort và Khách sạn toàn quốc theo ngày ở và số khách.',url:canonical,type:'website'}};
 
 export default function StayPage() {
   return <div className="subpage">
