@@ -11,7 +11,7 @@ import './units.css';
 import './utility.css';
 import './admin-mobile-fixes.css';
 import './media-picker.css';
+import './rate-calendar.css';
 
 export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
-
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminStorageGuard/>{children}</>}
