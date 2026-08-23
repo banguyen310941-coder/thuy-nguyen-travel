@@ -48,6 +48,8 @@ jobs:
             "out/stay/index.html"
             "out/tours/index.html"
             "out/cruises/index.html"
+            "out/product/index.html"
+            "out/tour-product/index.html"
             "out/destinations/index.html"
             "out/guide/index.html"
             "out/guide/read/index.html"
