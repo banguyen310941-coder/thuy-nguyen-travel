@@ -9,6 +9,7 @@ import './product-manager.css';
 import './units.css';
 import './utility.css';
 import './admin-mobile-fixes.css';
+import './media-picker.css';
 
 export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
 
