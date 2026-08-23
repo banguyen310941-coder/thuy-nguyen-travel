@@ -5,6 +5,8 @@ import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
+function normalizeVietnamPhone(raw:string){const digits=raw.replace(/\D/g,'');if(digits.startsWith('84')&&digits.length===11)return `0${digits.slice(2)}`;return digits}
+
 export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind?:string}){
   const [state,setState]=useState<'idle'|'sending'|'saved'|'fallback'>('idle');
   const [code,setCode]=useState('');
@@ -31,8 +33,8 @@ export function BookingInquiry({product,kind='dịch vụ'}:{product:string;kind
 
   async function send(form:HTMLFormElement){
     setMessage('');setState('idle');
-    const data=new FormData(form);const name=String(data.get('name')||'').trim();const phone=String(data.get('phone')||'').replace(/\s+/g,'').trim();const from=String(data.get('from')||'');const to=String(data.get('to')||'');
-    if(name.length<2){setMessage('Vui lòng nhập họ tên đầy đủ.');return}if(!/^(0|\+84)\d{9,10}$/.test(phone)){setMessage('Số điện thoại chưa đúng định dạng Việt Nam.');return}if(!from){setMessage(isStay?'Vui lòng chọn ngày nhận phòng.':isTour?'Vui lòng chọn ngày khởi hành.':'Vui lòng chọn ngày đi.');return}if(from<today){setMessage('Ngày đi/nhận phòng không thể ở trong quá khứ.');return}if(isStay&&!to){setMessage('Vui lòng chọn ngày trả phòng.');return}if(isStay&&to<=from){setMessage('Ngày trả phòng phải sau ngày nhận phòng.');return}
+    const data=new FormData(form);const name=String(data.get('name')||'').trim();const phone=normalizeVietnamPhone(String(data.get('phone')||''));const from=String(data.get('from')||'');const to=String(data.get('to')||'');
+    if(name.length<2){setMessage('Vui lòng nhập họ tên đầy đủ.');return}if(!/^0\d{9}$/.test(phone)){setMessage('Số điện thoại chưa đúng. Có thể nhập 0969 973 949, 0969.973.949 hoặc +84 969 973 949.');return}if(!from){setMessage(isStay?'Vui lòng chọn ngày nhận phòng.':isTour?'Vui lòng chọn ngày khởi hành.':'Vui lòng chọn ngày đi.');return}if(from<today){setMessage('Ngày đi/nhận phòng không thể ở trong quá khứ.');return}if(isStay&&!to){setMessage('Vui lòng chọn ngày trả phòng.');return}if(isStay&&to<=from){setMessage('Ngày trả phòng phải sau ngày nhận phòng.');return}
     const rawNote=String(data.get('note')||'').trim();const note=[selectedUnit?`Căn/phòng/cabin đã chọn: ${selectedUnit}`:'',rawNote].filter(Boolean).join('\n');
     const payload={kind,product,customerName:name,phone,email:String(data.get('email')||'').trim(),startDate:from,endDate:isStay?to:null,adults:Number(data.get('adults')||2),children:Number(data.get('children')||0),rooms:isTour?1:Number(data.get('rooms')||1),note,source:'website'};
     let apiFailed=false;
