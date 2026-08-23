@@ -1,3 +1,4 @@
+import type {Metadata} from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { tours } from '@/data/catalog';
@@ -5,6 +6,7 @@ import { BookingInquiry } from '@/components/BookingInquiry';
 import { ContactZaloButton } from '@/components/ContactZaloButton';
 
 export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const tour=tours.find(t=>t.slug===slug);if(!tour)return {title:'Tour du lịch'};return {title:`${tour.name} - ${tour.duration}`,description:tour.summary,alternates:{canonical:`/tours/${tour.slug}`},openGraph:{title:tour.name,description:tour.summary,images:[tour.image],type:'website'}}}
 
 export default async function TourDetailPage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params; const tour=tours.find(t=>t.slug===slug); if(!tour)notFound();
@@ -12,13 +14,9 @@ export default async function TourDetailPage({params}:{params:Promise<{slug:stri
  const itinerary=tour.itinerary||[{title:'Ngày 1',morning:'Khởi hành và bắt đầu hành trình theo lịch xác nhận.'},{title:'Các ngày tiếp theo',morning:`Tham quan các điểm chính theo tuyến ${tour.route}.`},{title:'Ngày cuối',morning:'Kết thúc chương trình và trở về điểm xuất phát.'}];
  return <div className="tour-rich-page">
   <section className="tour-rich-head"><div className="container"><div className="tour-breadcrumb"><Link href="/">Trang chủ</Link><span>/</span><Link href="/tours">Tour du lịch</Link><span>/</span><span>{tour.name}</span></div><div className="tour-title-wrap"><div><span className="tour-category">{tour.category}</span><h1>{tour.name}</h1><div className="tour-rating">★ {tour.rating||8.8} <span>{tour.reviewCount||'—'} đánh giá</span></div></div><div className="tour-price-box">{tour.oldPrice&&<del>{tour.oldPrice}</del>}<small>Giá từ</small><strong>{tour.priceFrom||'Liên hệ'}</strong><span>/ khách</span></div></div></div></section>
-
   <section className="container tour-gallery-wrap"><div className="tour-gallery"><div className="tour-gallery-main" style={{backgroundImage:`url(${gallery[0]})`}}/><div style={{backgroundImage:`url(${gallery[1]})`}}/><div style={{backgroundImage:`url(${gallery[2]})`}}/></div></section>
-
   <section className="container tour-summary-card"><div className="tour-fast-info"><div><span>🕒</span><b>Thời gian</b><small>{tour.duration}</small></div><div><span>✈</span><b>Hãng bay</b><small>{tour.airline||'Theo lịch'}</small></div><div><span>🚌</span><b>Phương tiện</b><small>{tour.transport?.join(' · ')||'Theo chương trình'}</small></div><div><span>📍</span><b>Khởi hành</b><small>{tour.departureFrom||'Liên hệ'}</small></div></div>{tour.departureDates?.length&&<div className="tour-departures"><b>Lịch khởi hành:</b>{tour.departureDates.map(d=><span key={d}>{d}</span>)}</div>}{tour.promotions?.length&&<div className="tour-promos">{tour.promotions.map(p=><div key={p}>🎁 {p}</div>)}</div>}</section>
-
   <nav className="tour-tabbar"><div className="container"><a href="#intro">Giới thiệu</a><a href="#itinerary">Lịch trình</a><a href="#price">Bảng giá</a><a href="#reviews">Đánh giá</a><a href="#faq">Hỏi đáp</a><a href="#similar">Tour tương tự</a></div></nav>
-
   <section className="container tour-content-layout"><main>
    <section id="intro" className="tour-content-card"><h2>Giới thiệu tour</h2><p>{tour.summary}</p>{tour.highlights?.length&&<><h3>Điểm nổi bật</h3><ul className="tour-highlight-list">{tour.highlights.map(x=><li key={x}>{x}</li>)}</ul></>}</section>
    <section id="itinerary" className="tour-content-card"><h2>Lịch trình tour</h2><div className="tour-itinerary">{itinerary.map((day,i)=><article key={i}><div className="tour-day-index">{i+1}</div><div><h3>{day.title}</h3>{day.morning&&<p><b>Buổi sáng:</b> {day.morning}</p>}{day.afternoon&&<p><b>Buổi chiều:</b> {day.afternoon}</p>}{day.evening&&<p><b>Buổi tối:</b> {day.evening}</p>}{day.meals&&<small>Bữa ăn: {day.meals}</small>}</div></article>)}</div></section>
