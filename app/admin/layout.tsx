@@ -8,8 +8,8 @@ import './product-v2.css';
 import './product-manager.css';
 import './units.css';
 import './utility.css';
-import {AdminDeleteEnhancer} from '@/components/AdminDeleteEnhancer';
+import './admin-mobile-fixes.css';
 
 export const metadata:Metadata={title:'Quản trị Thúy Nguyên Travel',robots:{index:false,follow:false,nocache:true}};
 
-export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminDeleteEnhancer/>{children}</>}
+export default function AdminLayout({children}:{children:React.ReactNode}){return <>{children}</>}
