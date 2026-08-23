@@ -1,3 +1,4 @@
+import type {Metadata} from 'next';
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {cruises} from '@/data/catalog';
@@ -6,6 +7,7 @@ import {PublishedUnits} from '@/components/PublishedUnits';
 import {ContactPhoneInline} from '@/components/ContactPhoneInline';
 
 export function generateStaticParams(){return cruises.map(cruise=>({slug:cruise.slug}))}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const cruise=cruises.find(item=>item.slug===slug);if(!cruise)return {title:'Du thuyền'};return {title:`${cruise.name} - ${cruise.bay}`,description:cruise.summary,alternates:{canonical:`/cruises/${cruise.slug}`},openGraph:{title:cruise.name,description:cruise.summary,images:[cruise.image],type:'website'}}}
 
 export default async function CruiseDetailPage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;const cruise=cruises.find(item=>item.slug===slug);if(!cruise)notFound();
