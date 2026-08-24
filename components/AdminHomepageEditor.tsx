@@ -19,18 +19,20 @@ export function AdminHomepageEditor(){
   },[]);
 
   function change<K extends keyof HomeCmsData>(name:K,value:HomeCmsData[K]){setForm(v=>({...v,[name]:value}));}
+  function notify(){window.dispatchEvent(new Event('tn-homepage-updated'));}
 
   async function save(){
     localStorage.setItem('tn_cms_homepage',JSON.stringify(form));
+    notify();
     if(API_BASE&&key){
       const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify({value:form})});
-      if(response.ok){setMessage('Đã lưu & xuất bản lên website.');return;}
+      if(response.ok){setMessage('Đã lưu & xuất bản lên website. Trang chủ đang mở sẽ tự cập nhật.');return;}
       setMessage('Đã lưu bản xem thử trên máy này; backend chưa lưu được.');return;
     }
-    setMessage('Đã lưu bản xem thử trên máy này. Mở trang chủ để xem thay đổi ngay.');
+    setMessage('Đã lưu & cập nhật trang chủ trên máy này. Không cần tải lại trang đang mở.');
   }
 
-  function reset(){setForm(defaultHomeCms);localStorage.removeItem('tn_cms_homepage');setMessage('Đã khôi phục nội dung mặc định trên máy này.');}
+  function reset(){setForm(defaultHomeCms);localStorage.removeItem('tn_cms_homepage');notify();setMessage('Đã khôi phục nội dung mặc định và cập nhật trang chủ.');}
   const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={e=>change(name,e.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
 
   return <section className="admin-panel cms-home-editor">
