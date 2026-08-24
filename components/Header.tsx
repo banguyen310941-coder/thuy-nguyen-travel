@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {usePathname,useSearchParams} from 'next/navigation';
+import {usePathname} from 'next/navigation';
 import {useEffect,useRef} from 'react';
 import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 
@@ -17,7 +17,6 @@ const nav = [
 
 export function Header() {
   const pathname = usePathname();
-  const searchParams=useSearchParams();
   const menuRef = useRef<HTMLDetailsElement>(null);
   const settings=useSiteSettings();
   const phone=formatPhone(settings.hotline);
@@ -26,7 +25,7 @@ export function Header() {
     if (menuRef.current) menuRef.current.open = false;
   };
 
-  useEffect(() => { closeMobileMenu(); }, [pathname,searchParams]);
+  useEffect(() => { closeMobileMenu(); }, [pathname]);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -36,11 +35,14 @@ export function Header() {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMobileMenu();
     };
+    const handlePopState = () => closeMobileMenu();
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleEscape);
+    window.addEventListener('popstate', handlePopState);
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
