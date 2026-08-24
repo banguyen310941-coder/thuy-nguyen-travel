@@ -33,9 +33,14 @@ const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 export function useHomeCms(){
   const [data,setData]=useState<HomeCmsData>(defaultHomeCms);
   useEffect(()=>{
-    const local=localStorage.getItem('tn_cms_homepage');
-    if(local){try{setData({...defaultHomeCms,...JSON.parse(local)})}catch{}}
-    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(v?.value)setData({...defaultHomeCms,...v.value})}).catch(()=>{});}
+    let alive=true;
+    const loadLocal=()=>{try{const local=localStorage.getItem('tn_cms_homepage');if(alive)setData(local?{...defaultHomeCms,...JSON.parse(local)}:defaultHomeCms)}catch{if(alive)setData(defaultHomeCms)}};
+    loadLocal();
+    const refresh=()=>loadLocal();
+    window.addEventListener('tn-homepage-updated',refresh);
+    window.addEventListener('storage',refresh);
+    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData({...defaultHomeCms,...v.value})}).catch(()=>{});}
+    return()=>{alive=false;window.removeEventListener('tn-homepage-updated',refresh);window.removeEventListener('storage',refresh)};
   },[]);
   return data;
 }
