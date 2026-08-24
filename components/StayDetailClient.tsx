@@ -1,0 +1,39 @@
+'use client';
+
+import Link from 'next/link';
+import {Suspense,useEffect,useMemo,useState} from 'react';
+import type {Stay} from '@/data/catalog';
+import {BookingInquiry} from '@/components/BookingInquiry';
+import {PublishedUnits} from '@/components/PublishedUnits';
+import {ContactPhoneInline} from '@/components/ContactPhoneInline';
+
+type CmsProduct={slug:string;type:string;name:string;place:string;price:string;status:string;summary:string;cover:string;gallery:string;rating:string;category:string;address:string;checkin:string;checkout:string;amenities:string;policies:string;childrenPolicy:string;extraCharge:string;content:string;seoTitle?:string;seoDescription?:string};
+
+const lines=(value?:string)=>String(value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+
+export function StayDetailClient({base}:{base:Stay}){
+  const [cms,setCms]=useState<CmsProduct|null|undefined>(undefined);
+  useEffect(()=>{const load=()=>{try{const items=JSON.parse(localStorage.getItem('tn_cms_products_v3_units')||'[]') as CmsProduct[];setCms(items.find(x=>x.slug===base.slug)||null)}catch{setCms(null)}};load();window.addEventListener('tn-products-updated',load);window.addEventListener('storage',load);return()=>{window.removeEventListener('tn-products-updated',load);window.removeEventListener('storage',load)}},[base.slug]);
+
+  useEffect(()=>{if(!cms||cms.status!=='published')return;if(cms.seoTitle)document.title=cms.seoTitle;const desc=cms.seoDescription||cms.summary;if(desc){let meta=document.head.querySelector('meta[name="description"]') as HTMLMetaElement|null;if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta)}meta.content=desc}},[cms]);
+
+  const view=useMemo(()=>{const published=cms?.status==='published';const galleryCms=published?lines(cms?.gallery):[];const highlightsCms=published?lines(cms?.amenities):[];return {
+    name:published&&cms?.name?cms.name:base.name,
+    location:published&&(cms?.address||cms?.place)?(cms.address||cms.place):base.location,
+    type:published&&cms?.type==='Villa & Resort'?'Villa':published&&cms?.type==='Khách sạn'?'Khách sạn':base.type,
+    image:published&&cms?.cover?cms.cover:base.image,
+    gallery:galleryCms.length?[cms?.cover||base.image,...galleryCms].filter(Boolean) as string[]:(base.gallery?.length?base.gallery:[base.image,base.image,base.image]),
+    rating:published&&cms?.rating?(Number(String(cms.rating).replace(',','.'))||base.rating):base.rating,
+    summary:published&&cms?.summary?cms.summary:base.summary,
+    content:published&&cms?.content?cms.content:'',
+    highlights:highlightsCms.length?highlightsCms:base.highlights,
+    price:published&&cms?.price?cms.price:'Liên hệ giá',
+    checkin:published?cms?.checkin||'':'',checkout:published?cms?.checkout||'':'',
+    policies:published?lines(cms?.policies):[],childrenPolicy:published?cms?.childrenPolicy||'':'',extraCharge:published?cms?.extraCharge||'':'',
+  }},[base,cms]);
+
+  if(cms&&cms.status!=='published')return <section className="sub-section white"><div className="container"><div className="article-state"><h1>Sản phẩm đang tạm ẩn</h1><p>Sản phẩm này đã được chuyển sang bản nháp hoặc tạm ngừng bán trong Admin.</p><Link href="/stay">← Quay lại danh sách lưu trú</Link></div></div></section>;
+
+  const gallery=view.gallery;const isVilla=view.type==='Villa';
+  return <div className="product-detail-v2"><section className="pd-head"><div className="container"><div className="pd-breadcrumb"><Link href="/">Trang chủ</Link><span>›</span><Link href="/stay">Lưu trú</Link><span>›</span><b>{view.name}</b></div><div className="pd-title"><div><span className="pd-type">{view.type}</span><h1>{view.name}</h1><p>📍 {view.location}</p></div><div className="pd-rating"><span>Rất tốt</span><b>{view.rating}</b></div></div></div></section><section className="container pd-gallery"><div className="pd-main-img" style={{backgroundImage:`url(${gallery[0]})`}}/><div style={{backgroundImage:`url(${gallery[1]||gallery[0]})`}}/><div style={{backgroundImage:`url(${gallery[2]||gallery[0]})`}}/><a className="pd-gallery-open" href={gallery[0]} target="_blank" rel="noreferrer">📷 Xem ảnh lớn</a></section><section className="container pd-summary-grid"><div className="pd-summary-card"><h2>{isVilla?'Villa nghỉ dưỡng phù hợp gia đình & nhóm':'Lưu trú nghỉ dưỡng cao cấp'}</h2><p>{view.summary}</p>{view.content&&<p className="cms-preline">{view.content}</p>}<div className="pd-quick-info"><span>✓ {isVilla?'Nhiều căn villa quản lý riêng':'Nhiều hạng phòng quản lý riêng'}</span><span>✓ Giá ngày thường / cuối tuần / lễ</span><span>✓ Sức chứa & phụ thu riêng từng căn</span><span>✓ Xác nhận tình trạng theo ngày</span></div></div><div className="pd-price-card"><small>GIÁ TỐT NHẤT THEO NGÀY</small><strong>{view.price}</strong><p>Giá thay đổi theo căn/phòng, ngày ở và số khách.</p><a href="#booking">Kiểm tra giá & phòng trống</a><ContactPhoneInline/></div></section><nav className="pd-tabs"><div className="container"><a href="#overview">Tổng quan</a><a href="#units">{isVilla?'Từng căn Villa':'Từng hạng phòng'}</a><a href="#amenities">Tiện ích</a><a href="#policy">Chính sách</a><a href="#reviews">Đánh giá</a></div></nav><section className="container pd-body"><main><section id="overview" className="pd-block"><h2>Tổng quan</h2><p>{view.summary}</p><div className="pd-highlight-grid">{view.highlights.map(item=><div key={item}>✓ <b>{item}</b></div>)}</div></section><Suspense fallback={<section className="detail-block live-units"><div className="live-units-head"><h2>{isVilla?'Danh sách từng căn Villa & giá':'Danh sách hạng phòng & giá'}</h2><p>Đang tải giá và tình trạng phòng...</p></div></section>}><PublishedUnits slug={base.slug} label={isVilla?'Danh sách từng căn Villa & giá':'Danh sách hạng phòng & giá'}/></Suspense><section id="amenities" className="pd-block"><h2>Tiện ích nổi bật</h2><div className="pd-highlight-grid">{view.highlights.map(item=><div key={item}>✦ <b>{item}</b></div>)}</div></section><section id="policy" className="pd-block"><h2>Chính sách lưu trú</h2><div className="pd-policy-grid"><div><b>Nhận / trả phòng</b><p>{view.checkin||view.checkout?`${view.checkin||'—'} / ${view.checkout||'—'}`:'Giờ nhận và trả phòng được xác nhận theo từng hạng phòng.'}</p></div><div><b>Trẻ em</b><p>{view.childrenPolicy||'Phụ thu tùy độ tuổi, hạng phòng và số khách thực tế.'}</p></div><div><b>Phụ thu</b><p>{view.extraCharge||'Mức phụ thu được xác nhận theo số khách và từng hạng phòng.'}</p></div><div><b>Hoàn hủy</b><p>{view.policies.length?view.policies.join(' · '):'Áp dụng theo gói giá và thời điểm đặt.'}</p></div></div></section><section id="reviews" className="pd-block"><h2>Đánh giá</h2><div className="pd-review-summary"><b>{view.rating}/10</b><div><strong>Rất tốt</strong><p>Điểm đánh giá được cập nhật từ dữ liệu sản phẩm.</p></div></div></section></main><aside id="booking"><BookingInquiry product={view.name} kind={isVilla?'villa / resort':'khách sạn'}/></aside></section></div>;
+}
