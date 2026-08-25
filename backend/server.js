@@ -7,11 +7,17 @@ import crypto from 'node:crypto';
 const app = express();
 const port = Number(process.env.PORT || 3001);
 const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '').split(',').map(v=>v.trim()).filter(Boolean);
+const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 
 app.use(cors({origin(origin, callback){if(!origin||allowedOrigins.length===0||allowedOrigins.includes(origin))return callback(null,true);return callback(new Error('Origin not allowed'));}}));
 app.use(express.json({limit:'2mb'}));
 
-const pool = mysql.createPool({uri:process.env.DATABASE_URL,connectionLimit:10,charset:'utf8mb4'});
+if(!databaseUrl){
+  console.error('DATABASE_URL is not configured. Set it to a MySQL connection URL, for example mysql://USER:PASSWORD@HOST:3306/thuy_nguyen_travel');
+  process.exit(1);
+}
+
+const pool = mysql.createPool(databaseUrl);
 const statuses = new Set(['new','contacting','confirmed','completed','cancelled']);
 const customerStatuses = new Set(['lead','contacting','customer','inactive']);
 const productStatuses = new Set(['draft','published','hidden']);
