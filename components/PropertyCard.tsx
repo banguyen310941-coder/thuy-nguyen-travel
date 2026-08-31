@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import type { Stay } from '@/data/catalog';
+import {SafeBackground,travelFallback} from '@/components/SafeImage';
 
 export function PropertyCard({ stay }: { stay: Stay }) {
   const price = stay.type === 'Villa' ? '3.900.000đ/đêm' : stay.name.includes('Vinpearl') ? '2.500.000đ/đêm' : '2.200.000đ/đêm';
   return (
     <article className="property-card mock-product-card">
-      <Link href={`/stay/${stay.slug}`} className="property-image mock-product-image" style={{ backgroundImage: `url(${stay.image})` }} aria-label={stay.name}>
-        <span className="mock-badge">{stay.type}</span>
-        <span className="mock-heart">♡</span>
+      <Link href={`/stay/${stay.slug}`} aria-label={stay.name}>
+        <SafeBackground src={stay.image} fallback={travelFallback(stay.type)} className="property-image mock-product-image" ariaLabel={stay.name}>
+          <span className="mock-badge">{stay.type}</span>
+          <span className="mock-heart">♡</span>
+        </SafeBackground>
       </Link>
       <div className="property-body mock-product-body">
         <Link href={`/stay/${stay.slug}`}><h3>{stay.name}</h3></Link>
