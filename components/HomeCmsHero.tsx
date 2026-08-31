@@ -14,9 +14,9 @@ export type HomeCmsData={
 };
 
 export const defaultHomeCms:HomeCmsData={
-  eyebrow:'THÚY NGUYÊN TRAVEL',
+  eyebrow:'HAPPYGO TRAVEL',
   title:'Du lịch trọn gói – Nghỉ dưỡng đẳng cấp',
-  subtitle:'Vé · Tour · Villa · Resort · Du thuyền – Khám phá thế giới cùng chúng tôi!',
+  subtitle:'Vé · Tour · Villa · Resort · Du thuyền – Hành trình hạnh phúc, kết nối yêu thương.',
   noteTitle:'Hành trình của bạn',
   noteText:'Bắt đầu từ một giấc mơ...',
   heroImage:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1900&q=88',
@@ -25,21 +25,28 @@ export const defaultHomeCms:HomeCmsData={
   productsEnabled:true,productsTitle:'Sản phẩm nổi bật',
   cruisesEnabled:true,cruisesTitle:'Du thuyền nổi bật',cruisesSubtitle:'Hạ Long & Lan Hạ',
   toursEnabled:true,toursTitle:'Tour du lịch hot',
-  ctaEnabled:true,ctaEyebrow:'THÚY NGUYÊN TRAVEL',ctaTitle:'Khám phá thế giới, trải nghiệm khác biệt!',ctaText:'Gọi ngay để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'
+  ctaEnabled:true,ctaEyebrow:'HAPPYGO TRAVEL',ctaTitle:'Hành trình hạnh phúc, kết nối yêu thương',ctaText:'Liên hệ HappyGo Travel để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'
 };
 
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
+
+function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
+ const next={...defaultHomeCms,...(value||{})};
+ if(/th[uú]y\s*nguy[eê]n/i.test(next.eyebrow||''))next.eyebrow='HAPPYGO TRAVEL';
+ if(/th[uú]y\s*nguy[eê]n/i.test(next.ctaEyebrow||''))next.ctaEyebrow='HAPPYGO TRAVEL';
+ return next;
+}
 
 export function useHomeCms(){
   const [data,setData]=useState<HomeCmsData>(defaultHomeCms);
   useEffect(()=>{
     let alive=true;
-    const loadLocal=()=>{try{const local=localStorage.getItem('tn_cms_homepage');if(alive)setData(local?{...defaultHomeCms,...JSON.parse(local)}:defaultHomeCms)}catch{if(alive)setData(defaultHomeCms)}};
+    const loadLocal=()=>{try{const local=localStorage.getItem('tn_cms_homepage');const next=migrateHome(local?JSON.parse(local):null);if(alive)setData(next);if(local){const before=JSON.stringify(JSON.parse(local));const after=JSON.stringify(next);if(before!==after)localStorage.setItem('tn_cms_homepage',after)}}catch{if(alive)setData(defaultHomeCms)}};
     loadLocal();
     const refresh=()=>loadLocal();
     window.addEventListener('tn-homepage-updated',refresh);
     window.addEventListener('storage',refresh);
-    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData({...defaultHomeCms,...v.value})}).catch(()=>{});}
+    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData(migrateHome(v.value))}).catch(()=>{});}
     return()=>{alive=false;window.removeEventListener('tn-homepage-updated',refresh);window.removeEventListener('storage',refresh)};
   },[]);
   return data;
