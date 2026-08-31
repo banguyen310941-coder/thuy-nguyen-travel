@@ -1,10 +1,4 @@
-import type {Metadata} from 'next';
-import {notFound} from 'next/navigation';
-import {tours} from '@/data/catalog';
-import {TourDetailClient} from '@/components/TourDetailClient';
-
-const SITE='https://banguyen310941-coder.github.io/thuy-nguyen-travel';
-export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
-export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const tour=tours.find(t=>t.slug===slug);if(!tour)return {title:'Tour du lịch'};const url=`${SITE}/tours/${tour.slug}`;return {title:tour.seoTitle||`${tour.name} - ${tour.duration}`,description:tour.seoDescription||tour.summary,alternates:{canonical:url},openGraph:{title:tour.name,description:tour.summary,url,images:[tour.image],type:'website'}}}
-
-export default async function TourDetailPage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const tour=tours.find(t=>t.slug===slug);if(!tour)notFound();return <TourDetailClient base={tour}/>}
+import type {Metadata} from 'next';import {notFound} from 'next/navigation';import {tours} from '@/data/catalog';import {TourDetailClient} from '@/components/TourDetailClient';
+const SITE='https://happygo.vn';export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const t=tours.find(x=>x.slug===slug);if(!t)return{title:'Tour du lịch'};const url=`${SITE}/tours/${t.slug}`;return{title:t.seoTitle||`${t.name} - ${t.duration}`,description:t.seoDescription||t.summary,alternates:{canonical:url},openGraph:{title:t.name,description:t.summary,url,images:[{url:t.image,alt:t.name}],type:'website'},twitter:{card:'summary_large_image',title:t.name,description:t.summary,images:[t.image]}}}
+export default async function TourDetailPage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const t=tours.find(x=>x.slug===slug);if(!t)notFound();const url=`${SITE}/tours/${t.slug}`;const schema=[{"@context":"https://schema.org","@type":"TouristTrip","name":t.name,"description":t.summary,"image":t.image,"url":url,"touristType":"Du khách Việt Nam","provider":{"@type":"TravelAgency","name":"HappyGo Travel","url":SITE}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Trang chủ","item":SITE},{"@type":"ListItem","position":2,"name":"Tour","item":`${SITE}/tours`},{"@type":"ListItem","position":3,"name":t.name,"item":url}]}];return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><TourDetailClient base={t}/></>}
