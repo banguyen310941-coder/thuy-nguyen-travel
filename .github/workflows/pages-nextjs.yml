@@ -1,88 +1,61 @@
-name: Publish Thuy Nguyen Travel Next.js
+name: Publish HappyGo Travel Next.js
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
-  group: thuy-nguyen-travel-pages
+  group: happygo-travel-pages
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-
       - name: Prepare CI logs
         run: mkdir -p ci-logs
-
       - name: Lint source
         shell: bash
         run: |
           set -o pipefail
           npm run lint 2>&1 | tee ci-logs/lint.log
-
       - name: Typecheck source
         shell: bash
         run: |
           set -o pipefail
           npm run typecheck 2>&1 | tee ci-logs/typecheck.log
-
       - name: Build Next.js static site
         shell: bash
         env:
           NEXT_TELEMETRY_DISABLED: 1
         run: |
           set -o pipefail
+          # Server API routes are for Vercel. GitHub Pages is a static compatibility deploy.
+          if [ -d app/api ]; then mv app/api /tmp/happygo-api; fi
           npm run build 2>&1 | tee ci-logs/build.log
-
+          if [ -d /tmp/happygo-api ]; then mv /tmp/happygo-api app/api; fi
       - name: Verify critical static routes
         shell: bash
         run: |
           set -euo pipefail
-          routes=(
-            "out/index.html"
-            "out/search/index.html"
-            "out/stay/index.html"
-            "out/tours/index.html"
-            "out/cruises/index.html"
-            "out/product/index.html"
-            "out/tour-product/index.html"
-            "out/destinations/index.html"
-            "out/guide/index.html"
-            "out/guide/read/index.html"
-            "out/admin/index.html"
-            "out/checkout/index.html"
-            "out/404.html"
-          )
-          for file in "${routes[@]}"; do
-            test -f "$file" || { echo "Missing exported route: $file" | tee -a ci-logs/routes.log; exit 1; }
-            echo "OK: $file" | tee -a ci-logs/routes.log
-          done
-          test -f out/sitemap.xml || { echo "Missing sitemap.xml" | tee -a ci-logs/routes.log; exit 1; }
-          test -f out/robots.txt || { echo "Missing robots.txt" | tee -a ci-logs/routes.log; exit 1; }
+          routes=("out/index.html" "out/search/index.html" "out/stay/index.html" "out/tours/index.html" "out/cruises/index.html" "out/product/index.html" "out/tour-product/index.html" "out/destinations/index.html" "out/guide/index.html" "out/guide/read/index.html" "out/admin/index.html" "out/checkout/index.html" "out/404.html")
+          for file in "${routes[@]}"; do test -f "$file" || { echo "Missing exported route: $file" | tee -a ci-logs/routes.log; exit 1; }; done
+          test -f out/sitemap.xml
+          test -f out/robots.txt
           echo "Critical static export verified" | tee -a ci-logs/routes.log
-
       - name: Upload CI diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,12 +64,10 @@ jobs:
           path: ci-logs
           if-no-files-found: ignore
           retention-days: 7
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
-
   deploy:
     environment:
       name: github-pages
