@@ -3,14 +3,16 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 
 type Department='all'|'marketing'|'resa'|'product'|'sales'|'accounting';
+type StaffDepartment=Exclude<Department,'all'>;
 type Msg={id:string;staffId:string;name:string;department:Department;text:string;createdAt:string};
-type Staff={id:string;name:string;email:string;status:string;role:string;department?:Exclude<Department,'all'>};
+type Staff={id:string;name:string;email:string;status:string;role:string;department?:StaffDepartment};
 const CHAT='happygo_admin_team_chat_v2';const STAFF='tn_admin_staff_v1';const ME='happygo_admin_current_staff_v1';const ROOM='happygo_admin_chat_room_v1';
 const labels:Record<Department,string>={all:'Toàn công ty',marketing:'Marketing',resa:'Resa / Đặt phòng',product:'Sản phẩm',sales:'Kinh doanh',accounting:'Kế toán'};
 const departments=Object.keys(labels) as Department[];
 function safeJson<T>(key:string,fallback:T):T{try{const raw=localStorage.getItem(key);if(!raw)return fallback;return JSON.parse(raw) as T}catch{return fallback}}
 function validDepartment(v:unknown):v is Department{return typeof v==='string'&&departments.includes(v as Department)}
-function normalizeDepartment(s:Partial<Staff>):Exclude<Department,'all'>{if(s.department&&validDepartment(s.department)&&s.department!=='all')return s.department;if(s.role==='content')return'marketing';if(s.role==='operations')return'resa';if(s.role==='accounting')return'accounting';return'sales'}
+function validStaffDepartment(v:unknown):v is StaffDepartment{return v==='marketing'||v==='resa'||v==='product'||v==='sales'||v==='accounting'}
+function normalizeDepartment(s:Partial<Staff>):StaffDepartment{if(validStaffDepartment(s.department))return s.department;if(s.role==='content')return'marketing';if(s.role==='operations')return'resa';if(s.role==='accounting')return'accounting';return'sales'}
 function normalizeStaff(raw:unknown):Staff|null{if(!raw||typeof raw!=='object')return null;const s=raw as Partial<Staff>;const id=String(s.id||'').trim(),name=String(s.name||'').trim();if(!id||!name)return null;return{id,name,email:String(s.email||''),status:String(s.status||'active'),role:String(s.role||'sales'),department:normalizeDepartment(s)}}
 function normalizeMessage(raw:unknown):Msg|null{if(!raw||typeof raw!=='object')return null;const m=raw as Partial<Msg>;const id=String(m.id||'').trim(),staffId=String(m.staffId||'').trim(),name=String(m.name||'').trim(),text=String(m.text||'').trim();if(!id||!staffId||!name||!text)return null;return{id,staffId,name,department:validDepartment(m.department)?m.department:'all',text,createdAt:String(m.createdAt||new Date().toISOString())}}
 
