@@ -1,0 +1,1 @@
+import {HappyGoInfoPage} from '@/components/HappyGoInfoPage';export const metadata={title:'Chính sách bảo mật'};export default function Page(){return <HappyGoInfoPage kind="privacy"/>}
