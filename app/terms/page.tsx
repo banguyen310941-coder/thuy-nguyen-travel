@@ -1,0 +1,1 @@
+import {HappyGoInfoPage} from '@/components/HappyGoInfoPage';export const metadata={title:'Điều khoản sử dụng'};export default function Page(){return <HappyGoInfoPage kind="terms"/>}
