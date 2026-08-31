@@ -4,7 +4,7 @@ import './home.css';
 
 export const metadata = {
   title: 'Du lịch trọn gói - Nghỉ dưỡng đẳng cấp',
-  description: 'Thúy Nguyên Travel - Tour, Villa, Resort, Khách sạn và Du thuyền toàn quốc. Tư vấn hành trình, lưu trú và dịch vụ du lịch theo nhu cầu.'
+  description: 'HappyGo Travel - Tour, Villa, Resort, Khách sạn và Du thuyền toàn quốc. Hành trình hạnh phúc, kết nối yêu thương.'
 };
 
 export default function HomePage() {
