@@ -1,5 +1,6 @@
 import { HomeCmsHero } from '@/components/HomeCmsHero';
 import { HomeCmsSections } from '@/components/HomeCmsSections';
+import { ApprovedPartnerProducts } from '@/components/ApprovedPartnerProducts';
 import './home.css';
 
 export const metadata = {
@@ -8,5 +9,5 @@ export const metadata = {
 };
 
 export default function HomePage() {
-  return <><HomeCmsHero/><HomeCmsSections/></>;
+  return <><HomeCmsHero/><HomeCmsSections/><ApprovedPartnerProducts/></>;
 }
