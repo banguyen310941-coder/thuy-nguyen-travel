@@ -1,9 +1,4 @@
-import type {Metadata} from 'next';
-import {notFound} from 'next/navigation';
-import {cruises} from '@/data/catalog';
-import {CruiseDetailClient} from '@/components/CruiseDetailClient';
-
-const SITE='https://banguyen310941-coder.github.io/thuy-nguyen-travel';
-export function generateStaticParams(){return cruises.map(cruise=>({slug:cruise.slug}))}
-export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const cruise=cruises.find(item=>item.slug===slug);if(!cruise)return {title:'Du thuyền'};const url=`${SITE}/cruises/${cruise.slug}`;return {title:`${cruise.name} - ${cruise.bay}`,description:cruise.summary,alternates:{canonical:url},openGraph:{title:cruise.name,description:cruise.summary,url,images:[cruise.image],type:'website'}}}
-export default async function CruiseDetailPage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const cruise=cruises.find(item=>item.slug===slug);if(!cruise)notFound();return <CruiseDetailClient base={cruise}/>}
+import type {Metadata} from 'next';import {notFound} from 'next/navigation';import {cruises} from '@/data/catalog';import {CruiseDetailClient} from '@/components/CruiseDetailClient';
+const SITE='https://happygo.vn';export function generateStaticParams(){return cruises.map(c=>({slug:c.slug}))}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const c=cruises.find(x=>x.slug===slug);if(!c)return{title:'Du thuyền'};const url=`${SITE}/cruises/${c.slug}`;return{title:`${c.name} - ${c.bay}`,description:c.summary,alternates:{canonical:url},openGraph:{title:c.name,description:c.summary,url,images:[{url:c.image,alt:c.name}],type:'website'},twitter:{card:'summary_large_image',title:c.name,description:c.summary,images:[c.image]}}}
+export default async function CruiseDetailPage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const c=cruises.find(x=>x.slug===slug);if(!c)notFound();const url=`${SITE}/cruises/${c.slug}`;const schema=[{"@context":"https://schema.org","@type":"TouristTrip","name":c.name,"description":c.summary,"image":c.image,"url":url,"provider":{"@type":"TravelAgency","name":"HappyGo Travel","url":SITE}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Trang chủ","item":SITE},{"@type":"ListItem","position":2,"name":"Du thuyền","item":`${SITE}/cruises`},{"@type":"ListItem","position":3,"name":c.name,"item":url}]}];return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><CruiseDetailClient base={c}/></>}
