@@ -16,6 +16,7 @@ import './cms-fixes.css';
 import './cms-home-fixes.css';
 import './guide-portal.css';
 import './happygo-brand.css';
+import './happygo-footer.css';
 import { SiteChrome } from '@/components/SiteChrome';
 
 export const viewport: Viewport = { width:'device-width', initialScale:1, maximumScale:5, viewportFit:'cover' };
@@ -26,4 +27,4 @@ export const metadata: Metadata = {
   openGraph:{title:'Thúy Nguyên Travel',description:'Tour, villa, khách sạn và du thuyền toàn quốc.',type:'website'},
   other:{'x-ui-version':'stabilization-v7-guide-20260823'}
 };
-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="vi"><body data-ui-version="stabilization-v7-guide-20260823"><SiteChrome>{children}</SiteChrome></body></html>}
+export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="vi"><body id="top" data-ui-version="stabilization-v7-guide-20260823"><SiteChrome>{children}</SiteChrome></body></html>}
