@@ -17,7 +17,7 @@ export function Footer() {
     <footer className="happygo-footer">
       <div className="container happygo-footer-grid">
         <section className="happygo-footer-brand">
-          <Link href="/" className="footer-happygo-logo" aria-label="HappyGo Travel"><HappyGoLogo compact/></Link>
+          <Link href="/" className="footer-happygo-logo happygo-link" aria-label="HappyGo Travel"><HappyGoLogo/></Link>
           <p><strong>HappyGo Travel</strong> – Hành trình hạnh phúc<br/>Kết nối yêu thương. Chúng tôi mang đến cho bạn những hành trình ý nghĩa, dịch vụ chất lượng và trải nghiệm đáng nhớ.</p>
           <div className="happygo-socials" aria-label="Mạng xã hội">
             <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook">f</a>
@@ -29,7 +29,7 @@ export function Footer() {
 
         <section className="happygo-footer-col">
           <h4>LIÊN HỆ</h4>
-          <a href={`tel:${phoneDigits}`}><span>⌕</span>{formatPhone(settings.hotline)}</a>
+          <a href={`tel:${phoneDigits}`}><span>☎</span>{formatPhone(settings.hotline)}</a>
           <a href="mailto:info@happygo.vn"><span>✉</span>info@happygo.vn</a>
           <p><span>⌖</span>Tầng 5, 123 Nguyễn Văn Cừ,<br/>Q. Long Biên, Hà Nội</p>
           <p><span>◷</span>Thứ 2 - Chủ nhật: 08:00 - 21:00</p>
