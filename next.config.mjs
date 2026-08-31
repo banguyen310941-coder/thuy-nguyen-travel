@@ -2,12 +2,16 @@
 const isGithubPages = process.env.GITHUB_ACTIONS === 'true';
 
 const nextConfig = {
-  output: 'export',
-  images: { unoptimized: true },
-  trailingSlash: true,
+  // GitHub Pages still needs a static export. Vercel keeps the normal
+  // Next.js server runtime so API routes, authentication and database
+  // access can be added without changing the public application again.
+  ...(isGithubPages ? { output: 'export' } : {}),
+  images: { unoptimized: isGithubPages },
+  trailingSlash: isGithubPages,
   basePath: isGithubPages ? '/thuy-nguyen-travel' : '',
-  // Do not add a trailing slash here. Next already appends /_next/ to assetPrefix.
   assetPrefix: isGithubPages ? '/thuy-nguyen-travel' : '',
+  poweredByHeader: false,
+  reactStrictMode: true,
 };
 
 export default nextConfig;
