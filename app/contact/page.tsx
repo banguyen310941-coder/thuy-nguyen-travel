@@ -1,0 +1,1 @@
+import {HappyGoInfoPage} from '@/components/HappyGoInfoPage';export const metadata={title:'Liên hệ HappyGo Travel'};export default function Page(){return <HappyGoInfoPage kind="contact"/>}
