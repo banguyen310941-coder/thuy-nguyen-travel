@@ -3,13 +3,20 @@
 import {useEffect,useState} from 'react';
 
 export type SiteSettings={brand:string;hotline:string;email:string;zalo:string};
-export const defaultSiteSettings:SiteSettings={brand:'Thúy Nguyên Travel',hotline:'0969973949',email:'info@thuynguyentravel.com',zalo:'0969973949'};
+export const defaultSiteSettings:SiteSettings={brand:'HappyGo Travel',hotline:'0969973949',email:'info@happygo.vn',zalo:'0969973949'};
 const key='tn_cms_site_settings_v1';
+
+function migrateBrand(value:Partial<SiteSettings>|null|undefined):SiteSettings{
+ const current={...defaultSiteSettings,...(value||{})};
+ if(!current.brand||/th[uú]y\s*nguy[eê]n/i.test(current.brand))current.brand='HappyGo Travel';
+ if(!current.email||/thuynguyen/i.test(current.email))current.email='info@happygo.vn';
+ return current;
+}
 
 export function useSiteSettings(){
  const [settings,setSettings]=useState<SiteSettings>(defaultSiteSettings);
  useEffect(()=>{
-  const load=()=>{try{const raw=localStorage.getItem(key);setSettings(raw?{...defaultSiteSettings,...JSON.parse(raw)}:defaultSiteSettings)}catch{setSettings(defaultSiteSettings)}};
+  const load=()=>{try{const raw=localStorage.getItem(key);const next=migrateBrand(raw?JSON.parse(raw):null);setSettings(next);if(raw){const before=JSON.stringify(JSON.parse(raw));const after=JSON.stringify(next);if(before!==after){localStorage.setItem(key,after);window.dispatchEvent(new Event('tn-site-settings-updated'))}}}catch{setSettings(defaultSiteSettings)}};
   load();
   window.addEventListener('tn-site-settings-updated',load);
   window.addEventListener('storage',load);
