@@ -7,12 +7,13 @@ import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 import {BookingCartBadge} from '@/components/BookingCart';
 import {DemoTourSchedules} from '@/components/DemoTourSchedules';
 import {PartnerDemoSeeder} from '@/components/PartnerDemoSeeder';
+import {PartnerApiHelpLauncher} from '@/components/PartnerApiHelpLauncher';
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const settings=useSiteSettings();
   if (pathname.startsWith('/admin')) return <><DemoTourSchedules/>{children}</>;
-  if (pathname.startsWith('/partner')) return <><PartnerDemoSeeder/><DemoTourSchedules/>{children}</>;
+  if (pathname.startsWith('/partner')) return <><PartnerDemoSeeder/><PartnerApiHelpLauncher/><DemoTourSchedules/>{children}</>;
   const phoneDigits=settings.hotline.replace(/\D/g,'');
   const zalo=settings.zalo.replace(/\D/g,'')||phoneDigits;
   const phoneLabel=formatPhone(settings.hotline);
