@@ -7,6 +7,8 @@ const PROFILE='happygo_partner_profile_v1';
 const PRODUCTS='happygo_partner_products_v1';
 const PRICING='happygo_partner_pricing_v1';
 const DEMO_ID='pt_happygo_demo';
+const DEMO_EMAIL='demo@happygo.vn';
+const DEMO_PASSWORD='HappyGo123';
 
 function read(key:string){try{const raw=localStorage.getItem(key);const value=raw?JSON.parse(raw):[];return Array.isArray(value)?value:[]}catch{return[]}}
 function write(key:string,value:unknown){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
@@ -14,11 +16,11 @@ function write(key:string,value:unknown){try{localStorage.setItem(key,JSON.strin
 export function PartnerDemoSeeder(){
  useEffect(()=>{
   const accounts=read(ACCOUNTS);
-  if(!accounts.some((x:any)=>x?.id===DEMO_ID)){
-   write(ACCOUNTS,[...accounts,{id:DEMO_ID,email:'demo@happygo.vn',password:'HappyGo123',companyName:'Sunrise Hospitality Demo',contactName:'Nguyễn Minh Partner',phone:'0909123456',createdAt:new Date().toISOString(),status:'active'}]);
-  }
+  const demo={id:DEMO_ID,email:DEMO_EMAIL,password:DEMO_PASSWORD,companyName:'Sunrise Hospitality Demo',contactName:'Nguyễn Minh Partner',phone:'0909123456',createdAt:new Date().toISOString(),status:'active'};
+  const cleaned=accounts.filter((x:any)=>x?.id!==DEMO_ID&&String(x?.email||'').trim().toLowerCase()!==DEMO_EMAIL);
+  write(ACCOUNTS,[demo,...cleaned]);
   const profileKey=`${PROFILE}_${DEMO_ID}`;
-  try{if(!localStorage.getItem(profileKey))write(profileKey,{id:DEMO_ID,name:'Sunrise Hospitality Demo',contact:'Nguyễn Minh Partner',phone:'0909123456',email:'demo@happygo.vn',website:'https://example.com',taxCode:'0312345678',address:'12 Trần Phú, Nha Trang, Khánh Hòa'})}catch{}
+  try{if(!localStorage.getItem(profileKey))write(profileKey,{id:DEMO_ID,name:'Sunrise Hospitality Demo',contact:'Nguyễn Minh Partner',phone:'0909123456',email:DEMO_EMAIL,website:'https://example.com',taxCode:'0312345678',address:'12 Trần Phú, Nha Trang, Khánh Hòa'})}catch{}
   const products=read(PRODUCTS);
   const demoProducts=[
    {id:'partner_demo_resort',partnerId:DEMO_ID,partnerName:'Sunrise Hospitality Demo',type:'Khách sạn',name:'HappyGo Demo Beach Resort Nha Trang',slug:'happygo-demo-beach-resort-nha-trang',place:'Nha Trang, Khánh Hòa',address:'12 Trần Phú, Nha Trang',price:'2.900.000đ/đêm',summary:'Khách sạn demo dùng để trải nghiệm đầy đủ giao diện Partner Hub HappyGo.',cover:'',gallery:'',amenities:'Hồ bơi, buffet sáng, wifi, phòng gym, bãi biển',policies:'Hủy miễn phí trước 7 ngày. Phụ thu theo chính sách từng giai đoạn.',checkin:'14:00',checkout:'12:00',unitsText:'Deluxe Ocean View | 2 khách | King/Twin\nFamily Suite | 4 khách | 2 phòng ngủ',status:'approved',source:'manual',updatedAt:new Date().toISOString()},
