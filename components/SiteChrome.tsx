@@ -6,11 +6,13 @@ import { Footer } from '@/components/Footer';
 import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 import {BookingCartBadge} from '@/components/BookingCart';
 import {DemoTourSchedules} from '@/components/DemoTourSchedules';
+import {PartnerDemoSeeder} from '@/components/PartnerDemoSeeder';
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const settings=useSiteSettings();
-  if (pathname.startsWith('/admin')||pathname.startsWith('/partner')) return <><DemoTourSchedules/>{children}</>;
+  if (pathname.startsWith('/admin')) return <><DemoTourSchedules/>{children}</>;
+  if (pathname.startsWith('/partner')) return <><PartnerDemoSeeder/><DemoTourSchedules/>{children}</>;
   const phoneDigits=settings.hotline.replace(/\D/g,'');
   const zalo=settings.zalo.replace(/\D/g,'')||phoneDigits;
   const phoneLabel=formatPhone(settings.hotline);
