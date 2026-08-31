@@ -15,6 +15,7 @@ import './cms-public.css';
 import './cms-fixes.css';
 import './cms-home-fixes.css';
 import './guide-portal.css';
+import './happygo-brand.css';
 import { SiteChrome } from '@/components/SiteChrome';
 
 export const viewport: Viewport = { width:'device-width', initialScale:1, maximumScale:5, viewportFit:'cover' };
