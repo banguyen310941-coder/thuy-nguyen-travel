@@ -1,12 +1,3 @@
-import { HomeCmsHero } from '@/components/HomeCmsHero';
-import { HomeCmsSections } from '@/components/HomeCmsSections';
-import './home.css';
-
-export const metadata = {
-  title: 'Du lịch trọn gói - Nghỉ dưỡng đẳng cấp',
-  description: 'HappyGo Travel - Tour, Villa, Resort, Khách sạn và Du thuyền toàn quốc. Hành trình hạnh phúc, kết nối yêu thương.'
-};
-
-export default function HomePage() {
-  return <><HomeCmsHero/><HomeCmsSections/></>;
-}
+import type {Metadata} from 'next';import {HomeCmsHero} from '@/components/HomeCmsHero';import {HomeCmsSections} from '@/components/HomeCmsSections';import './home.css';
+export const metadata:Metadata={title:'Du lịch Việt Nam | Tour, khách sạn, villa & du thuyền',description:'Khám phá tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Tư vấn nhanh, lựa chọn đa dạng và giá minh bạch.',alternates:{canonical:'/'},openGraph:{title:'HappyGo Travel - Du lịch Việt Nam',description:'Tour, khách sạn, villa, resort và du thuyền toàn quốc.',url:'https://happygo.vn/'}};
+export default function HomePage(){const website={"@context":"https://schema.org","@type":"WebSite","name":"HappyGo Travel","url":"https://happygo.vn","inLanguage":"vi-VN","potentialAction":{"@type":"SearchAction","target":"https://happygo.vn/search?q={search_term_string}","query-input":"required name=search_term_string"}};return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(website)}}/><HomeCmsHero/><HomeCmsSections/></>}
