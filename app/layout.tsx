@@ -18,6 +18,7 @@ import './guide-portal.css';
 import './happygo-brand.css';
 import './happygo-footer.css';
 import './partner.css';
+import './partner-enhancements.css';
 import { SiteChrome } from '@/components/SiteChrome';
 
 export const viewport: Viewport = { width:'device-width', initialScale:1, maximumScale:5, viewportFit:'cover', themeColor:'#0d47a1' };
