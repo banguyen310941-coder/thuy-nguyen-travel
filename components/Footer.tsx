@@ -1,20 +1,73 @@
 'use client';
 
 import Link from 'next/link';
+import {FormEvent,useState} from 'react';
 import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 import {HappyGoLogo} from '@/components/HappyGoLogo';
 
 export function Footer() {
   const settings=useSiteSettings();
+  const[email,setEmail]=useState('');
+  const[subscribed,setSubscribed]=useState(false);
+  const phoneDigits=settings.hotline.replace(/\D/g,'');
+  const zaloDigits=settings.zalo.replace(/\D/g,'')||phoneDigits;
+  function subscribe(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!email.trim())return;setSubscribed(true);setEmail('');}
+
   return (
-    <footer className="footer">
-      <div className="container footer-grid">
-        <div><Link href="/" className="footer-happygo-logo" aria-label="HappyGo Travel"><HappyGoLogo/></Link><p>Tour, villa, khách sạn, resort và du thuyền toàn quốc.</p><p>Hotline: <a href={`tel:${settings.hotline}`}>{formatPhone(settings.hotline)}</a></p><p>Email: <a href={`mailto:${settings.email}`}>{settings.email}</a></p></div>
-        <div><h4>Lưu trú</h4><Link href="/stay?type=villa">Villa & Resort</Link><Link href="/stay?type=hotel">Khách sạn</Link><Link href="/stay?type=resort">Resort</Link></div>
-        <div><h4>Du lịch</h4><Link href="/tours">Tour</Link><Link href="/cruises">Du thuyền</Link><Link href="/destinations">Điểm đến</Link></div>
-        <div><h4>Thông tin</h4><Link href="/guide">Cẩm nang</Link><Link href="/search">Tìm kiếm</Link><a href={`https://zalo.me/${settings.zalo}`} target="_blank" rel="noreferrer">Zalo tư vấn</a></div>
+    <footer className="happygo-footer">
+      <div className="container happygo-footer-grid">
+        <section className="happygo-footer-brand">
+          <Link href="/" className="footer-happygo-logo" aria-label="HappyGo Travel"><HappyGoLogo compact/></Link>
+          <p><strong>HappyGo Travel</strong> – Hành trình hạnh phúc<br/>Kết nối yêu thương. Chúng tôi mang đến cho bạn những hành trình ý nghĩa, dịch vụ chất lượng và trải nghiệm đáng nhớ.</p>
+          <div className="happygo-socials" aria-label="Mạng xã hội">
+            <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook">f</a>
+            <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube">▶</a>
+            <a href="https://tiktok.com" target="_blank" rel="noreferrer" aria-label="TikTok">♪</a>
+            <a href={`https://zalo.me/${zaloDigits}`} target="_blank" rel="noreferrer" aria-label="Zalo">Zalo</a>
+          </div>
+        </section>
+
+        <section className="happygo-footer-col">
+          <h4>LIÊN HỆ</h4>
+          <a href={`tel:${phoneDigits}`}><span>⌕</span>{formatPhone(settings.hotline)}</a>
+          <a href="mailto:info@happygo.vn"><span>✉</span>info@happygo.vn</a>
+          <p><span>⌖</span>Tầng 5, 123 Nguyễn Văn Cừ,<br/>Q. Long Biên, Hà Nội</p>
+          <p><span>◷</span>Thứ 2 - Chủ nhật: 08:00 - 21:00</p>
+        </section>
+
+        <section className="happygo-footer-col">
+          <h4>VỀ HAPPYGO</h4>
+          <Link href="/guide">Giới thiệu</Link>
+          <Link href="/guide">Điều khoản sử dụng</Link>
+          <Link href="/guide">Chính sách bảo mật</Link>
+          <Link href="/guide">Hướng dẫn thanh toán</Link>
+          <Link href="/search">Liên hệ</Link>
+        </section>
+
+        <section className="happygo-footer-col">
+          <h4>DỊCH VỤ</h4>
+          <Link href="/tours">Tour du lịch</Link>
+          <Link href="/stay?type=villa">Villa &amp; Resort</Link>
+          <Link href="/stay?type=hotel">Khách sạn</Link>
+          <Link href="/cruises">Du thuyền</Link>
+          <Link href="/search">Vé máy bay</Link>
+        </section>
+
+        <section className="happygo-footer-newsletter">
+          <h4>ĐĂNG KÝ NHẬN ƯU ĐÃI</h4>
+          <p>Nhận thông tin khuyến mãi và ưu đãi mới nhất từ HappyGo Travel</p>
+          <form onSubmit={subscribe}>
+            <input type="email" value={email} onChange={e=>{setEmail(e.target.value);setSubscribed(false)}} placeholder="Nhập email của bạn" aria-label="Email nhận ưu đãi" required/>
+            <button type="submit">Đăng ký</button>
+          </form>
+          {subscribed&&<small>✓ Đã ghi nhận email của bạn.</small>}
+        </section>
       </div>
-      <div className="container copyright">© 2026 HappyGo Travel.</div>
+
+      <div className="happygo-footer-bottom">
+        <div className="container"><span>© 2026 HappyGo Travel. All rights reserved.</span><span>Thiết kế bởi <b>HappyGo</b> Travel Team</span></div>
+      </div>
+      <a className="happygo-backtop" href="#top" aria-label="Lên đầu trang">↑</a>
     </footer>
   );
 }
