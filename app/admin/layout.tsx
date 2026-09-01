@@ -17,6 +17,7 @@ import './media-picker.css';
 import './rate-calendar.css';
 import './connectivity.css';
 import './admin-refresh.css';
+import './admin-detail-pro.css';
 
 export const metadata:Metadata={title:'Quản trị HappyGo Travel',robots:{index:false,follow:false,nocache:true}};
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/>{children}</>}
