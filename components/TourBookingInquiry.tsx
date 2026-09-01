@@ -3,17 +3,16 @@
 import {useMemo,useState} from 'react';
 import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 import {addCartItem} from '@/components/BookingCart';
+import {fallbackUnitPrice,parsePricingDate} from '@/lib/pricing-calendar';
 
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const LOCAL_KEY='tn_local_bookings_v1',PRODUCTS_KEY='tn_cms_products_v3_units';
 const normalizePhone=(raw:string)=>{const digits=raw.replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits};
 const normalizeDate=(raw:string)=>{const value=raw.trim();const iso=value.match(/^(\d{4})-(\d{2})-(\d{2})/);if(iso)return `${iso[1]}-${iso[2]}-${iso[3]}`;const vi=value.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);if(vi)return `${vi[3]}-${vi[2].padStart(2,'0')}-${vi[1].padStart(2,'0')}`;return ''};
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-const money=(v?:string)=>{const n=String(v||'').replace(/\D/g,'');return n?Number(n):undefined};
-const holidays=new Set(['01-01','04-30','05-01','09-02']);
 type TourUnit={id:string;code?:string;name?:string;weekdayPrice?:string;weekendPrice?:string;holidayPrice?:string;pricingBasis?:'guest'|'package'|'room_night'|'unit_night'|'cabin_night';guestType?:'adult'|'child'|'all'};type TourProduct={id?:string;slug?:string;name?:string;type?:string;units?:TourUnit[]};
 function tourUnits(product:string){try{const all=JSON.parse(localStorage.getItem(PRODUCTS_KEY)||'[]') as TourProduct[];const p=(Array.isArray(all)?all:[]).find(x=>x.name===product&&x.type==='Tour')||(Array.isArray(all)?all:[]).find(x=>x.name===product);const units=p?.units||[];const adult=units.find(u=>u.pricingBasis==='guest'&&u.guestType==='adult')||units.find(u=>/người lớn|nguoi lon|adult/i.test(`${u.name||''} ${u.code||''}`));const child=units.find(u=>u.pricingBasis==='guest'&&u.guestType==='child')||units.find(u=>/trẻ em|tre em|child/i.test(`${u.name||''} ${u.code||''}`));return{product:p,adult,child}}catch{return{product:undefined,adult:undefined,child:undefined}}}
-function unitPrice(u:TourUnit|undefined,date:string){if(!u)return undefined;const d=new Date(`${date}T12:00:00`),md=`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,base=money(u.weekdayPrice),weekend=money(u.weekendPrice)||base,holiday=money(u.holidayPrice)||weekend||base;if(holidays.has(md))return holiday;if(d.getDay()===5||d.getDay()===6)return weekend;return base}
+function unitPrice(u:TourUnit|undefined,date:string){return u?fallbackUnitPrice(u,parsePricingDate(date))||undefined:undefined}
 function saveLocal(payload:any){try{const list=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]');const now=new Date();const code=`TN${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(Date.now()).slice(-5)}`;localStorage.setItem(LOCAL_KEY,JSON.stringify([{id:Date.now(),code,kind:'tour',product:payload.product,customer_name:payload.customerName,phone:payload.phone,email:payload.email||'',start_date:payload.startDate,end_date:null,adults:payload.adults,children:payload.children,rooms:1,note:payload.note||'',status:'new',admin_note:'',created_at:now.toISOString(),source:'website-local'},...list].slice(0,500)));window.dispatchEvent(new Event('tn-bookings-updated'));return code}catch{return ''}}
 
 export function TourBookingInquiry({product,departureDates}:{product:string;departureDates:string[]}){
