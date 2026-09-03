@@ -1,14 +1,14 @@
-# Thúy Nguyên Travel - Booking Backend
+# HappyGo Travel - Booking Backend
 
-Backend này được tách độc lập để sau này chuyển website từ GitHub Pages sang hosting/VPS mà không phải viết lại form đặt dịch vụ.
+Backend này được tách độc lập để sau này chuyển website từ GitHub Pages sang Vercel/hosting/VPS mà không phải viết lại form đặt dịch vụ.
 
 ## Yêu cầu
 - Node.js 20+
 - MySQL 8+ hoặc MariaDB tương thích
-- Domain/subdomain API, ví dụ `https://api.thuynguyentravel.vn`
+- Domain/subdomain API, ví dụ `https://api.happygo.vn`
 
 ## Cài đặt
-1. Tạo database `thuy_nguyen_travel`.
+1. Tạo database `happygo_travel`.
 2. Chạy file `schema.sql`.
 3. Sao chép `.env.example` thành `.env` và điền `DATABASE_URL`, `ADMIN_API_KEY`, `ALLOWED_ORIGINS`.
 4. Chạy `npm install` trong thư mục `backend`.
@@ -18,7 +18,7 @@ Backend này được tách độc lập để sau này chuyển website từ Gi
 - `GET /api/health`: kiểm tra backend/database.
 - `POST /api/bookings`: khách tạo đơn, không cần khóa quản trị.
 - `GET /api/bookings`: Admin xem đơn, cần header `x-admin-key`.
-- `PATCH /api/bookings/:id`: Admin đổi trạng thái/ghi chú, cần `x-admin-key`.
+- `PATCH /api/bookings/:id`: Admin đổi trạng thái/ghi chú, cần header `x-admin-key`.
 
 ## Nối frontend
 Ở build frontend, đặt:
