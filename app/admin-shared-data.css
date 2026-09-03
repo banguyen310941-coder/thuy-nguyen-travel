@@ -1,0 +1,20 @@
+.admin-shared-data{position:relative}
+.admin-shared-data>summary{list-style:none;display:flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid #d9e5ee;border-radius:9px;background:#fff;color:#34536b;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.admin-shared-data>summary::-webkit-details-marker{display:none}
+.admin-shared-data>summary i{width:8px;height:8px;border-radius:50%;background:#e59b19;box-shadow:0 0 0 3px #fff3d8}
+.admin-shared-data[data-state="synced"]>summary i{background:#1b9a61;box-shadow:0 0 0 3px #daf5e8}
+.admin-shared-data[data-state="syncing"]>summary i{background:#1777b8;box-shadow:0 0 0 3px #dceffc;animation:shared-pulse 1s infinite}
+.admin-shared-data[data-state="error"]>summary i{background:#cf3f44;box-shadow:0 0 0 3px #fde4e4}
+.admin-shared-data-panel{position:absolute;z-index:90;right:0;top:calc(100% + 9px);width:min(370px,calc(100vw - 30px));padding:18px;border:1px solid #d9e5ee;border-radius:14px;background:#fff;box-shadow:0 18px 45px rgba(20,52,74,.2);color:#2d4c62}
+.admin-shared-data-panel small{display:block;color:#1472ad;font-weight:900;letter-spacing:.08em}
+.admin-shared-data-panel h3{margin:5px 0 4px;font-size:17px;color:#183c55}
+.admin-shared-data-panel p{margin:0 0 4px;font-size:13px;line-height:1.5}
+.admin-shared-data-panel time{display:block;margin-bottom:12px;color:#718493;font-size:11px}
+.admin-shared-data-panel label{display:grid;gap:5px;margin-top:12px;font-size:12px;font-weight:800}
+.admin-shared-data-panel input{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbdbe6;border-radius:8px;background:#fafdff}
+.admin-shared-data-panel>div{display:flex;gap:8px;margin-top:10px}
+.admin-shared-data-panel button{min-height:38px;padding:0 12px;border:1px solid #cbdbe6;border-radius:8px;background:#fff;color:#294e67;font-weight:800;cursor:pointer}
+.admin-shared-data-panel button:disabled{opacity:.55;cursor:wait}
+.admin-shared-data-panel em{display:block;margin-top:12px;color:#6f8290;font-size:11px;line-height:1.45;font-style:normal}
+@keyframes shared-pulse{50%{opacity:.35}}
+@media(max-width:760px){.admin-shared-data>summary span{display:none}.admin-shared-data>summary{padding:0 11px}.admin-shared-data-panel{position:fixed;top:74px;right:15px;left:15px;width:auto}}

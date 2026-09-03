@@ -37,8 +37,10 @@ import './attendance-workspace.css';
 import './sales-availability.css';
 import './marketing-sales-funnel.css';
 import './today-work.css';
+import './admin-shared-data.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
+import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
 
 export const viewport:Viewport={
   width:'device-width',
@@ -87,5 +89,5 @@ export default function RootLayout({children}:Readonly<{children:React.ReactNode
     areaServed:{'@type':'Country',name:'Vietnam'},
     contactPoint:{'@type':'ContactPoint',telephone:'+84969973949',contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'},
   };
-  return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260903"><script type="application/ld+json">{JSON.stringify(organization)}</script><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
+  return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260903"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
 }
