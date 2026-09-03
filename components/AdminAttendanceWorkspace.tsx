@@ -138,6 +138,7 @@ export function AdminAttendanceWorkspace() {
   const manager = isOwner(current) || isAdminStaff(current) || isAccountingStaff(current);
   const today = localDateKey(now);
   const todaySchedule = scheduleForDate(today, config);
+  const restDay = todaySchedule.dayWeight === 0;
   const todayRecord = records.find((item) => recordKey(item.staffId, item.date) === recordKey(current.id, today));
   const companyConfigured = config.latitude !== null && config.longitude !== null;
 
@@ -175,6 +176,10 @@ export function AdminAttendanceWorkspace() {
 
   async function checkIn() {
     if (!current.id || todayRecord) return;
+    if (restDay) {
+      setMessage("Chủ nhật là ngày nghỉ cả ngày, bạn không cần check-in.");
+      return;
+    }
     setBusy(true);
     setMessage("Đang xác minh vị trí công ty...");
     try {
@@ -268,7 +273,6 @@ export function AdminAttendanceWorkspace() {
     const shifts = [
       [configDraft.weekdayStart, configDraft.weekdayEnd, "ngày thường"],
       [configDraft.saturdayStart, configDraft.saturdayEnd, "thứ Bảy"],
-      [configDraft.sundayStart, configDraft.sundayEnd, "Chủ nhật"],
     ];
     const invalidShift = shifts.find(([start, end]) => dateAtTime("2000-01-01", end) <= dateAtTime("2000-01-01", start));
     if (invalidShift) {
@@ -318,9 +322,14 @@ export function AdminAttendanceWorkspace() {
         0,
       );
       const dueDates = monthDates.filter((date) => {
-        const end = dateAtTime(date, scheduleForDate(date, config).end);
+        const schedule = scheduleForDate(date, config);
+        if (schedule.dayWeight === 0) return false;
+        const end = dateAtTime(date, schedule.end);
         return end <= now;
       });
+      const workingRecords = personRecords.filter(
+        (record) => scheduleForDate(record.date, config).dayWeight > 0,
+      );
       const absent = dueDates.filter(
         (date) => !personRecords.some((record) => record.date === date && record.checkInAt),
       ).length;
@@ -328,11 +337,11 @@ export function AdminAttendanceWorkspace() {
         person,
         records: personRecords,
         planned,
-        payable: personRecords.reduce((sum, record) => sum + payableDays(record), 0),
+        payable: workingRecords.reduce((sum, record) => sum + payableDays(record), 0),
         worked: personRecords.reduce((sum, record) => sum + workedMinutes(record), 0),
-        late: personRecords.reduce((sum, record) => sum + lateMinutes(record, config.graceMinutes), 0),
-        early: personRecords.reduce((sum, record) => sum + earlyMinutes(record), 0),
-        incomplete: personRecords.filter((record) => !record.checkOutAt).length,
+        late: workingRecords.reduce((sum, record) => sum + lateMinutes(record, config.graceMinutes), 0),
+        early: workingRecords.reduce((sum, record) => sum + earlyMinutes(record), 0),
+        incomplete: workingRecords.filter((record) => !record.checkOutAt).length,
         absent,
       };
     });
@@ -388,6 +397,10 @@ export function AdminAttendanceWorkspace() {
   function startCorrection(record?: AttendanceRecord) {
     const personId = record?.staffId || selectedReport?.person.id || current.id;
     const date = record?.date || today;
+    if (scheduleForDate(date, config).dayWeight === 0) {
+      setMessage("Chủ nhật là ngày nghỉ cả ngày nên không thể tạo hoặc sửa công hưởng lương.");
+      return;
+    }
     setCorrection({
       staffId: personId,
       date,
@@ -404,13 +417,17 @@ export function AdminAttendanceWorkspace() {
     }
     const person = people.find((item) => item.id === correction.staffId);
     if (!person) return;
+    const schedule = scheduleForDate(correction.date, config);
+    if (schedule.dayWeight === 0) {
+      setMessage("Chủ nhật là ngày nghỉ cả ngày nên không thể ghi nhận công.");
+      return;
+    }
     const checkIn = dateAtTime(correction.date, correction.checkIn);
     const checkOut = dateAtTime(correction.date, correction.checkOut);
     if (checkOut <= checkIn) {
       setMessage("Giờ check-out phải sau giờ check-in.");
       return;
     }
-    const schedule = scheduleForDate(correction.date, config);
     const existing = records.find(
       (item) => item.staffId === correction.staffId && item.date === correction.date,
     );
@@ -442,7 +459,9 @@ export function AdminAttendanceWorkspace() {
     setMessage(`Đã điều chỉnh công cho ${person.name} ngày ${formatDate(correction.date)}.`);
   }
 
-  const liveStatus = !todayRecord
+  const liveStatus = restDay
+    ? "Ngày nghỉ"
+    : !todayRecord
     ? now < dateAtTime(today, todaySchedule.start)
       ? "Chưa đến ca"
       : "Chưa check-in"
@@ -488,13 +507,15 @@ export function AdminAttendanceWorkspace() {
             </div>
             <div className="attendance-clock">{now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
             <h3>{current.name}</h3>
-            <p>{todaySchedule.label} · {todaySchedule.start}–{todaySchedule.end}</p>
+            <p>{todaySchedule.label}{restDay ? "" : ` · ${todaySchedule.start}–${todaySchedule.end}`}</p>
             <div className="attendance-punch-times">
               <span><small>CHECK-IN</small><b>{formatClock(todayRecord?.checkInAt)}</b></span>
               <i>→</i>
               <span><small>CHECK-OUT</small><b>{formatClock(todayRecord?.checkOutAt)}</b></span>
             </div>
-            {!todayRecord ? (
+            {restDay ? (
+              <div className="attendance-complete">✓ Hôm nay nghỉ cả ngày · không cần check-in</div>
+            ) : !todayRecord ? (
               <button className="admin-primary attendance-main-action" disabled={busy} onClick={checkIn}>{busy ? "Đang kiểm tra GPS..." : "Check-in tại công ty"}</button>
             ) : !todayRecord.checkOutAt ? (
               <button className="admin-primary attendance-main-action checkout" disabled={busy} onClick={checkOut}>{busy ? "Đang kiểm tra GPS..." : "Check-out trước khi về"}</button>
@@ -507,8 +528,8 @@ export function AdminAttendanceWorkspace() {
           <div className="attendance-day-details">
             <article>
               <small>CA LÀM HÔM NAY</small>
-              <b>{todaySchedule.start} – {todaySchedule.end}</b>
-              <span>{todaySchedule.dayWeight} công · nghỉ giữa ca {todaySchedule.breakMinutes} phút</span>
+              <b>{restDay ? "Nghỉ cả ngày" : `${todaySchedule.start} – ${todaySchedule.end}`}</b>
+              <span>{restDay ? "0 công · không cần check-in" : `${todaySchedule.dayWeight} công · nghỉ giữa ca ${todaySchedule.breakMinutes} phút`}</span>
             </article>
             <article>
               <small>VỊ TRÍ CHECK-IN</small>
@@ -523,7 +544,7 @@ export function AdminAttendanceWorkspace() {
             <article className="attendance-week-rule">
               <small>LỊCH MẶC ĐỊNH</small>
               <b>Thứ 2–6: 08:30–17:30</b>
-              <span>Thứ 7 làm sáng, nghỉ chiều · Chủ nhật nghỉ sáng, làm chiều.</span>
+              <span>Thứ 7 làm sáng, nghỉ chiều · Chủ nhật nghỉ cả ngày.</span>
             </article>
           </div>
         </div>
@@ -557,7 +578,7 @@ export function AdminAttendanceWorkspace() {
               <div className="attendance-detail-table-wrap">
                 <table className="attendance-detail-table">
                   <thead><tr><th>Ngày / Ca</th><th>Check-in</th><th>Check-out</th><th>GPS</th><th>Giờ làm</th><th>Công</th><th>Ghi chú</th><th></th></tr></thead>
-                  <tbody>{selectedRecords.map((record) => <tr key={record.id}><td><b>{formatDate(record.date)}</b><small>{record.shiftLabel}</small></td><td><b>{formatClock(record.checkInAt)}</b><small>{lateMinutes(record, config.graceMinutes) ? `Muộn ${lateMinutes(record, config.graceMinutes)}p` : "Đúng giờ"}</small></td><td><b>{formatClock(record.checkOutAt)}</b><small>{record.checkOutAt ? earlyMinutes(record) ? `Sớm ${earlyMinutes(record)}p` : "Đủ giờ" : "Thiếu check-out"}</small></td><td><b>{locationText(record.checkInLocation)}</b><small>{locationText(record.checkOutLocation)}</small></td><td>{formatMinutes(workedMinutes(record))}</td><td><strong>{payableDays(record).toFixed(2)}</strong></td><td>{record.adjustedBy ? <><b>Điều chỉnh bởi {record.adjustedBy}</b><small>{record.adjustmentReason}</small></> : <small>{record.note || "Tự chấm công"}</small>}</td><td>{manager && <button onClick={() => startCorrection(record)}>Sửa</button>}</td></tr>)}{!selectedRecords.length && <tr><td colSpan={8} className="attendance-empty">Chưa có dữ liệu chấm công trong tháng này.</td></tr>}</tbody>
+                  <tbody>{selectedRecords.map((record) => { const recordRestDay = scheduleForDate(record.date, config).dayWeight === 0; return <tr key={record.id}><td><b>{formatDate(record.date)}</b><small>{recordRestDay ? "Chủ nhật · bản ghi cũ" : record.shiftLabel}</small></td><td><b>{formatClock(record.checkInAt)}</b><small>{recordRestDay ? "Ngày nghỉ" : lateMinutes(record, config.graceMinutes) ? `Muộn ${lateMinutes(record, config.graceMinutes)}p` : "Đúng giờ"}</small></td><td><b>{formatClock(record.checkOutAt)}</b><small>{recordRestDay ? "Không tính công" : record.checkOutAt ? earlyMinutes(record) ? `Sớm ${earlyMinutes(record)}p` : "Đủ giờ" : "Thiếu check-out"}</small></td><td><b>{locationText(record.checkInLocation)}</b><small>{locationText(record.checkOutLocation)}</small></td><td>{formatMinutes(workedMinutes(record))}</td><td><strong>{recordRestDay ? "0.00" : payableDays(record).toFixed(2)}</strong></td><td>{record.adjustedBy ? <><b>Điều chỉnh bởi {record.adjustedBy}</b><small>{record.adjustmentReason}</small></> : <small>{record.note || "Tự chấm công"}</small>}</td><td>{manager && !recordRestDay && <button onClick={() => startCorrection(record)}>Sửa</button>}</td></tr>})}{!selectedRecords.length && <tr><td colSpan={8} className="attendance-empty">Chưa có dữ liệu chấm công trong tháng này.</td></tr>}</tbody>
                 </table>
               </div>
             </>
@@ -581,11 +602,11 @@ export function AdminAttendanceWorkspace() {
           </div>
 
           <div className="attendance-setting-section">
-            <div><small>LỊCH LÀM VIỆC</small><h3>Ca mặc định toàn công ty</h3><p>Ngày thường nghỉ trưa 60 phút; thứ Bảy nghỉ chiều và Chủ nhật nghỉ sáng.</p></div>
+            <div><small>LỊCH LÀM VIỆC</small><h3>Ca mặc định toàn công ty</h3><p>Ngày thường nghỉ trưa 60 phút; thứ Bảy nghỉ chiều và Chủ nhật nghỉ cả ngày.</p></div>
             <div className="attendance-shift-grid">
               <article><b>Thứ 2 – Thứ 6</b><div><label>Vào<input type="time" value={configDraft.weekdayStart} onChange={(event) => setConfigDraft({ ...configDraft, weekdayStart: event.target.value })} /></label><label>Ra<input type="time" value={configDraft.weekdayEnd} onChange={(event) => setConfigDraft({ ...configDraft, weekdayEnd: event.target.value })} /></label><label>Nghỉ (phút)<input type="number" value={configDraft.weekdayBreakMinutes} onChange={(event) => setConfigDraft({ ...configDraft, weekdayBreakMinutes: Number(event.target.value) })} /></label></div></article>
               <article><b>Thứ Bảy · ca sáng</b><div><label>Vào<input type="time" value={configDraft.saturdayStart} onChange={(event) => setConfigDraft({ ...configDraft, saturdayStart: event.target.value })} /></label><label>Ra<input type="time" value={configDraft.saturdayEnd} onChange={(event) => setConfigDraft({ ...configDraft, saturdayEnd: event.target.value })} /></label></div><small>Buổi chiều nghỉ.</small></article>
-              <article><b>Chủ nhật · ca chiều</b><div><label>Vào<input type="time" value={configDraft.sundayStart} onChange={(event) => setConfigDraft({ ...configDraft, sundayStart: event.target.value })} /></label><label>Ra<input type="time" value={configDraft.sundayEnd} onChange={(event) => setConfigDraft({ ...configDraft, sundayEnd: event.target.value })} /></label></div><small>Buổi sáng nghỉ.</small></article>
+              <article><b>Chủ nhật · nghỉ cả ngày</b><div><span>Không có ca làm việc</span></div><small>Không check-in, không tính ca vắng và không cộng công.</small></article>
               <article><b>Quy tắc đi muộn</b><div><label>Miễn trừ (phút)<input type="number" min="0" max="60" value={configDraft.graceMinutes} onChange={(event) => setConfigDraft({ ...configDraft, graceMinutes: Number(event.target.value) })} /></label></div><small>Sau mốc này mới cộng phút đi muộn.</small></article>
             </div>
           </div>

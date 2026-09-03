@@ -56,6 +56,7 @@ export function AdminAttendanceNotifications({
     const config = readAttendanceConfig();
     const today = localDateKey(now);
     const schedule = scheduleForDate(today, config);
+    if (schedule.dayWeight === 0) return;
     const start = dateAtTime(today, schedule.start);
     const end = dateAtTime(today, schedule.end);
     const record = readAttendanceRecords().find(

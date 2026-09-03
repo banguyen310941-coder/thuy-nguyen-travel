@@ -43,8 +43,6 @@ export type AttendanceConfig = {
   weekdayBreakMinutes: number;
   saturdayStart: string;
   saturdayEnd: string;
-  sundayStart: string;
-  sundayEnd: string;
 };
 
 export type AttendanceNotice = {
@@ -77,8 +75,6 @@ export const defaultAttendanceConfig: AttendanceConfig = {
   weekdayBreakMinutes: 60,
   saturdayStart: "08:30",
   saturdayEnd: "12:00",
-  sundayStart: "13:30",
-  sundayEnd: "17:30",
 };
 
 function parse<T>(key: string, fallback: T): T {
@@ -151,11 +147,11 @@ export function scheduleForDate(date: string, config: AttendanceConfig): Attenda
   }
   if (weekDay === 0) {
     return {
-      label: "Chủ nhật · ca chiều",
-      start: config.sundayStart,
-      end: config.sundayEnd,
+      label: "Chủ nhật · nghỉ cả ngày",
+      start: "00:00",
+      end: "00:00",
       breakMinutes: 0,
-      dayWeight: 0.5,
+      dayWeight: 0,
     };
   }
   return {

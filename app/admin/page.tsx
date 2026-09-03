@@ -11,6 +11,7 @@ import { AdminMarketingBudget } from "@/components/AdminMarketingBudget";
 import { AdminAccountingWorkspace } from "@/components/AdminAccountingWorkspace";
 import { AdminAttendanceWorkspace } from "@/components/AdminAttendanceWorkspace";
 import { AdminAttendanceNotifications } from "@/components/AdminAttendanceNotifications";
+import { AdminSalesAvailabilityToggle } from "@/components/AdminSalesAvailabilityToggle";
 import { AdminTodayWork } from "@/components/AdminTodayWork";
 import { AdminInstallApp } from "@/components/AdminInstallApp";
 import { AdminPaymentApprovals } from "@/components/AdminPaymentApprovals";
@@ -326,6 +327,7 @@ export default function AdminPage() {
             <h1>{active}</h1>
           </div>
           <div className="admin-top-actions">
+            <AdminSalesAvailabilityToggle staff={current} />
             <AdminInstallApp />
             <AdminChatNotifications
               staffId={current.id}
