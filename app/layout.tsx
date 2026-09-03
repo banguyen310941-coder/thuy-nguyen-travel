@@ -48,8 +48,9 @@ export const viewport:Viewport={
   colorScheme:'light',
 };
 
-const VERCEL_SITE=process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:'';
-const SITE=process.env.NEXT_PUBLIC_SITE_URL||VERCEL_SITE||'https://happygo.vn';
+const VERCEL_PRODUCTION_SITE=process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:'';
+const VERCEL_DEPLOYMENT_SITE=process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:'';
+const SITE=process.env.NEXT_PUBLIC_SITE_URL||VERCEL_PRODUCTION_SITE||VERCEL_DEPLOYMENT_SITE||'https://happygo.vn';
 const description='Đặt tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Giá minh bạch, tư vấn nhanh, hành trình hạnh phúc.';
 
 export const metadata:Metadata={
