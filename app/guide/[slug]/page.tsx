@@ -1,4 +1,61 @@
-import type {Metadata} from 'next';import Link from 'next/link';import {notFound} from 'next/navigation';import {guidePosts,getGuide} from '@/data/guides';import {GuideArticleEditable} from '@/components/GuideArticleEditable';
-const base='https://happygo.vn';export function generateStaticParams(){return guidePosts.map(p=>({slug:p.slug}))}
-export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const p=getGuide(slug);if(!p)return{};const url=`${base}/guide/${p.slug}`;return{title:p.title,description:p.excerpt,keywords:p.keywords,alternates:{canonical:url},openGraph:{title:p.title,description:p.excerpt,url,type:'article',images:[{url:p.image,alt:p.title}],siteName:'HappyGo Travel'},twitter:{card:'summary_large_image',title:p.title,description:p.excerpt,images:[p.image]}}}
-export default async function GuideArticle({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const p=getGuide(slug);if(!p)notFound();const url=`${base}/guide/${p.slug}`;const schema=[{"@context":"https://schema.org","@type":"Article","headline":p.title,"description":p.excerpt,"image":[p.image],"datePublished":"2026-08-23","dateModified":"2026-08-31","mainEntityOfPage":{"@type":"WebPage","@id":url},"inLanguage":"vi-VN","author":{"@type":"Organization","name":"HappyGo Travel","url":base},"publisher":{"@type":"TravelAgency","name":"HappyGo Travel","url":base,"telephone":"+84969973949"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Trang chủ","item":base},{"@type":"ListItem","position":2,"name":"Cẩm nang","item":`${base}/guide`},{"@type":"ListItem","position":3,"name":p.title,"item":url}]}];return <main className="subpage seo-article-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,'\\u003c')}}/><div className="container article-container"><nav className="article-breadcrumb" aria-label="Breadcrumb"><Link href="/">Trang chủ</Link><span>›</span><Link href="/guide">Cẩm nang</Link><span>›</span><b>{p.category}</b></nav><GuideArticleEditable post={p}/><aside className="related-guides" aria-label="Bài viết liên quan"><h2>Bài viết liên quan</h2><div className="guide-grid">{guidePosts.filter(x=>x.slug!==p.slug).sort((a,b)=>Number(b.category===p.category)-Number(a.category===p.category)).slice(0,3).map(x=><Link className="guide-card" href={`/guide/${x.slug}`} key={x.slug}><div className="guide-image" style={{backgroundImage:`url(${x.image})`}}/><div className="guide-body"><small>{x.category}</small><h3>{x.title}</h3><p>{x.excerpt}</p><b>Đọc bài →</b></div></Link>)}</div></aside></div></main>}
+import type {Metadata} from 'next';
+import Link from 'next/link';
+import {notFound} from 'next/navigation';
+import {guidePosts,getGuide} from '@/data/guides';
+import {GuideArticleEditable} from '@/components/GuideArticleEditable';
+import {getSiteUrl} from '@/lib/site-url';
+
+export function generateStaticParams(){
+  return guidePosts.map(post=>({slug:post.slug}));
+}
+
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
+  const {slug}=await params;
+  const post=getGuide(slug);
+  if(!post)return {};
+  const base=getSiteUrl();
+  const url=`${base}/guide/${post.slug}`;
+  return {
+    title:post.title,
+    description:post.excerpt,
+    keywords:post.keywords,
+    alternates:{canonical:url},
+    openGraph:{title:post.title,description:post.excerpt,url,type:'article',images:[{url:post.image,alt:post.title}],siteName:'HappyGo Travel'},
+    twitter:{card:'summary_large_image',title:post.title,description:post.excerpt,images:[post.image]},
+  };
+}
+
+export default async function GuideArticle({params}:{params:Promise<{slug:string}>}){
+  const {slug}=await params;
+  const post=getGuide(slug);
+  if(!post)notFound();
+
+  const base=getSiteUrl();
+  const url=`${base}/guide/${post.slug}`;
+  const schema=[
+    {
+      '@context':'https://schema.org',
+      '@type':'Article',
+      headline:post.title,
+      description:post.excerpt,
+      image:[post.image],
+      datePublished:'2026-08-23',
+      dateModified:'2026-08-31',
+      mainEntityOfPage:{'@type':'WebPage','@id':url},
+      inLanguage:'vi-VN',
+      author:{'@type':'Organization',name:'HappyGo Travel',url:base},
+      publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:base,telephone:'+84969973949'},
+    },
+    {
+      '@context':'https://schema.org',
+      '@type':'BreadcrumbList',
+      itemListElement:[
+        {'@type':'ListItem',position:1,name:'Trang chủ',item:base},
+        {'@type':'ListItem',position:2,name:'Cẩm nang',item:`${base}/guide`},
+        {'@type':'ListItem',position:3,name:post.title,item:url},
+      ],
+    },
+  ];
+
+  return <main className="subpage seo-article-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,'\\u003c')}}/><div className="container article-container"><nav className="article-breadcrumb" aria-label="Breadcrumb"><Link href="/">Trang chủ</Link><span>›</span><Link href="/guide">Cẩm nang</Link><span>›</span><b>{post.category}</b></nav><GuideArticleEditable post={post}/><aside className="related-guides" aria-label="Bài viết liên quan"><h2>Bài viết liên quan</h2><div className="guide-grid">{guidePosts.filter(item=>item.slug!==post.slug).sort((a,b)=>Number(b.category===post.category)-Number(a.category===post.category)).slice(0,3).map(item=><Link className="guide-card" href={`/guide/${item.slug}`} key={item.slug}><div className="guide-image" style={{backgroundImage:`url(${item.image})`}}/><div className="guide-body"><small>{item.category}</small><h3>{item.title}</h3><p>{item.excerpt}</p><b>Đọc bài →</b></div></Link>)}</div></aside></div></main>;
+}
