@@ -7,6 +7,7 @@ import { AdminServiceOperations } from "@/components/AdminServiceOperations";
 import { AdminSupplierOrders } from "@/components/AdminSupplierOrders";
 import { AdminCustomerVouchers } from "@/components/AdminCustomerVouchers";
 import { AdminBackupCenter } from "@/components/AdminBackupCenter";
+import { AdminMarketingBudget } from "@/components/AdminMarketingBudget";
 import { AdminTodayWork } from "@/components/AdminTodayWork";
 import { AdminInstallApp } from "@/components/AdminInstallApp";
 import { AdminPaymentApprovals } from "@/components/AdminPaymentApprovals";
@@ -65,6 +66,7 @@ const modules = [
   ["🎟", "Voucher khách hàng"],
   ["♟", "Nhân viên & phân quyền"],
   ["✉", "Email & Marketing"],
+  ["₫", "Marketing & ngân sách"],
   ["▤", "Sản phẩm"],
   ["▦", "Lịch giá & tồn phòng"],
   ["✈", "Tour du lịch"],
@@ -94,6 +96,7 @@ const permission: Record<string, string> = {
   "Voucher khách hàng": "bookings",
   "Nhân viên & phân quyền": "staff",
   "Email & Marketing": "email",
+  "Marketing & ngân sách": "email",
   "Sản phẩm": "products",
   "Lịch giá & tồn phòng": "rates",
   "Tour du lịch": "tours",
@@ -434,6 +437,9 @@ export default function AdminPage() {
         )}
         {active === "Email & Marketing" && allowed(active) && (
           <AdminEmailCampaigns />
+        )}
+        {active === "Marketing & ngân sách" && allowed(active) && (
+          <AdminMarketingBudget />
         )}
         {active === "Lịch giá & tồn phòng" && allowed(active) && (
           <AdminRateManager />
