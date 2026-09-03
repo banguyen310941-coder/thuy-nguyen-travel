@@ -6,7 +6,7 @@ import {hasPermission,isAccountingStaff,isAdminStaff,isOwner,money,readCurrentSt
 type EntryType='income'|'expense';
 type FundId='cash'|'bank'|'wallet';
 type SourceId='receipt'|'supplier'|'marketing'|'manual';
-type Tab='overview'|'ledger'|'settings';
+type Tab='overview'|'marketing'|'ledger'|'settings';
 
 type ManualEntry={
   id:string;voucherNo:string;type:EntryType;date:string;category:string;description:string;
@@ -15,25 +15,31 @@ type ManualEntry={
 };
 type Receipt={id:string;receiptNo?:string;bookingCode:string;customerName:string;amount:number;receivedAt:string;method:string;transactionRef:string;note:string;createdByName:string;createdAt:string};
 type Payment={id:string;bookingCode:string;supplierName:string;amount:number;purpose:string;status:string;paidAmount?:number;paidAt?:string;paymentMethod?:string;transactionRef?:string;accountingNote?:string;paidBy?:string;createdAt:string};
-type MarketingExpense={id:string;campaign:string;date:string;category:string;channel:string;vendor:string;amount:number;documentRef:string;note:string;createdByName:string;createdAt:string};
+type MarketingProposal={id:string;title:string;campaign:string;month:string;channel:string;objective:string;requestedAmount:number;approvedAmount:number;status:'draft'|'pending'|'changes_requested'|'approved'|'rejected';createdByName:string;approvedBy?:string};
+type MarketingExpense={id:string;proposalId:string;campaign:string;month:string;date:string;category:string;channel:string;vendor:string;amount:number;documentRef:string;note:string;fund?:FundId;createdById?:string;createdByName:string;createdAt:string};
 type OpeningBalances={cash:number;bank:number;wallet:number;updatedAt?:string;updatedBy?:string};
 type LedgerRow={id:string;voucherNo:string;type:EntryType;date:string;category:string;description:string;counterparty:string;fund:FundId;amount:number;documentRef:string;note:string;source:SourceId;createdBy:string;createdAt:string;manualId?:string};
 type Draft={type:EntryType;date:string;category:string;description:string;counterparty:string;fund:FundId;amount:string;documentRef:string;note:string};
+type MarketingPaymentDraft={proposalId:string;date:string;category:string;vendor:string;amount:string;fund:FundId;documentRef:string;note:string};
 
 const MANUAL_KEY='happygo_accounting_manual_entries_v1';
 const BALANCE_KEY='happygo_accounting_opening_balances_v1';
 const RECEIPTS_KEY='happygo_customer_receipts_v1';
 const PAYMENTS_KEY='happygo_payment_requests_v1';
+const MARKETING_PROPOSALS_KEY='happygo_marketing_budget_proposals_v1';
 const MARKETING_KEY='happygo_marketing_expenses_v1';
 const EVENT='happygo-accounting-updated';
 const fundLabel:Record<FundId,string>={cash:'Tiền mặt',bank:'Tài khoản ngân hàng',wallet:'Ví điện tử'};
 const sourceLabel:Record<SourceId,string>={receipt:'Phiếu thu khách',supplier:'Thanh toán NCC',marketing:'Chi phí Marketing',manual:'Kế toán ghi tay'};
+const marketingStatusLabel:Record<MarketingProposal['status'],string>={draft:'Nháp',pending:'Chờ duyệt',changes_requested:'Cần bổ sung',approved:'Đã duyệt',rejected:'Từ chối'};
 const incomeCategories=['Thu khác','Bổ sung vốn','Hoàn ứng','Thu hồi công nợ','Lãi tiền gửi'];
 const expenseCategories=['Chi văn phòng','Lương & phụ cấp','Thuế & phí','Đi lại & công tác','Hoàn tiền khách','Tạm ứng','Chi phí khác'];
+const marketingCategories=['Chi phí quảng cáo','Sản xuất nội dung','Thiết kế','KOL / KOC','Công cụ / Phần mềm','Sự kiện','In ấn / POSM','Khác'];
 
 function currentMonth(){return new Date().toISOString().slice(0,7)}
 function today(){return new Date().toISOString().slice(0,10)}
 function blankDraft():Draft{return{type:'income',date:today(),category:incomeCategories[0],description:'',counterparty:'',fund:'bank',amount:'',documentRef:'',note:''}}
+function blankMarketingPayment():MarketingPaymentDraft{return{proposalId:'',date:today(),category:marketingCategories[0],vendor:'',amount:'',fund:'bank',documentRef:'',note:''}}
 function read<T>(key:string,fallback:T):T{try{const value=JSON.parse(localStorage.getItem(key)||'');return value??fallback}catch{return fallback}}
 function write<T>(key:string,value:T){localStorage.setItem(key,JSON.stringify(value));window.dispatchEvent(new Event(EVENT))}
 function parseAmount(value:unknown){const parsed=Number(String(value??'').replace(/[^\d]/g,''));return Number.isFinite(parsed)?parsed:0}
@@ -49,6 +55,7 @@ export function AdminAccountingWorkspace(){
   const[manualEntries,setManualEntries]=useState<ManualEntry[]>([]);
   const[receipts,setReceipts]=useState<Receipt[]>([]);
   const[payments,setPayments]=useState<Payment[]>([]);
+  const[marketingProposals,setMarketingProposals]=useState<MarketingProposal[]>([]);
   const[marketing,setMarketing]=useState<MarketingExpense[]>([]);
   const[balances,setBalances]=useState<OpeningBalances>({cash:0,bank:0,wallet:0});
   const[balanceDraft,setBalanceDraft]=useState({cash:'0',bank:'0',wallet:'0'});
@@ -56,6 +63,8 @@ export function AdminAccountingWorkspace(){
   const[tab,setTab]=useState<Tab>('overview');
   const[entryOpen,setEntryOpen]=useState(false);
   const[draft,setDraft]=useState<Draft>(blankDraft());
+  const[marketingPayOpen,setMarketingPayOpen]=useState(false);
+  const[marketingPayDraft,setMarketingPayDraft]=useState<MarketingPaymentDraft>(blankMarketingPayment());
   const[query,setQuery]=useState('');
   const[typeFilter,setTypeFilter]=useState<'all'|EntryType>('all');
   const[fundFilter,setFundFilter]=useState<'all'|FundId>('all');
@@ -68,6 +77,7 @@ export function AdminAccountingWorkspace(){
     setManualEntries(read(MANUAL_KEY,[]));
     setReceipts(read(RECEIPTS_KEY,[]));
     setPayments(read(PAYMENTS_KEY,[]));
+    setMarketingProposals(read(MARKETING_PROPOSALS_KEY,[]));
     setMarketing(read(MARKETING_KEY,[]));
     setBalances(nextBalances);
     setBalanceDraft({cash:String(nextBalances.cash||0),bank:String(nextBalances.bank||0),wallet:String(nextBalances.wallet||0)});
@@ -88,7 +98,7 @@ export function AdminAccountingWorkspace(){
       return{id:`receipt:${item.id}`,voucherNo:item.receiptNo||item.bookingCode,type:'income',date:dateOnly(item.receivedAt||item.createdAt),category:correction?'Điều chỉnh giảm thu':'Thu tiền khách',description:correction?`Điều chỉnh phiếu thu ${item.bookingCode}`:`Thu tiền booking ${item.bookingCode}`,counterparty:item.customerName||'Khách hàng',fund:inferFund(item.method),amount:Number(item.amount||0),documentRef:item.transactionRef||'',note:item.note||'',source:'receipt',createdBy:item.createdByName||'Hệ thống',createdAt:item.createdAt||item.receivedAt};
     });
     const paymentRows=payments.filter(item=>item.status==='paid').map((item):LedgerRow=>({id:`supplier:${item.id}`,voucherNo:`PC-${item.bookingCode||item.id}`,type:'expense',date:dateOnly(item.paidAt||item.createdAt),category:'Thanh toán nhà cung cấp',description:item.purpose||`Chi phí booking ${item.bookingCode}`,counterparty:item.supplierName||'Nhà cung cấp',fund:inferFund(item.paymentMethod),amount:Math.abs(Number(item.paidAmount||item.amount||0)),documentRef:item.transactionRef||'',note:item.accountingNote||'',source:'supplier',createdBy:item.paidBy||'Kế toán',createdAt:item.paidAt||item.createdAt}));
-    const marketingRows=marketing.map((item):LedgerRow=>({id:`marketing:${item.id}`,voucherNo:`MKT-${item.id.slice(-6)}`,type:'expense',date:dateOnly(item.date||item.createdAt),category:item.category||'Chi phí Marketing',description:`Marketing: ${item.campaign}`,counterparty:item.vendor||'Nhà cung cấp',fund:'bank',amount:Math.abs(Number(item.amount||0)),documentRef:item.documentRef||'',note:item.note||`${item.channel||''}`,source:'marketing',createdBy:item.createdByName||'Marketing',createdAt:item.createdAt||item.date}));
+    const marketingRows=marketing.map((item):LedgerRow=>({id:`marketing:${item.id}`,voucherNo:`MKT-${item.id.slice(-6)}`,type:'expense',date:dateOnly(item.date||item.createdAt),category:item.category||'Chi phí Marketing',description:`Marketing: ${item.campaign}`,counterparty:item.vendor||'Nhà cung cấp',fund:item.fund||'bank',amount:Math.abs(Number(item.amount||0)),documentRef:item.documentRef||'',note:item.note||`${item.channel||''}`,source:'marketing',createdBy:item.createdByName||'Marketing',createdAt:item.createdAt||item.date}));
     const manualRows=manualEntries.filter(item=>!item.voidedAt).map((item):LedgerRow=>({id:`manual:${item.id}`,voucherNo:item.voucherNo,type:item.type,date:item.date,category:item.category,description:item.description,counterparty:item.counterparty,fund:item.fund,amount:item.amount,documentRef:item.documentRef,note:item.note,source:'manual',createdBy:item.createdByName,createdAt:item.createdAt,manualId:item.id}));
     return[...receiptRows,...paymentRows,...marketingRows,...manualRows].filter(item=>item.amount!==0).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));
   },[receipts,payments,marketing,manualEntries]);
@@ -122,6 +132,17 @@ export function AdminAccountingWorkspace(){
     return[...grouped.entries()].map(([category,amount])=>({category,amount,percent:Math.round(amount*100/total)})).sort((a,b)=>b.amount-a.amount);
   },[monthRows,totals.expense]);
 
+  const marketingSpendByProposal=useMemo(()=>marketing.reduce((result,item)=>{
+    if(item.proposalId)result[item.proposalId]=(result[item.proposalId]||0)+Number(item.amount||0);
+    return result;
+  },{} as Record<string,number>),[marketing]);
+  const monthMarketingProposals=useMemo(()=>marketingProposals.filter(item=>item.month===month&&item.status!=='draft'&&item.status!=='rejected').sort((a,b)=>{
+    if(a.status==='approved'&&b.status!=='approved')return-1;
+    if(b.status==='approved'&&a.status!=='approved')return 1;
+    return b.approvedAmount-a.approvedAmount;
+  }),[marketingProposals,month]);
+  const actionableMarketingCount=monthMarketingProposals.filter(item=>item.status==='approved'&&item.approvedAmount-(marketingSpendByProposal[item.id]||0)>0).length;
+
   function changeType(type:EntryType){setDraft(current=>({...current,type,category:(type==='income'?incomeCategories:expenseCategories)[0]}))}
 
   function saveEntry(){
@@ -131,6 +152,28 @@ export function AdminAccountingWorkspace(){
     const entry:ManualEntry={id:`acc_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,voucherNo:voucherNo(draft.type),type:draft.type,date:draft.date,category:draft.category,description:draft.description.trim(),counterparty:draft.counterparty.trim(),fund:draft.fund,amount,documentRef:draft.documentRef.trim(),note:draft.note.trim(),createdById:staff.id,createdByName:staff.name,createdAt:new Date().toISOString()};
     const next=[entry,...manualEntries];
     write(MANUAL_KEY,next);setManualEntries(next);setMonth(entry.date.slice(0,7));setDraft(blankDraft());setEntryOpen(false);setTab('ledger');setMessage(`Đã ghi ${entry.voucherNo} · ${money(amount)}.`);
+  }
+
+  function openMarketingPayment(proposal:MarketingProposal){
+    const spent=marketingSpendByProposal[proposal.id]||0,remaining=proposal.approvedAmount-spent;
+    if(proposal.status!=='approved')return alert('Đề xuất này chưa được duyệt nên Kế toán chưa thể chi.');
+    if(remaining<=0)return alert('Ngân sách của đề xuất này đã được sử dụng hết.');
+    setMarketingPayDraft({proposalId:proposal.id,date:month===currentMonth()?today():`${month}-01`,category:marketingCategories[0],vendor:'',amount:String(remaining),fund:'bank',documentRef:'',note:''});
+    setMarketingPayOpen(true);setEntryOpen(false);setTab('marketing');setMessage('');
+  }
+
+  function saveMarketingPayment(){
+    if(!staff||!canAccess)return alert('Tài khoản không có quyền chi ngân sách Marketing.');
+    const proposal=marketingProposals.find(item=>item.id===marketingPayDraft.proposalId),amount=parseAmount(marketingPayDraft.amount);
+    if(!proposal||proposal.status!=='approved')return alert('Chỉ được chi cho đề xuất Marketing đã duyệt.');
+    const spent=marketingSpendByProposal[proposal.id]||0,remaining=proposal.approvedAmount-spent;
+    if(!marketingPayDraft.date||!marketingPayDraft.vendor.trim()||!marketingPayDraft.documentRef.trim()||amount<=0)return alert('Vui lòng nhập ngày chi, đơn vị nhận tiền, số tiền và mã giao dịch/chứng từ.');
+    if(amount>remaining)return alert(`Khoản chi vượt ngân sách còn lại ${money(remaining)}. Vui lòng điều chỉnh số tiền hoặc xin duyệt bổ sung.`);
+    const entry:MarketingExpense={id:`mkt_exp_acc_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,proposalId:proposal.id,campaign:proposal.campaign,month:marketingPayDraft.date.slice(0,7),date:marketingPayDraft.date,category:marketingPayDraft.category,channel:proposal.channel,vendor:marketingPayDraft.vendor.trim(),amount,documentRef:marketingPayDraft.documentRef.trim(),note:marketingPayDraft.note.trim()||`Kế toán chi theo đề xuất: ${proposal.title}`,fund:marketingPayDraft.fund,createdById:staff.id,createdByName:staff.name,createdAt:new Date().toISOString()};
+    const next=[entry,...marketing];
+    localStorage.setItem(MARKETING_KEY,JSON.stringify(next));
+    window.dispatchEvent(new Event('happygo-marketing-budget-updated'));window.dispatchEvent(new Event(EVENT));
+    setMarketing(next);setMonth(entry.month);setMarketingPayDraft(blankMarketingPayment());setMarketingPayOpen(false);setTab('marketing');setMessage(`Đã chi ${money(amount)} cho “${proposal.campaign}” và cập nhật báo cáo Marketing.`);
   }
 
   function voidEntry(id:string){
@@ -181,7 +224,7 @@ export function AdminAccountingWorkspace(){
       <article className={totals.net<0?'danger':'good'}><small>THU – CHI TRONG THÁNG</small><b>{totals.net>=0?'+ ':''}{money(totals.net)}</b><span>{totals.net>=0?'Dòng tiền dương':'Dòng tiền âm'}</span></article>
       <article className={totals.closing<0?'danger':'closing'}><small>SỐ DƯ CUỐI KỲ</small><b>{money(totals.closing)}</b><span>Đầu kỳ + Thu − Chi</span></article>
     </div>
-    <div className="accounting-tabs"><button className={tab==='overview'?'active':''} onClick={()=>setTab('overview')}>Tổng quan</button><button className={tab==='ledger'?'active':''} onClick={()=>setTab('ledger')}>Sổ giao dịch ({monthRows.length})</button><button className={tab==='settings'?'active':''} onClick={()=>setTab('settings')}>Số dư khởi tạo</button></div>
+    <div className="accounting-tabs"><button className={tab==='overview'?'active':''} onClick={()=>setTab('overview')}>Tổng quan</button><button className={tab==='marketing'?'active':''} onClick={()=>setTab('marketing')}>Chi ngân sách Marketing ({actionableMarketingCount})</button><button className={tab==='ledger'?'active':''} onClick={()=>setTab('ledger')}>Sổ giao dịch ({monthRows.length})</button><button className={tab==='settings'?'active':''} onClick={()=>setTab('settings')}>Số dư khởi tạo</button></div>
 
     {entryOpen&&<div className="accounting-entry-form">
       <div className="accounting-form-title"><div><small>CHỨNG TỪ NỘI BỘ</small><h3>Ghi nhận khoản thu hoặc chi</h3></div><button aria-label="Đóng" onClick={()=>setEntryOpen(false)}>×</button></div>
@@ -199,10 +242,21 @@ export function AdminAccountingWorkspace(){
       </div>
     </div>}
 
+    {marketingPayOpen&&<div className="accounting-entry-form marketing-payment-form">
+      <div className="accounting-form-title"><div><small>CHI THEO NGÂN SÁCH ĐÃ DUYỆT</small><h3>{marketingProposals.find(item=>item.id===marketingPayDraft.proposalId)?.campaign}</h3></div><button aria-label="Đóng" onClick={()=>setMarketingPayOpen(false)}>×</button></div>
+      {(()=>{const proposal=marketingProposals.find(item=>item.id===marketingPayDraft.proposalId),spent=proposal?marketingSpendByProposal[proposal.id]||0:0,remaining=proposal?proposal.approvedAmount-spent:0;return <><div className="marketing-payment-limit"><span><small>NGÂN SÁCH DUYỆT</small><b>{money(proposal?.approvedAmount||0)}</b></span><span><small>ĐÃ CHI</small><b>{money(spent)}</b></span><span><small>CÒN ĐƯỢC CHI</small><b>{money(remaining)}</b></span></div><div className="tour-editor-grid"><label>Ngày chi<input type="date" value={marketingPayDraft.date} onChange={event=>setMarketingPayDraft({...marketingPayDraft,date:event.target.value})}/></label><label>Hạng mục<select value={marketingPayDraft.category} onChange={event=>setMarketingPayDraft({...marketingPayDraft,category:event.target.value})}>{marketingCategories.map(item=><option key={item}>{item}</option>)}</select></label><label>Đơn vị nhận tiền<input value={marketingPayDraft.vendor} onChange={event=>setMarketingPayDraft({...marketingPayDraft,vendor:event.target.value})} placeholder="Meta, TikTok, KOL, đơn vị thiết kế..."/></label><label>Số tiền<input inputMode="numeric" value={marketingPayDraft.amount} onChange={event=>setMarketingPayDraft({...marketingPayDraft,amount:event.target.value})}/></label><label>Quỹ chi<select value={marketingPayDraft.fund} onChange={event=>setMarketingPayDraft({...marketingPayDraft,fund:event.target.value as FundId})}>{Object.entries(fundLabel).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label><label>Mã giao dịch / chứng từ<input value={marketingPayDraft.documentRef} onChange={event=>setMarketingPayDraft({...marketingPayDraft,documentRef:event.target.value})} placeholder="Bắt buộc để đối soát"/></label><label className="span-2">Ghi chú<textarea rows={3} value={marketingPayDraft.note} onChange={event=>setMarketingPayDraft({...marketingPayDraft,note:event.target.value})}/></label><div className="span-2 editor-actions"><button onClick={()=>setMarketingPayOpen(false)}>Hủy</button><button className="admin-primary" onClick={saveMarketingPayment}>Xác nhận chi ngân sách</button></div></div></>})()}
+    </div>}
+
     {tab==='overview'&&<div className="accounting-overview-grid">
       <section className="accounting-card"><div className="accounting-card-head"><div><small>SỐ DƯ THEO QUỸ</small><b>Cuối tháng {month}</b></div><strong>{money(totals.closing)}</strong></div><div className="accounting-funds">{fundTotals.map(item=><article key={item.fund}><div><span className={`fund-icon ${item.fund}`}>{item.fund==='cash'?'₫':item.fund==='bank'?'▥':'◈'}</span><div><b>{fundLabel[item.fund]}</b><small>Đầu kỳ {money(item.opening)}</small></div></div><strong>{money(item.closing)}</strong><p><span>Thu {money(item.income)}</span><span>Chi −{money(item.expense)}</span></p></article>)}</div></section>
       <section className="accounting-card"><div className="accounting-card-head"><div><small>CƠ CẤU CHI PHÍ</small><b>Theo hạng mục trong tháng</b></div><strong>{money(totals.expense)}</strong></div><div className="accounting-breakdown">{expenseBreakdown.map(item=><article key={item.category}><div><b>{item.category}</b><span>{money(item.amount)} · {item.percent}%</span></div><p><i style={{width:`${Math.max(4,item.amount*100/maxExpense)}%`}}></i></p></article>)}{!expenseBreakdown.length&&<div className="admin-empty-state"><b>Chưa có chi phí trong tháng</b></div>}</div></section>
       <section className="accounting-card accounting-recent"><div className="accounting-card-head"><div><small>GIAO DỊCH GẦN NHẤT</small><b>{Math.min(monthRows.length,6)} phát sinh mới</b></div><button onClick={()=>setTab('ledger')}>Xem toàn bộ</button></div><div className="accounting-mini-ledger">{monthRows.slice(0,6).map(item=>{const decrease=item.type==='expense'||item.amount<0;return <article key={item.id}><span className={decrease?'expense':'income'}>{decrease?'↑':'↓'}</span><div><b>{item.description}</b><small>{formatDate(item.date)} · {item.voucherNo} · {fundLabel[item.fund]}</small></div><strong className={decrease?'expense':'income'}>{decrease?'−':'+'} {money(Math.abs(item.amount))}</strong></article>})}{!monthRows.length&&<div className="admin-empty-state"><b>Chưa có phát sinh trong tháng</b><span>Ghi chứng từ mới hoặc hoàn tất phiếu thu/chi để số liệu tự cập nhật.</span></div>}</div></section>
+    </div>}
+
+    {tab==='marketing'&&<div className="accounting-marketing-list">
+      <div className="accounting-marketing-intro"><div><small>ĐỀ XUẤT MARKETING · {month}</small><h3>Chi đúng chiến dịch và hạn mức đã duyệt</h3><p>Đề xuất chờ duyệt vẫn được hiển thị để Kế toán theo dõi, nhưng chỉ đề xuất đã duyệt mới được lập phiếu chi.</p></div><strong>{actionableMarketingCount} khoản có thể chi</strong></div>
+      {monthMarketingProposals.map(proposal=>{const spent=marketingSpendByProposal[proposal.id]||0,remaining=proposal.approvedAmount-spent,limit=proposal.status==='approved'?proposal.approvedAmount:proposal.requestedAmount,percent=limit>0?Math.min(100,Math.round(spent*100/limit)):0;return <article className="accounting-marketing-card" key={proposal.id}><div className="accounting-marketing-main"><div><small>{proposal.channel} · Người đề xuất: {proposal.createdByName}</small><b>{proposal.campaign}</b><span>{proposal.title}</span></div><em className={proposal.status}>{marketingStatusLabel[proposal.status]}</em></div><div className="accounting-marketing-money"><span><small>ĐỀ XUẤT</small><b>{money(proposal.requestedAmount)}</b></span><span><small>ĐƯỢC DUYỆT</small><b>{proposal.status==='approved'?money(proposal.approvedAmount):'—'}</b></span><span><small>ĐÃ CHI</small><b>{money(spent)}</b></span><span><small>CÒN LẠI</small><b>{proposal.status==='approved'?money(remaining):'Chờ duyệt'}</b></span></div>{proposal.status==='approved'&&<div className="accounting-marketing-progress"><i style={{width:`${percent}%`}}></i><span>{percent}% ngân sách đã sử dụng</span></div>}<div className="accounting-marketing-actions"><span>{proposal.status==='approved'?(remaining>0?`Có thể chi tối đa ${money(remaining)}`:'Đã sử dụng hết ngân sách'):'Chưa đủ điều kiện lập phiếu chi'}</span>{proposal.status==='approved'&&remaining>0&&<button className="admin-primary" onClick={()=>openMarketingPayment(proposal)}>Lập phiếu chi</button>}</div></article>})}
+      {!monthMarketingProposals.length&&<div className="admin-empty-state"><b>Chưa có đề xuất Marketing trong tháng {month}</b><span>Đề xuất cần được gửi từ “Marketing & ngân sách” để Kế toán theo dõi và chi đúng hạng mục.</span></div>}
     </div>}
 
     {tab==='ledger'&&<>
