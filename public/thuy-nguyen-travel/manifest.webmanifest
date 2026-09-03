@@ -1,0 +1,16 @@
+{
+  "name": "HappyGo Travel",
+  "short_name": "HappyGo",
+  "description": "HappyGo Travel - hệ thống du lịch và điều hành nhân viên",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#0d47a1",
+  "lang": "vi",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "business", "productivity"],
+  "icons": [
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
