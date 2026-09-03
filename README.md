@@ -1,6 +1,6 @@
 # HappyGo Travel
 
-Website và hệ thống điều hành du lịch của **HappyGo Travel**, xây dựng bằng Next.js 15, TypeScript và App Router, chuẩn bị triển khai chính trên Vercel.
+Website và hệ thống điều hành du lịch của **HappyGo Travel**, xây dựng bằng Next.js 15, TypeScript và App Router, triển khai chính trên Vercel.
 
 ## Thông tin thương hiệu
 
@@ -19,6 +19,10 @@ Website và hệ thống điều hành du lịch của **HappyGo Travel**, xây 
 - Neon/PostgreSQL-ready server utilities
 - PWA manifest + service worker
 - GitHub Actions dùng để lint, typecheck và build trước khi deploy
+
+## Cấu trúc triển khai
+
+Repository `main` là **một ứng dụng Next.js duy nhất tại root `/`**. API server-side dùng Next.js Route Handlers trong `app/api`. Không có service Express/MySQL riêng trong nhánh production, để Vercel nhận diện đúng một project Next.js.
 
 ## Các khu vực chính
 
@@ -69,10 +73,8 @@ Xem `.env.example` để biết danh sách biến môi trường. Không commit 
 
 Một số khóa `localStorage` vẫn dùng tiền tố `tn_`. Đây là **khóa kỹ thuật tương thích dữ liệu cũ**, không phải tên thương hiệu hiển thị. Không đổi các khóa này trước khi có migration dữ liệu vì có thể làm mất dữ liệu CMS/admin đang lưu trên trình duyệt.
 
-Thư mục `backend/` là backend Express/MySQL độc lập từ giai đoạn trước. Nó được giữ để tham chiếu/migration và **không phải cấu hình deploy mặc định của project Next.js trên Vercel**.
-
 ## Backup trước khi chuẩn hóa Vercel
 
-Bản repo trước khi dọn prototype/GitHub Pages đã được giữ tại branch:
+Bản repo trước khi dọn prototype, GitHub Pages và backend Express/MySQL cũ đã được giữ tại branch:
 
 `archive-pre-vercel-cleanup-20260903`
