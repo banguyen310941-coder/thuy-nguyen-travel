@@ -1,4 +1,4 @@
-# Thúy Nguyên Travel — Next.js application
+# HappyGo Travel — Next.js application
 
 Đây là bản rebuild ứng dụng thật, thay cho prototype HTML tĩnh.
 
