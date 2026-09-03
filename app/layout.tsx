@@ -1,9 +1,89 @@
 import type {Metadata,Viewport} from 'next';
-import './globals.css';import './home.css';import './mockup.css';import './mobile-v2.css';import './subpages.css';import './booking-live.css';import './checkout.css';import './tour-rich.css';import './product-detail-v2.css';import './units-public.css';import './fixes.css';import './rate-public.css';import './cms-public.css';import './cms-fixes.css';import './cms-home-fixes.css';import './guide-portal.css';import './happygo-brand.css';import './happygo-footer.css';import './partner.css';import './partner-enhancements.css';import './partner-product-editor.css';import './unified-product-units.css';import './customer-account.css';import './happygo-info.css';import './partner-refresh.css';import './partner-detail-pro.css';import './support-center.css';import './crm-pipeline.css';import './booking-operations.css';import './payment-approval.css';import './financial-ledger.css';import './customer-receipts.css';import './service-operations.css';import './accounting-workspace.css';import './attendance-workspace.css';import './sales-availability.css';import './today-work.css';import {SiteChrome} from '@/components/SiteChrome';import {PwaRegister} from '@/components/PwaRegister';
-export const viewport:Viewport={width:'device-width',initialScale:1,maximumScale:5,viewportFit:'cover',themeColor:'#0d47a1',colorScheme:'light'};
+import './globals.css';
+import './home.css';
+import './mockup.css';
+import './mobile-v2.css';
+import './subpages.css';
+import './booking-live.css';
+import './checkout.css';
+import './tour-rich.css';
+import './product-detail-v2.css';
+import './units-public.css';
+import './fixes.css';
+import './rate-public.css';
+import './cms-public.css';
+import './cms-fixes.css';
+import './cms-home-fixes.css';
+import './guide-portal.css';
+import './happygo-brand.css';
+import './happygo-footer.css';
+import './partner.css';
+import './partner-enhancements.css';
+import './partner-product-editor.css';
+import './unified-product-units.css';
+import './customer-account.css';
+import './happygo-info.css';
+import './partner-refresh.css';
+import './partner-detail-pro.css';
+import './support-center.css';
+import './crm-pipeline.css';
+import './booking-operations.css';
+import './payment-approval.css';
+import './financial-ledger.css';
+import './customer-receipts.css';
+import './service-operations.css';
+import './accounting-workspace.css';
+import './attendance-workspace.css';
+import './sales-availability.css';
+import './today-work.css';
+import {SiteChrome} from '@/components/SiteChrome';
+import {PwaRegister} from '@/components/PwaRegister';
+
+export const viewport:Viewport={
+  width:'device-width',
+  initialScale:1,
+  maximumScale:5,
+  viewportFit:'cover',
+  themeColor:'#0d47a1',
+  colorScheme:'light',
+};
+
 const VERCEL_SITE=process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:'';
 const SITE=process.env.NEXT_PUBLIC_SITE_URL||VERCEL_SITE||'https://happygo.vn';
-const ASSET_BASE=process.env.GITHUB_ACTIONS==='true'?'/thuy-nguyen-travel':'';
 const description='Đặt tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Giá minh bạch, tư vấn nhanh, hành trình hạnh phúc.';
-export const metadata:Metadata={metadataBase:new URL(SITE),title:{default:'HappyGo Travel | Tour, khách sạn, villa & du thuyền',template:'%s | HappyGo Travel'},description,applicationName:'HappyGo Travel',authors:[{name:'HappyGo Travel',url:SITE}],creator:'HappyGo Travel',publisher:'HappyGo Travel',category:'travel',keywords:['HappyGo Travel','du lịch Việt Nam','tour du lịch','đặt khách sạn','villa nghỉ dưỡng','resort','du thuyền','tour trong nước'],alternates:{canonical:'/'},manifest:`${ASSET_BASE}/manifest.webmanifest`,icons:{icon:`${ASSET_BASE}/icon.svg`,apple:`${ASSET_BASE}/icon.svg`},appleWebApp:{capable:true,statusBarStyle:'default',title:'HappyGo'},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},openGraph:{title:'HappyGo Travel | Hành trình hạnh phúc',description,type:'website',locale:'vi_VN',siteName:'HappyGo Travel',url:SITE},twitter:{card:'summary_large_image',title:'HappyGo Travel | Tour, khách sạn, villa & du thuyền',description},other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-pwa-v3-20260903'}};
-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){const organization={"@context":"https://schema.org","@type":["TravelAgency","Organization"],"@id":`${SITE}/#organization`,"name":"HappyGo Travel","url":SITE,"email":"info@happygo.vn","telephone":"+84969973949","areaServed":{"@type":"Country","name":"Vietnam"},"contactPoint":{"@type":"ContactPoint","telephone":"+84969973949","contactType":"customer service","areaServed":"VN","availableLanguage":"Vietnamese"}};return <html lang="vi"><body id="top" data-ui-version="happygo-pwa-v3-20260903"><script type="application/ld+json">{JSON.stringify(organization)}</script><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>}
+
+export const metadata:Metadata={
+  metadataBase:new URL(SITE),
+  title:{default:'HappyGo Travel | Tour, khách sạn, villa & du thuyền',template:'%s | HappyGo Travel'},
+  description,
+  applicationName:'HappyGo Travel',
+  authors:[{name:'HappyGo Travel',url:SITE}],
+  creator:'HappyGo Travel',
+  publisher:'HappyGo Travel',
+  category:'travel',
+  keywords:['HappyGo Travel','du lịch Việt Nam','tour du lịch','đặt khách sạn','villa nghỉ dưỡng','resort','du thuyền','tour trong nước'],
+  alternates:{canonical:'/'},
+  manifest:'/manifest.webmanifest',
+  icons:{icon:'/icon.svg',apple:'/icon.svg'},
+  appleWebApp:{capable:true,statusBarStyle:'default',title:'HappyGo'},
+  formatDetection:{email:false,address:false,telephone:false},
+  robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
+  openGraph:{title:'HappyGo Travel | Hành trình hạnh phúc',description,type:'website',locale:'vi_VN',siteName:'HappyGo Travel',url:SITE},
+  twitter:{card:'summary_large_image',title:'HappyGo Travel | Tour, khách sạn, villa & du thuyền',description},
+  other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-vercel-20260903'},
+};
+
+export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){
+  const organization={
+    '@context':'https://schema.org',
+    '@type':['TravelAgency','Organization'],
+    '@id':`${SITE}/#organization`,
+    name:'HappyGo Travel',
+    url:SITE,
+    email:'info@happygo.vn',
+    telephone:'+84969973949',
+    areaServed:{'@type':'Country',name:'Vietnam'},
+    contactPoint:{'@type':'ContactPoint',telephone:'+84969973949',contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'},
+  };
+  return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260903"><script type="application/ld+json">{JSON.stringify(organization)}</script><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
+}
