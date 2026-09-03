@@ -35,6 +35,7 @@ import './service-operations.css';
 import './accounting-workspace.css';
 import './attendance-workspace.css';
 import './sales-availability.css';
+import './marketing-sales-funnel.css';
 import './today-work.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';

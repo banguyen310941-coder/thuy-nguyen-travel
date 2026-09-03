@@ -8,6 +8,7 @@ import { AdminSupplierOrders } from "@/components/AdminSupplierOrders";
 import { AdminCustomerVouchers } from "@/components/AdminCustomerVouchers";
 import { AdminBackupCenter } from "@/components/AdminBackupCenter";
 import { AdminMarketingBudget } from "@/components/AdminMarketingBudget";
+import { AdminMarketingSalesFunnel } from "@/components/AdminMarketingSalesFunnel";
 import { AdminAccountingWorkspace } from "@/components/AdminAccountingWorkspace";
 import { AdminAttendanceWorkspace } from "@/components/AdminAttendanceWorkspace";
 import { AdminAttendanceNotifications } from "@/components/AdminAttendanceNotifications";
@@ -459,7 +460,10 @@ export default function AdminPage() {
           <AdminEmailCampaigns />
         )}
         {active === "Marketing & ngân sách" && allowed(active) && (
-          <AdminMarketingBudget />
+          <>
+            <AdminMarketingBudget />
+            <AdminMarketingSalesFunnel />
+          </>
         )}
         {active === "Lịch giá & tồn phòng" && allowed(active) && (
           <AdminRateManager />
