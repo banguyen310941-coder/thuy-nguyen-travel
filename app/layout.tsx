@@ -38,6 +38,7 @@ import './sales-availability.css';
 import './marketing-sales-funnel.css';
 import './today-work.css';
 import './admin-shared-data.css';
+import './portal-production.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
@@ -74,7 +75,7 @@ export const metadata:Metadata={
   robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
   openGraph:{title:'HappyGo Travel | Hành trình hạnh phúc',description,type:'website',locale:'vi_VN',siteName:'HappyGo Travel',url:SITE},
   twitter:{card:'summary_large_image',title:'HappyGo Travel | Tour, khách sạn, villa & du thuyền',description},
-  other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-vercel-20260903'},
+  other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-vercel-20260904'},
 };
 
 export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){
@@ -89,5 +90,5 @@ export default function RootLayout({children}:Readonly<{children:React.ReactNode
     areaServed:{'@type':'Country',name:'Vietnam'},
     contactPoint:{'@type':'ContactPoint',telephone:'+84969973949',contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'},
   };
-  return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260903"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
+  return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260904"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
 }
