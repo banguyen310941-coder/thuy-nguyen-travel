@@ -6,6 +6,7 @@ import { AdminBookingOperations } from "@/components/AdminBookingOperations";
 import { AdminServiceOperations } from "@/components/AdminServiceOperations";
 import { AdminSupplierOrders } from "@/components/AdminSupplierOrders";
 import { AdminCustomerVouchers } from "@/components/AdminCustomerVouchers";
+import { AdminBackupCenter } from "@/components/AdminBackupCenter";
 import { AdminTodayWork } from "@/components/AdminTodayWork";
 import { AdminInstallApp } from "@/components/AdminInstallApp";
 import { AdminPaymentApprovals } from "@/components/AdminPaymentApprovals";
@@ -75,6 +76,7 @@ const modules = [
   ["⌂", "Giao diện (Trang chủ)"],
   ["⌕", "Cấu hình SEO"],
   ["⇩", "Google Drive"],
+  ["↧", "Sao lưu dữ liệu"],
   ["♲", "Thùng rác / Xóa dữ liệu"],
   ["⚙", "Cài đặt"],
 ] as const;
@@ -105,7 +107,7 @@ const permission: Record<string, string> = {
   "Google Drive": "settings",
   "Cài đặt": "settings",
 };
-const ownerOnly = ["Thùng rác / Xóa dữ liệu"];
+const ownerOnly = ["Sao lưu dữ liệu", "Thùng rác / Xóa dữ liệu"];
 const mobilePrimary = [
   "Tổng quan",
   "Điều hành Sale",
@@ -464,6 +466,7 @@ export default function AdminPage() {
         )}
         {active === "Cấu hình SEO" && allowed(active) && <AdminSeoPanel />}
         {active === "Google Drive" && allowed(active) && <AdminDrivePanel />}
+        {active === "Sao lưu dữ liệu" && owner && <AdminBackupCenter />}
         {active === "Cài đặt" && allowed(active) && <AdminSettingsPanel />}
       </main>
     </div>
