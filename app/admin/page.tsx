@@ -9,6 +9,8 @@ import { AdminCustomerVouchers } from "@/components/AdminCustomerVouchers";
 import { AdminBackupCenter } from "@/components/AdminBackupCenter";
 import { AdminMarketingBudget } from "@/components/AdminMarketingBudget";
 import { AdminAccountingWorkspace } from "@/components/AdminAccountingWorkspace";
+import { AdminAttendanceWorkspace } from "@/components/AdminAttendanceWorkspace";
+import { AdminAttendanceNotifications } from "@/components/AdminAttendanceNotifications";
 import { AdminTodayWork } from "@/components/AdminTodayWork";
 import { AdminInstallApp } from "@/components/AdminInstallApp";
 import { AdminPaymentApprovals } from "@/components/AdminPaymentApprovals";
@@ -59,6 +61,7 @@ const modules = [
   ["💳", "Duyệt & thanh toán"],
   ["📒", "Sổ công nợ"],
   ["₫", "Kế toán thu chi"],
+  ["⏱", "Chấm công"],
   ["📈", "Doanh thu & Sale"],
   ["💬", "Chat nội bộ"],
   ["◎", "Khách hàng / CRM"],
@@ -91,6 +94,7 @@ const permission: Record<string, string> = {
   "Duyệt & thanh toán": "payments",
   "Sổ công nợ": "ledger",
   "Kế toán thu chi": "ledger",
+  "Chấm công": "attendance",
   "Doanh thu & Sale": "revenue",
   "Khách hàng / CRM": "customers",
   "Quản lý đối tác": "partners",
@@ -116,8 +120,8 @@ const permission: Record<string, string> = {
 const ownerOnly = ["Sao lưu dữ liệu", "Thùng rác / Xóa dữ liệu"];
 const mobilePrimary = [
   "Tổng quan",
+  "Chấm công",
   "Điều hành Sale",
-  "Điều hành dịch vụ",
   "Chat nội bộ",
 ];
 export default function AdminPage() {
@@ -194,6 +198,7 @@ export default function AdminPage() {
       owner ||
       n === "Tổng quan" ||
       n === "Chat nội bộ" ||
+      n === "Chấm công" ||
       (!ownerOnly.includes(n) &&
         Boolean(permission[n] && current.permissions?.includes(permission[n]))),
     visible = modules.filter(([, n]) => allowed(n)),
@@ -246,6 +251,8 @@ export default function AdminPage() {
             <span>
               {n === "Điều hành Sale"
                 ? "Sale"
+                : n === "Chấm công"
+                  ? "Chấm công"
                 : n === "Điều hành dịch vụ"
                   ? "Dịch vụ"
                   : n === "Chat nội bộ"
@@ -326,6 +333,10 @@ export default function AdminPage() {
               onOpen={(m) => {
                 if (allowed(m)) go(m);
               }}
+            />
+            <AdminAttendanceNotifications
+              staffId={current.id}
+              onOpen={() => go("Chấm công")}
             />
             <div className="admin-identity">
               <small>ĐANG ĐĂNG NHẬP</small>
@@ -411,6 +422,7 @@ export default function AdminPage() {
         {active === "Kế toán thu chi" && allowed(active) && (
           <AdminAccountingWorkspace />
         )}
+        {active === "Chấm công" && <AdminAttendanceWorkspace />}
         {active === "Doanh thu & Sale" && allowed(active) && (
           <AdminRevenueDashboard />
         )}
