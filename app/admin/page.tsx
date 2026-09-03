@@ -8,6 +8,7 @@ import { AdminSupplierOrders } from "@/components/AdminSupplierOrders";
 import { AdminCustomerVouchers } from "@/components/AdminCustomerVouchers";
 import { AdminBackupCenter } from "@/components/AdminBackupCenter";
 import { AdminMarketingBudget } from "@/components/AdminMarketingBudget";
+import { AdminAccountingWorkspace } from "@/components/AdminAccountingWorkspace";
 import { AdminTodayWork } from "@/components/AdminTodayWork";
 import { AdminInstallApp } from "@/components/AdminInstallApp";
 import { AdminPaymentApprovals } from "@/components/AdminPaymentApprovals";
@@ -57,6 +58,7 @@ const modules = [
   ["🧾", "Phiếu thu khách"],
   ["💳", "Duyệt & thanh toán"],
   ["📒", "Sổ công nợ"],
+  ["₫", "Kế toán thu chi"],
   ["📈", "Doanh thu & Sale"],
   ["💬", "Chat nội bộ"],
   ["◎", "Khách hàng / CRM"],
@@ -88,6 +90,7 @@ const permission: Record<string, string> = {
   "Phiếu thu khách": "receipts",
   "Duyệt & thanh toán": "payments",
   "Sổ công nợ": "ledger",
+  "Kế toán thu chi": "ledger",
   "Doanh thu & Sale": "revenue",
   "Khách hàng / CRM": "customers",
   "Quản lý đối tác": "partners",
@@ -405,6 +408,9 @@ export default function AdminPage() {
           <AdminPaymentApprovals />
         )}
         {active === "Sổ công nợ" && allowed(active) && <AdminFinancialLedger />}
+        {active === "Kế toán thu chi" && allowed(active) && (
+          <AdminAccountingWorkspace />
+        )}
         {active === "Doanh thu & Sale" && allowed(active) && (
           <AdminRevenueDashboard />
         )}
