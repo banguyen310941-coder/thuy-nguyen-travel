@@ -21,7 +21,7 @@ function blankProposal():ProposalDraft{return{id:'',title:'',campaign:'',month:c
 function blankExpense():ExpenseDraft{return{proposalId:'',campaign:'',date:today(),category:categories[0],channel:channels[0],vendor:'',amount:'',documentRef:'',note:''}}
 function read<T>(key:string,fallback:T):T{try{return JSON.parse(localStorage.getItem(key)||'')??fallback}catch{return fallback}}
 function store<T>(key:string,value:T,event:string){localStorage.setItem(key,JSON.stringify(value));window.dispatchEvent(new Event(event))}
-function num(value:unknown){const parsed=Number(String(value??'').replace(/[^d.-]/g,''));return Number.isFinite(parsed)?parsed:0}
+function num(value:unknown){const parsed=Number(String(value??'').replace(/[^\d.-]/g,''));return Number.isFinite(parsed)?parsed:0}
 function time(value?:string){if(!value)return'—';const parsed=new Date(value);return Number.isNaN(+parsed)?value:parsed.toLocaleString('vi-VN')}
 function date(value?:string){if(!value)return'—';const parsed=new Date(`${value.slice(0,10)}T00:00:00`);return Number.isNaN(+parsed)?value:parsed.toLocaleDateString('vi-VN')}
 function esc(value:unknown){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]||char))}
