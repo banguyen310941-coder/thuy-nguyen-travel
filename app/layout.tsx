@@ -8,6 +8,7 @@ import './booking-live.css';
 import './checkout.css';
 import './tour-rich.css';
 import './product-detail-v2.css';
+import './product-gallery-calendar.css';
 import './public-product-sync.css';
 import './units-public.css';
 import './fixes.css';
