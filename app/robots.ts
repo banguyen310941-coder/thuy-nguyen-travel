@@ -8,8 +8,8 @@ export default function robots():MetadataRoute.Robots{
   return {
     rules:[{
       userAgent:'*',
-      allow:'/',
-      disallow:['/admin/','/partner/','/account/','/checkout/','/api/','/search','/product','/tour-product','/guide/read'],
+      allow:['/','/product/'],
+      disallow:['/admin/','/partner/','/affiliate/','/account/','/checkout/','/api/','/search','/tour-product','/guide/read'],
     }],
     sitemap:`${base}/sitemap.xml`,
     host:base,
