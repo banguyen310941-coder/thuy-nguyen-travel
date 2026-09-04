@@ -24,6 +24,7 @@ import './admin-action-language.css';
 import './crm-workboard-v2.css';
 import './partner-manager-v2.css';
 import './affiliate-admin.css';
+import './affiliate-payout-queue.css';
 
 export const metadata:Metadata={title:'Quản trị HappyGo Travel',robots:{index:false,follow:false,nocache:true}};
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/><AdminAffiliateShortcut/>{children}</>}
