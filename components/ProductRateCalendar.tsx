@@ -28,7 +28,8 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
       const response=await fetch('/api/catalog/site-state',{cache:'no-store',headers:{accept:'application/json'}});
       if(!response.ok)throw new Error(`HTTP ${response.status}`);
       const payload=await response.json();
-      const incoming=Array.isArray(payload?.rates)?payload.rates as RateRange[]:[];
+      const stateRates=payload?.state?.tn_cms_daily_rates_v1;
+      const incoming=Array.isArray(stateRates)?stateRates as RateRange[]:Array.isArray(payload?.rates)?payload.rates as RateRange[]:[];
       setAllRates(incoming);
       setRatesLoaded(true);
       try{localStorage.setItem(RATE_KEY,JSON.stringify(incoming))}catch{}
@@ -67,7 +68,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
 
   if(!unit)return null;
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
-    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Đây là giá bán chính xác theo từng ngày.</b> Giá được đọc trực tiếp từ dữ liệu production; giá gốc đã được cộng biên lợi nhuận trước khi hiển thị.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
+    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng ngày lưu trú.</b> Chọn ngày có giá để xem hạng phòng và gửi yêu cầu đặt phòng.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
     <div className="prc-month"><button type="button" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>‹</button><b>{monthName(month)}</b><button type="button" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>›</button></div>
     <div className="prc-weekdays">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><span key={x}>{x}</span>)}</div>
     <div className="prc-grid">{cells.map((date,index)=>{
@@ -81,8 +82,8 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
       const disabled=key<today||unavailable||missing||loading;
       const className=[key<today?'past':'',unavailable?'soldout':'',missing?'unpriced':'',loading?'loading':'',key===selected?'selected':'',!disabled?'clickable':''].filter(Boolean).join(' ');
       const status=loading?'Đang tải':unavailable?'Hết':missing?'Chưa mở':compact(price);
-      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải giá production':missing?'Ngày này chưa có giá bán chính xác trong lịch production':unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{rate?.note&&<em>{rate.note}</em>}</button>;
+      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải lịch giá':missing?'Ngày này chưa mở giá bán':unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{rate?.note&&<em>{rate.note}</em>}</button>;
     })}</div>
-    <div className="prc-note"><span>Giá trên lịch là nguồn giá xác nhận. Bấm ngày có giá để chọn nhanh 1 đêm.</span><a href="#booking">Hoặc chọn ngày trong khung đặt phòng →</a></div>
+    <div className="prc-note"><span>Giá hiển thị là giá bán cho khách theo ngày đã chọn.</span><a href="#booking">Hoặc chọn ngày trong khung đặt phòng →</a></div>
   </section>;
 }
