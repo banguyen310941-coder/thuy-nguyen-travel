@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {clearSessionCookie,hashPassword,readSession,setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
+import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
 
 const COOKIE='happygo_customer_auth';
 function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
@@ -40,8 +41,8 @@ export async function POST(req:NextRequest){
    const response=NextResponse.json({ok:true,authenticated:true});setSessionCookie(response,COOKIE,'customer',accountId);return response;
   }
   if(action==='login'){
-   const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!emailOk(email)||!password)return NextResponse.json({error:'Email hoặc mật khẩu không hợp lệ.'},{status:400});
-   const rows=await sql`select id,password_hash,status from customer_accounts where lower(email)=${email} limit 1`;const account=rows[0];if(!account||!verifyPassword(password,String(account.password_hash||'')))return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401});if(String(account.status)!=='active')return NextResponse.json({error:'Tài khoản đang bị khóa.'},{status:403});await sql`update customer_accounts set last_login_at=now(),updated_at=now() where id=${String(account.id)}`;
+   const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!emailOk(email)||!password)return NextResponse.json({error:'Email hoặc mật khẩu không hợp lệ.'},{status:400});const attemptKey=authAttemptKey(req,'customer',email);if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429});
+   const rows=await sql`select id,password_hash,status from customer_accounts where lower(email)=${email} limit 1`;const account=rows[0];if(!account||!verifyPassword(password,String(account.password_hash||''))){await recordLoginAttempt(sql,attemptKey,'customer',false);return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401})}await recordLoginAttempt(sql,attemptKey,'customer',true);if(String(account.status)!=='active')return NextResponse.json({error:'Tài khoản đang bị khóa.'},{status:403});await sql`update customer_accounts set last_login_at=now(),updated_at=now() where id=${String(account.id)}`;
    const response=NextResponse.json({ok:true,authenticated:true});setSessionCookie(response,COOKIE,'customer',String(account.id));return response;
   }
   if(action==='logout'){
