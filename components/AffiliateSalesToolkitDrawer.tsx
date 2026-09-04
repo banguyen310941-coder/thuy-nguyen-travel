@@ -3,8 +3,8 @@
 import {useEffect,useState} from 'react';
 import {AffiliateSalesToolkit} from '@/components/AffiliateSalesToolkit';
 
-type Villa={id:string;name:string;place:string;publicPrice:number;affiliateLink:string};
-type Dashboard={affiliate:{commissionRate:number;referralCode:string};villas:Villa[]};
+type Product={id:string;slug:string;type:string;name:string;place:string;cover:string;publicPrice:number;affiliateLink:string;media:string[];albumUrl:string};
+type Dashboard={affiliate:{commissionRate:number;referralCode:string};products?:Product[];villas:Product[]};
 
 export function AffiliateSalesToolkitDrawer(){
  const[open,setOpen]=useState(false),[data,setData]=useState<Dashboard|null>(null);
@@ -12,7 +12,7 @@ export function AffiliateSalesToolkitDrawer(){
  return <>
   <button type="button" className="affiliate-toolkit-fab" onClick={()=>setOpen(true)}>✦ Bộ công cụ bán hàng</button>
   {open&&<div className="affiliate-toolkit-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false)}}>
-   <div className="affiliate-toolkit-drawer"><div className="affiliate-toolkit-drawer-head"><div><small>HAPPYGO TRAVEL · CTV</small><b>Công cụ chia sẻ & chính sách</b></div><button type="button" onClick={()=>setOpen(false)}>×</button></div>{data?<AffiliateSalesToolkit villas={data.villas||[]} commissionRate={Number(data.affiliate?.commissionRate||0)} referralCode={String(data.affiliate?.referralCode||'')}/>:<div className="affiliate-loading compact">Đang tải bộ công cụ...</div>}</div>
+   <div className="affiliate-toolkit-drawer"><div className="affiliate-toolkit-drawer-head"><div><small>HAPPYGO TRAVEL · CTV</small><b>Công cụ chia sẻ & album ảnh</b></div><button type="button" onClick={()=>setOpen(false)}>×</button></div>{data?<AffiliateSalesToolkit products={data.products?.length?data.products:data.villas||[]} commissionRate={Number(data.affiliate?.commissionRate||0)} referralCode={String(data.affiliate?.referralCode||'')}/>:<div className="affiliate-loading compact">Đang tải bộ công cụ...</div>}</div>
   </div>}
  </>;
 }
