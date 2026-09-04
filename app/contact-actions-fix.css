@@ -1,0 +1,54 @@
+/* Final contact-action guardrail: loaded last so support buttons cannot be hidden by older responsive CSS. */
+.floating-actions{
+  position:fixed!important;
+  right:max(12px,env(safe-area-inset-right))!important;
+  bottom:max(14px,env(safe-area-inset-bottom))!important;
+  z-index:1200!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  gap:10px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.floating-actions .call-float,
+.floating-actions .zalo-float,
+.floating-actions a:first-child{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.floating-actions .call-float{background:#ff641d!important;color:#fff!important}
+.floating-actions .zalo-float{background:#0878d1!important;color:#fff!important}
+
+@media(max-width:700px){
+  .floating-actions{
+    right:max(12px,env(safe-area-inset-right))!important;
+    bottom:calc(14px + env(safe-area-inset-bottom))!important;
+    gap:10px!important;
+  }
+  .floating-actions .call-float,
+  .floating-actions .zalo-float,
+  .floating-actions a:first-child{
+    width:58px!important;
+    height:58px!important;
+    min-width:58px!important;
+    min-height:58px!important;
+    border-radius:50%!important;
+    padding:0!important;
+    box-shadow:0 7px 22px rgba(0,0,0,.22)!important;
+    border:4px solid #fff!important;
+    font-size:20px!important;
+  }
+  .floating-actions .contact-label{display:none!important}
+  .floating-actions .zalo-word{font-size:15px!important;font-weight:900!important}
+  .booking-cart-badge{
+    right:max(14px,env(safe-area-inset-right))!important;
+    bottom:calc(158px + env(safe-area-inset-bottom))!important;
+    z-index:1150!important;
+  }
+}
