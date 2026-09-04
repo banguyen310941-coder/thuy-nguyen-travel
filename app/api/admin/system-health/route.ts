@@ -36,13 +36,14 @@ export async function GET(req:NextRequest){
   const hasMedia=sharedKeys.has('tn_cms_media_images_v2');
   const hasAttendance=sharedKeys.has('happygo_attendance_config_v1')||sharedKeys.has('happygo_attendance_records_v1');
   const hasChat=sharedKeys.has('happygo_admin_team_chat_v4')||sharedKeys.has('happygo_admin_chat_groups_v4');
-  const drive=isGoogleDriveConfigured(),email=Boolean(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM);
+  const drive=isGoogleDriveConfigured(),email=Boolean(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM),paymentWebhook=Boolean(process.env.PAYMENT_WEBHOOK_SECRET?.trim());
   const modules=[
    {id:'database',label:'Neon PostgreSQL',state:'ok',detail:'Kết nối đọc/ghi production',count:null},
    {id:'auth',label:'Tài khoản & phân quyền',state:Number(c.staff)>0?'ok':'warning',detail:`${Number(c.staff||0)} tài khoản nhân viên đang hoạt động · đăng nhập có giới hạn thử sai`,count:Number(c.staff||0)},
    {id:'crm',label:'CRM & khách hàng',state:'ok',detail:'Dữ liệu chuẩn lưu trên Neon',count:Number(c.customers||0)},
    {id:'bookings',label:'Booking & Điều hành',state:'ok',detail:'Booking chuẩn trên Neon + trạng thái vận hành dùng chung',count:Number(c.bookings||0)},
    {id:'finance',label:'Phiếu thu · Đề xuất chi · Kế toán',state:'ok',detail:`${Number(c.receipts||0)} phiếu thu · ${Number(c.payment_requests||0)} đề xuất · ${Number(c.accounting_entries||0)} bút toán`,count:Number(c.accounting_entries||0)},
+   {id:'payment_webhook',label:'Payment webhook',state:paymentWebhook?'ok':'optional',detail:paymentWebhook?'Endpoint payment_paid idempotent đã được bảo vệ bằng secret':'Adapter thanh toán đã sẵn sàng; cần PAYMENT_WEBHOOK_SECRET khi kết nối cổng thanh toán',count:null},
    {id:'partners',label:'Đối tác & sản phẩm đối tác',state:'ok',detail:`Tài khoản, duyệt, giá và hỗ trợ trên Neon · ${Number(c.partner_products||0)} sản phẩm đối tác`,count:Number(c.partners||0)},
    {id:'affiliates',label:'Cộng tác viên & hoa hồng',state:'ok',detail:`${Number(c.active_affiliates||0)}/${Number(c.affiliates||0)} CTV hoạt động · ${Number(c.affiliate_referrals||0)} referral · số dư chờ chi ${Number(c.affiliate_balance||0).toLocaleString('vi-VN')}đ`,count:Number(c.affiliates||0)},
    {id:'customer_accounts',label:'Tài khoản khách hàng',state:'ok',detail:'Đăng nhập và lịch sử booking theo session server',count:Number(c.customer_accounts||0)},
