@@ -29,7 +29,7 @@ export async function PATCH(req:NextRequest){
     }
     if(entity==='product'){
       if(!['draft','review','approved','rejected'].includes(status))return NextResponse.json({error:'Trạng thái sản phẩm không hợp lệ.'},{status:400});
-      const rows=await sql`update products set status=${status},updated_at=now() where id=${id} returning id,status`;if(!rows.length)return NextResponse.json({error:'Không tìm thấy sản phẩm.'},{status:404});
+      const rows=await sql`update products set status=${status},updated_at=now() where id=${id} and partner_id is not null returning id,status`;if(!rows.length)return NextResponse.json({error:'Không tìm thấy sản phẩm đối tác.'},{status:404});
       await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'partner_product.status','product',${id},${JSON.stringify({status})}::jsonb)`;
       return NextResponse.json({ok:true,id,status});
     }
