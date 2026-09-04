@@ -21,7 +21,7 @@ const ALLOWED_KEYS = new Set([
   "tn_cms_products_v3_units", "tn_cms_daily_rates_v1", "tn_cms_tours_v3", "tn_cms_articles_v3", "tn_cms_homepage", "tn_cms_media_images_v2",
   "happygo_admin_team_chat_v4", "happygo_admin_chat_reads_v4", "happygo_admin_chat_pins_v4", "happygo_admin_chat_groups_v4",
 ]);
-const DIRECT_WRITE_KEYS = new Set(["happygo_marketing_budget_proposals_v1","happygo_marketing_expenses_v1"]);
+const DIRECT_WRITE_KEYS = new Set(["happygo_marketing_budget_proposals_v1","happygo_marketing_expenses_v1","happygo_crm_sales_availability_v1"]);
 
 const KEY_PERMISSION: Record<string, string | null> = {
   tn_local_bookings_v1: "bookings",
