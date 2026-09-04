@@ -83,12 +83,6 @@ function parseEnvelope(value: unknown): SharedEnvelope | null {
   return { value: envelope.value, updatedAt: String(envelope.updatedAt || ""), updatedBy: envelope.updatedBy ? String(envelope.updatedBy) : undefined };
 }
 
-function bookingNumber(code: string) {
-  let hash = 2166136261;
-  for (let index = 0; index < code.length; index += 1) hash = Math.imul(hash ^ code.charCodeAt(index), 16777619);
-  return (hash >>> 0) || 1;
-}
-
 function bookingStatus(value: unknown) {
   const status = String(value || "new");
   return ["new", "contacting", "confirmed", "completed", "cancelled"].includes(status) ? status : "new";
@@ -96,7 +90,7 @@ function bookingStatus(value: unknown) {
 
 async function databaseBookings(sql: ReturnType<typeof db>) {
   const rows = await sql`
-    select b.code,b.status,b.source,b.start_date,b.end_date,b.adults,b.children,b.rooms,
+    select b.id,b.code,b.status,b.source,b.start_date,b.end_date,b.adults,b.children,b.rooms,
       b.customer_name_snapshot,b.phone_snapshot,b.email_snapshot,b.note,b.admin_note,
       b.selling_total_vnd,b.cost_total_vnd,b.sales_staff_id,b.sales_staff_name_snapshot,b.sales_assigned_at,b.created_at,
       item.product_name_snapshot,item.unit_name_snapshot,item.data_snapshot
@@ -107,7 +101,7 @@ async function databaseBookings(sql: ReturnType<typeof db>) {
     order by b.created_at desc limit 1000
   `;
   return rows.map((row) => ({
-    id: bookingNumber(String(row.code)), code: String(row.code), kind: String((row.data_snapshot as {kind?: unknown} | null)?.kind || "Dịch vụ"),
+    id: String(row.id), code: String(row.code), kind: String((row.data_snapshot as {kind?: unknown} | null)?.kind || "Dịch vụ"),
     product: String(row.product_name_snapshot || "Dịch vụ HappyGo") + (row.unit_name_snapshot ? ` · ${row.unit_name_snapshot}` : ""),
     customer_name: String(row.customer_name_snapshot || "Khách hàng"), phone: String(row.phone_snapshot || ""), email: row.email_snapshot ? String(row.email_snapshot) : "",
     start_date: row.start_date ? String(row.start_date).slice(0, 10) : null, end_date: row.end_date ? String(row.end_date).slice(0, 10) : null,
