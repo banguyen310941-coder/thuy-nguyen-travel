@@ -17,7 +17,7 @@ const ALLOWED_KEYS = new Set([
   "happygo_supplier_service_orders_v1", "happygo_inventory_reservations_v1", "happygo_customer_vouchers_v1",
   "happygo_booking_confirm_v1", "happygo_booking_confirm_versions_v1", "happygo_booking_operator_history_v1", "happygo_booking_ops_checklist_v1", "happygo_booking_price_history_v1", "happygo_booking_status_history_v1",
   "happygo_attendance_config_v1", "happygo_attendance_records_v1", "happygo_attendance_notifications_v1",
-  "tn_cms_products_v3_units", "tn_cms_daily_rates_v1", "tn_cms_tours_v3", "tn_cms_articles_v3", "tn_cms_homepage",
+  "tn_cms_products_v3_units", "tn_cms_daily_rates_v1", "tn_cms_tours_v3", "tn_cms_articles_v3", "tn_cms_homepage", "tn_cms_media_images_v2",
   "happygo_admin_team_chat_v4", "happygo_admin_chat_reads_v4", "happygo_admin_chat_pins_v4", "happygo_admin_chat_groups_v4",
 ]);
 
@@ -56,6 +56,7 @@ const KEY_PERMISSION: Record<string, string | null> = {
   tn_cms_tours_v3: "tours",
   tn_cms_articles_v3: "content",
   tn_cms_homepage: "settings",
+  tn_cms_media_images_v2: "media",
   happygo_admin_team_chat_v4: null,
   happygo_admin_chat_reads_v4: null,
   happygo_admin_chat_pins_v4: null,
