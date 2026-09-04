@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect,useMemo,useState} from 'react';
-import {usePathname,useRouter,useSearchParams} from 'next/navigation';
+import {usePathname,useRouter} from 'next/navigation';
 import {RATE_KEY,ratePriceForDate,type RateRange} from '@/components/AdminRateCalendar';
 import {pricingDateKey} from '@/lib/pricing-calendar';
 
@@ -14,13 +14,14 @@ const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getM
 export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{units:Unit[];label?:string}){
   const router=useRouter();
   const pathname=usePathname();
-  const params=useSearchParams();
   const availableUnits=useMemo(()=>units.filter(u=>u.status!=='hidden'),[units]);
   const [unitId,setUnitId]=useState(availableUnits[0]?.id||'');
   const [month,setMonth]=useState(()=>{const now=new Date();return new Date(now.getFullYear(),now.getMonth(),1)});
   const [rev,setRev]=useState(0);
+  const [selected,setSelected]=useState('');
   useEffect(()=>{if(!availableUnits.some(u=>u.id===unitId))setUnitId(availableUnits[0]?.id||'')},[availableUnits,unitId]);
   useEffect(()=>{const refresh=()=>setRev(x=>x+1);window.addEventListener('tn-rates-updated',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('tn-rates-updated',refresh);window.removeEventListener('storage',refresh)}},[]);
+  useEffect(()=>{const read=()=>setSelected(new URLSearchParams(window.location.search).get('checkin')||'');read();window.addEventListener('popstate',read);window.addEventListener('tn-pricing-dates-updated',read);return()=>{window.removeEventListener('popstate',read);window.removeEventListener('tn-pricing-dates-updated',read)}},[]);
   const unit=availableUnits.find(u=>u.id===unitId)||availableUnits[0];
   const rates=useMemo(()=>readRates().filter(r=>r.unitId===unitId),[unitId,rev]);
   const year=month.getFullYear(),monthIndex=month.getMonth();
@@ -28,9 +29,8 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
   const cells=Array.from({length:leading+last.getDate()},(_,index)=>index<leading?null:new Date(year,monthIndex,index-leading+1));
   while(cells.length%7)cells.push(null);
   const today=pricingDateKey(new Date());
-  const selected=params.get('checkin')||'';
   const rateFor=(key:string)=>{const matches=rates.filter(r=>r.start&&r.end&&key>=r.start&&key<=r.end);return matches.length?matches[matches.length-1]:null};
-  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const next=new URLSearchParams(params.toString());next.set('checkin',key);next.set('checkout',nextDateKey(date));router.replace(`${pathname}?${next.toString()}`,{scroll:false});setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
+  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',nextDateKey(date));router.replace(`${pathname}?${next.toString()}`,{scroll:false});setSelected(key);window.dispatchEvent(new Event('tn-pricing-dates-updated'));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
   if(!unit)return null;
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
     <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Đây là giá bán chính xác theo từng ngày.</b> Ngày chưa có giá production sẽ hiện “Chưa mở giá”, không lấy giá đề xuất để thay thế.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
