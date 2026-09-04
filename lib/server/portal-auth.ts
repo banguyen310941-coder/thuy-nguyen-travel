@@ -1,7 +1,7 @@
 import {createHmac,randomBytes,scryptSync,timingSafeEqual} from 'crypto';
 import type {NextRequest,NextResponse} from 'next/server';
 
-export type PortalKind='partner'|'admin';
+export type PortalKind='partner'|'admin'|'customer';
 type SessionPayload={kind:PortalKind;id:string;exp:number};
 
 function secret(){
