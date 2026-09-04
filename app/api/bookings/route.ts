@@ -6,12 +6,18 @@ function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'
 function code(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `HG${y}${m}${day}-${Math.random().toString(36).slice(2,7).toUpperCase()}`}
 function esc(v:unknown){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]||c))}
 async function sendEmail(to:string,subject:string,html:string){const key=process.env.RESEND_API_KEY;if(!key)return;const from=process.env.EMAIL_FROM||'HappyGo Travel <booking@happygo.vn>';const replyTo=process.env.EMAIL_REPLY_TO||'info@happygo.vn';await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],reply_to:replyTo,subject,html})})}
+async function availableSales(sql:any){
+ const sales=await sql`select id,name from staff where status='active' and (role='sales' or department='sales') order by name,id`;if(!sales.length)return[];
+ const rows=await sql`select distinct on (entity_id) entity_id,after_data from audit_logs where entity_type='sales_availability' order by entity_id,created_at desc,id desc`;
+ const state=new Map(rows.map((row:any)=>[String(row.entity_id),row.after_data as any]));
+ return sales.filter((sale:any)=>{const value:any=state.get(String(sale.id));return value?.receivingCustomers!==false});
+}
 async function resolveSalesAssignment(sql:any,customerId:string){
  const existing=await sql`select ca.staff_id,s.name from customer_assignments ca join staff s on s.id=ca.staff_id where ca.customer_id=${customerId} and s.status='active' limit 1`;
  if(existing[0])return{id:String(existing[0].staff_id),name:String(existing[0].name)};
  await sql`insert into sales_rotation(id,enabled,assigned_count) values(1,false,0) on conflict(id) do nothing`;
  const rotation=await sql`select last_staff_id,enabled from sales_rotation where id=1 limit 1`;if(!rotation[0]?.enabled)return null;
- const sales=await sql`select id,name from staff where status='active' and (role='sales' or department='sales') order by name,id`;if(!sales.length)return null;
+ const sales=await availableSales(sql);if(!sales.length)return null;
  const last=String(rotation[0].last_staff_id||''),index=sales.findIndex((item:any)=>String(item.id)===last),selected=sales[(index+1+sales.length)%sales.length]||sales[0];
  const inserted=await sql`insert into customer_assignments(customer_id,staff_id,source,assigned_at) values(${customerId},${String(selected.id)},'round_robin',now()) on conflict(customer_id) do nothing returning staff_id`;
  if(inserted.length){await sql`update sales_rotation set last_staff_id=${String(selected.id)},assigned_count=assigned_count+1,updated_at=now() where id=1`;return{id:String(selected.id),name:String(selected.name)}}
