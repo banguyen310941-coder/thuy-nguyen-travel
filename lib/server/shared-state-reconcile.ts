@@ -155,7 +155,7 @@ export async function productionSharedOverrides(actor:AdminActor,requested:Set<s
  if(requested.has('happygo_attendance_notifications_v1')){const value=array(await latestSharedValue('happygo_attendance_notifications_v1'));records.happygo_attendance_notifications_v1=envelope(value.filter(item=>String(item?.targetStaffId||'')===actor.id))}
  if(requested.has('happygo_admin_chat_groups_v4')){const groups=await chatGroups();records.happygo_admin_chat_groups_v4=envelope(groups.filter(group=>groupVisible(actor,group)))}
  if(requested.has('happygo_admin_team_chat_v4')){const groups=await chatGroups(),messages=array(await latestSharedValue('happygo_admin_team_chat_v4'));records.happygo_admin_team_chat_v4=envelope(messages.filter(message=>messageVisible(actor,message,groups)))}
- if(requested.has('happygo_admin_chat_reads_v4')){const reads=object(await latestSharedValue('happygo_admin_chat_reads_v4')),mine:Object=Object.fromEntries(Object.entries(reads).filter(([key])=>key.startsWith(`${actor.id}:`)));records.happygo_admin_chat_reads_v4=envelope(mine)}
+ if(requested.has('happygo_admin_chat_reads_v4')){const reads=object(await latestSharedValue('happygo_admin_chat_reads_v4')),mine:Record<string,unknown>=Object.fromEntries(Object.entries(reads).filter(([key])=>key.startsWith(`${actor.id}:`)));records.happygo_admin_chat_reads_v4=envelope(mine)}
  if(requested.has('happygo_admin_chat_pins_v4')){const value=object(await latestSharedValue('happygo_admin_chat_pins_v4')),byUser=object(value.__byUser);records.happygo_admin_chat_pins_v4=envelope(object(byUser[actor.id]))}
  return records;
 }
