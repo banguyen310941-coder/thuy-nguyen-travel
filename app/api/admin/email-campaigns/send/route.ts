@@ -1,11 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
+import {adminActor} from '@/lib/server/admin-access';
 
-function authorized(req:NextRequest){
- const expected=process.env.ADMIN_API_KEY||'';
- const actual=req.headers.get('x-admin-key')||'';
- return Boolean(expected)&&actual===expected;
-}
 function esc(v:unknown){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))}
 function htmlBody(input:{name:string;title:string;message:string;ctaLabel?:string;ctaUrl?:string}){
  const message=esc(input.message.replace(/{{\s*name\s*}}/gi,input.name)).replace(/\n/g,'<br/>');
@@ -21,8 +17,9 @@ async function sendResend(to:string,subject:string,html:string){
  if(!r.ok)throw new Error(`RESEND_${r.status}_${await r.text()}`);
 }
 export async function POST(req:NextRequest){
- if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
  if(!hasDatabase())return NextResponse.json({error:'DATABASE_URL chưa được cấu hình.'},{status:503});
+ const actor=await adminActor(req,'email');
+ if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  if(!process.env.RESEND_API_KEY)return NextResponse.json({error:'RESEND_API_KEY chưa được cấu hình.'},{status:503});
  const body=await req.json().catch(()=>({}));
  const status=String(body.customerStatus||'');
