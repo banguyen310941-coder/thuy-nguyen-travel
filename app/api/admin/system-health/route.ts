@@ -27,7 +27,12 @@ export async function GET(req:NextRequest){
     (select count(*) from customer_accounts where status='active')::int customer_accounts`,
    sql`select entity_id,max(created_at) updated_at from audit_logs where entity_type='admin_shared_state' group by entity_id`
   ]);
-  const c=counts[0] as any,sharedKeys=new Set(shared.map((row:any)=>String(row.entity_id))),sharedCount=sharedKeys.size,hasContent=sharedKeys.has('tn_cms_articles_v3')||sharedKeys.has('tn_cms_tours_v3')||sharedKeys.has('tn_cms_homepage'),hasMedia=sharedKeys.has('tn_cms_media_images_v2'),drive=isGoogleDriveConfigured(),email=Boolean(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM);
+  const c=counts[0] as any,sharedKeys=new Set(shared.map((row:any)=>String(row.entity_id))),sharedCount=sharedKeys.size;
+  const hasContent=sharedKeys.has('tn_cms_articles_v3')||sharedKeys.has('tn_cms_tours_v3')||sharedKeys.has('tn_cms_homepage');
+  const hasMedia=sharedKeys.has('tn_cms_media_images_v2');
+  const hasAttendance=sharedKeys.has('happygo_attendance_config_v1')||sharedKeys.has('happygo_attendance_records_v1');
+  const hasChat=sharedKeys.has('happygo_admin_team_chat_v4')||sharedKeys.has('happygo_admin_chat_groups_v4');
+  const drive=isGoogleDriveConfigured(),email=Boolean(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM);
   const modules=[
    {id:'database',label:'Neon PostgreSQL',state:'ok',detail:'Kết nối đọc/ghi production',count:null},
    {id:'auth',label:'Tài khoản & phân quyền',state:Number(c.staff)>0?'ok':'warning',detail:`${Number(c.staff||0)} tài khoản nhân viên đang hoạt động`,count:Number(c.staff||0)},
@@ -36,11 +41,13 @@ export async function GET(req:NextRequest){
    {id:'finance',label:'Phiếu thu · Đề xuất chi · Kế toán',state:'ok',detail:`${Number(c.receipts||0)} phiếu thu · ${Number(c.payment_requests||0)} đề xuất · ${Number(c.accounting_entries||0)} bút toán`,count:Number(c.accounting_entries||0)},
    {id:'partners',label:'Đối tác & sản phẩm đối tác',state:'ok',detail:`Tài khoản, duyệt, giá và hỗ trợ trên Neon · ${Number(c.partner_products||0)} sản phẩm đối tác`,count:Number(c.partners||0)},
    {id:'customer_accounts',label:'Tài khoản khách hàng',state:'ok',detail:'Đăng nhập và lịch sử booking theo session server',count:Number(c.customer_accounts||0)},
-   {id:'operations',label:'Điều hành · NCC · Voucher · CRM Pipeline',state:'ok',detail:`${sharedCount} vùng trạng thái server đã phát sinh; vùng chưa dùng sẽ tạo khi thao tác`,count:sharedCount},
    {id:'catalog',label:'Sản phẩm nội bộ',state:'ok',detail:`Neon products/product_units · ${Number(c.internal_products||0)} sản phẩm · ${Number(c.internal_units||0)} đơn vị bán`,count:Number(c.internal_products||0)},
    {id:'rates',label:'Lịch giá & tồn',state:'ok',detail:`Neon rate_rules · ${Number(c.internal_rates||0)} khoảng giá đang lưu`,count:Number(c.internal_rates||0)},
-   {id:'content',label:'Trang chủ · Tour CMS · Bài viết',state:'ok',detail:hasContent?'Đã có snapshot nội dung production; public site-state đang phục vụ website':'Hạ tầng server sẵn sàng; chưa phát sinh nội dung CMS mới',count:null},
-   {id:'media',label:'Media file storage',state:'optional',detail:hasMedia?'Danh mục ảnh đang được đồng bộ; upload file cloud chưa nối storage riêng':'Có thể dùng URL ảnh; upload file cloud chưa nối storage riêng',count:null},
+   {id:'content',label:'Trang chủ · Tour CMS · Bài viết',state:'ok',detail:hasContent?'API production riêng đã có dữ liệu; public site-state đang phục vụ website':'API production riêng sẵn sàng; chưa phát sinh nội dung CMS mới',count:null},
+   {id:'attendance',label:'Chấm công',state:'ok',detail:hasAttendance?'Shared-state production; server giới hạn nhân viên sửa công của chính mình và quản lý chỉnh theo vai trò':'Server reconciliation và phân quyền đã sẵn sàng; chưa phát sinh dữ liệu chấm công',count:null},
+   {id:'chat',label:'Chat nội bộ',state:'ok',detail:hasChat?'Shared-state production; server kiểm phạm vi phòng, tin nhắn trực tiếp và nhóm':'Server kiểm phạm vi phòng/direct/group đã sẵn sàng; chưa phát sinh dữ liệu chat',count:null},
+   {id:'operations',label:'Điều hành · NCC · Voucher · CRM Pipeline',state:'ok',detail:`${sharedCount} vùng trạng thái server đã phát sinh; vùng chưa dùng sẽ tạo khi thao tác`,count:sharedCount},
+   {id:'media',label:'Media',state:'optional',detail:hasMedia?'Danh mục ảnh/URL HTTPS đang đồng bộ production; upload file cloud riêng chưa nối':'Có thể dùng URL HTTPS/CDN dùng chung; upload file cloud riêng là tích hợp tùy chọn',count:null},
    {id:'email',label:'Email Resend',state:email?'ok':'warning',detail:email?'Server đã có cấu hình gửi mail':'Chưa đủ biến môi trường gửi mail',count:null},
    {id:'drive',label:'Google Drive',state:drive?'ok':'optional',detail:drive?'OAuth/Service Account đã cấu hình cho luồng đọc Drive':'Tích hợp đọc file tùy chọn; chưa hoàn tất OAuth',count:null},
   ];
