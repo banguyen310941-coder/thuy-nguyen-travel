@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AdminStaff } from "@/components/AdminSalesAccess";
 import {
   SHARED_ADMIN_KEYS,
@@ -8,10 +8,18 @@ import {
   SHARED_STATUS_EVENT,
   isApplyingSharedData,
   queueSharedKeys,
-  scanSharedChanges,
   syncSharedData,
+  type SharedAdminKey,
   type SharedSyncDetail,
 } from "@/lib/admin-shared-data";
+
+const SERVER_OWNED_CACHE_KEYS = new Set<SharedAdminKey>([
+  "tn_cms_products_v3_units",
+  "tn_cms_daily_rates_v1",
+  "tn_cms_tours_v3",
+  "tn_cms_articles_v3",
+  "tn_cms_homepage",
+]);
 
 const initialStatus: SharedSyncDetail = {
   state: "idle",
@@ -20,34 +28,35 @@ const initialStatus: SharedSyncDetail = {
 
 export function AdminSharedDataStatus({ staff }: { staff: AdminStaff }) {
   const [status, setStatus] = useState<SharedSyncDetail>(initialStatus);
+  const legacyKeys = useMemo(() => SHARED_ADMIN_KEYS.filter((key) => !SERVER_OWNED_CACHE_KEYS.has(key)), []);
 
   useEffect(() => {
     try { localStorage.removeItem("tn_admin_api_key"); } catch {}
     const statusListener = (event: Event) => setStatus((event as CustomEvent<SharedSyncDetail>).detail);
-    const listeners = Object.entries(SHARED_EVENT_KEYS).map(([event, keys]) => {
+    const listeners = Object.entries(SHARED_EVENT_KEYS).flatMap(([event, keys]) => {
+      const writable = keys.filter((key) => !SERVER_OWNED_CACHE_KEYS.has(key));
+      if (!writable.length) return [];
       const listener = () => {
-        if (!isApplyingSharedData()) queueSharedKeys(keys, staff.name);
+        if (!isApplyingSharedData()) queueSharedKeys(writable, staff.name);
       };
       window.addEventListener(event, listener);
-      return [event, listener] as const;
+      return [[event, listener] as const];
     });
-    const refresh = () => { void syncSharedData(SHARED_ADMIN_KEYS, staff.name); };
+    const refresh = () => { void syncSharedData(legacyKeys, staff.name); };
     const visibility = () => { if (document.visibilityState === "visible") refresh(); };
     window.addEventListener(SHARED_STATUS_EVENT, statusListener);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", visibility);
     refresh();
     const refreshTimer = window.setInterval(refresh, 30000);
-    const scanTimer = window.setInterval(() => scanSharedChanges(staff.name), 2500);
     return () => {
       listeners.forEach(([event, listener]) => window.removeEventListener(event, listener));
       window.removeEventListener(SHARED_STATUS_EVENT, statusListener);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", visibility);
       window.clearInterval(refreshTimer);
-      window.clearInterval(scanTimer);
     };
-  }, [staff.name]);
+  }, [legacyKeys, staff.name]);
 
   const badge = status.state === "synced" ? "Đã đồng bộ" : status.state === "syncing" ? "Đang đồng bộ" : status.state === "error" ? "Lỗi đồng bộ" : "Đang kết nối";
 
@@ -63,9 +72,9 @@ export function AdminSharedDataStatus({ staff }: { staff: AdminStaff }) {
         <p>{status.message}</p>
         {status.at ? <time>Gần nhất: {new Date(status.at).toLocaleString("vi-VN")}</time> : null}
         <div>
-          <button className="admin-primary" onClick={() => void syncSharedData(SHARED_ADMIN_KEYS, staff.name)} disabled={status.state === "syncing"}>Đồng bộ ngay</button>
+          <button className="admin-primary" onClick={() => void syncSharedData(legacyKeys, staff.name)} disabled={status.state === "syncing"}>Đồng bộ ngay</button>
         </div>
-        <em>Dùng phiên đăng nhập HttpOnly hiện tại; không còn nhập hoặc lưu ADMIN_API_KEY trên trình duyệt. CRM, Điều hành, NCC, Voucher, CMS, lịch giá, chấm công và chat được đồng bộ giữa các thiết bị theo quyền tài khoản.</em>
+        <em>Dùng phiên đăng nhập HttpOnly hiện tại. Chấm công, chat và các vùng vận hành chuyển tiếp được đồng bộ theo quyền tài khoản; Sản phẩm, lịch giá, Tour, Bài viết và Trang chủ đã dùng API production riêng nên không còn ghi ngược qua hàng đợi legacy.</em>
       </div>
     </details>
   );
