@@ -1,0 +1,35 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {randomUUID} from 'node:crypto';
+import {db,hasDatabase} from '@/lib/db';
+import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+
+export const dynamic='force-dynamic';
+export const runtime='nodejs';
+
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const types=['Tour','Villa & Resort','Khách sạn','Du thuyền'] as const;
+type ProductType=(typeof types)[number];
+function elevated(actor:AdminActor){return actor.role==='owner'||actor.role==='admin'||actor.permissions.includes('*')}
+function canType(actor:AdminActor,type:ProductType){if(elevated(actor)||actor.permissions.includes('products'))return true;if(type==='Tour')return actor.permissions.includes('tours');if(type==='Villa & Resort'||type==='Khách sạn')return actor.permissions.includes('stays');return actor.permissions.includes('cruises')}
+function parseMoney(value:unknown){const digits=String(value??'').replace(/[^0-9]/g,'');return digits?Math.max(0,Number(digits)):0}
+function capacity(value:unknown){const match=String(value??'').match(/\d+/);return match?Math.max(0,Number(match[0])):null}
+function status(value:unknown){const item=String(value||'draft');return ['draft','published','hidden'].includes(item)?item:'draft'}
+function unitStatus(value:unknown){const item=String(value||'available');return ['available','hold','soldout','hidden'].includes(item)?item:'available'}
+function stripUnits(product:any){const clone={...product};delete clone.units;return clone}
+function mapProduct(row:any,units:any[]){const data=row.data&&typeof row.data==='object'?row.data:{};return{...data,id:String(row.id),partnerId:row.partner_id?String(row.partner_id):undefined,slug:String(row.slug||''),type:String(row.type),name:String(row.name||''),status:String(row.status||'draft'),summary:String(row.description||data.summary||''),source:'admin',createdAt:String(row.created_at||''),updatedAt:String(row.updated_at||''),units:units.filter(unit=>String(unit.product_id)===String(row.id)).map(unit=>({...(unit.data&&typeof unit.data==='object'?unit.data:{}),id:String(unit.id),code:String(unit.code||''),name:String(unit.name||''),capacity:String((unit.data as any)?.capacity||unit.capacity||''),weekdayPrice:String((unit.data as any)?.weekdayPrice||unit.retail_price_vnd||''),status:String(unit.status||'available')}))}}
+
+export async function GET(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});try{const sql=db(),[products,units]=await Promise.all([sql`select * from products where partner_id is null order by updated_at desc,name`,sql`select * from product_units where product_id in(select id from products where partner_id is null) order by name,id`]);const items=products.filter((row:any)=>types.includes(String(row.type) as ProductType)&&canType(actor,String(row.type) as ProductType)).map((row:any)=>mapProduct(row,units));return NextResponse.json({ok:true,items,capabilities:{delete:elevated(actor)}},{headers:{'Cache-Control':'no-store, max-age=0'}})}catch(error){console.error('admin_products_get_failed',error);return NextResponse.json({error:'Không đọc được sản phẩm production.'},{status:500})}}
+
+export async function POST(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({})),action=String(body.action||'');try{const sql=db();
+ if(action==='save'){
+  const product=body.product&&typeof body.product==='object'?body.product:{},type=String(product.type||'') as ProductType;if(!types.includes(type)||!canType(actor,type))return NextResponse.json({error:'Bạn không có quyền cập nhật loại sản phẩm này.'},{status:403});const name=String(product.name||'').trim().slice(0,300),slug=String(product.slug||'').trim().slice(0,300);if(name.length<2||!slug)return NextResponse.json({error:'Tên và đường dẫn sản phẩm chưa hợp lệ.'},{status:400});const id=uuid.test(String(product.id||''))?String(product.id):randomUUID(),units=Array.isArray(product.units)?product.units.slice(0,500):[],retail=Math.max(parseMoney(product.price),...units.map((unit:any)=>parseMoney(unit.weekdayPrice)),0),now=new Date().toISOString(),productData={...stripUnits(product),id,source:'admin',updatedAt:now};
+  await sql`insert into products(id,partner_id,slug,type,name,status,description,retail_price_vnd,net_price_vnd,promo_price_vnd,data,created_at,updated_at) values(${id},null,${slug},${type},${name},${status(product.status)},${String(product.summary||'').slice(0,12000)||null},${retail},null,null,${JSON.stringify(productData)}::jsonb,coalesce(${product.createdAt||null}::timestamptz,now()),now()) on conflict(id) do update set slug=excluded.slug,type=excluded.type,name=excluded.name,status=excluded.status,description=excluded.description,retail_price_vnd=excluded.retail_price_vnd,data=excluded.data,updated_at=now()`;
+  await sql`delete from product_units where product_id=${id}`;
+  for(const raw of units){const unitId=uuid.test(String(raw?.id||''))?String(raw.id):randomUUID(),unitName=String(raw?.name||raw?.code||'Đơn vị bán').trim().slice(0,300);await sql`insert into product_units(id,product_id,code,name,capacity,retail_price_vnd,net_price_vnd,data,status) values(${unitId},${id},${String(raw?.code||'').slice(0,120)||null},${unitName},${capacity(raw?.capacity)},${parseMoney(raw?.weekdayPrice)},null,${JSON.stringify({...raw,id:unitId})}::jsonb,${unitStatus(raw?.status)})`}
+  await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'product.save','product',${id},${JSON.stringify({name,type,status:status(product.status),unitCount:units.length})}::jsonb)`;return NextResponse.json({ok:true,id,updatedAt:now})
+ }
+ if(action==='delete'){
+  if(!elevated(actor))return NextResponse.json({error:'Chỉ Chủ tài khoản hoặc Quản trị viên được xóa sản phẩm production.'},{status:403});const id=String(body.id||'');if(!uuid.test(id))return NextResponse.json({error:'Sản phẩm không hợp lệ.'},{status:400});const current=(await sql`select id,name,type from products where id=${id} and partner_id is null limit 1`)[0];if(!current)return NextResponse.json({error:'Không tìm thấy sản phẩm.'},{status:404});await sql`delete from product_units where product_id=${id}`;await sql`delete from rate_rules where product_id=${id}`;await sql`delete from products where id=${id} and partner_id is null`;await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data) values(${actor.id},'product.delete','product',${id},${JSON.stringify(current)}::jsonb)`;return NextResponse.json({ok:true})
+ }
+ return NextResponse.json({error:'Hành động không hỗ trợ.'},{status:400})
+ }catch(error){console.error('admin_products_post_failed',error);return NextResponse.json({error:'Không thể cập nhật sản phẩm production.'},{status:500})}}
