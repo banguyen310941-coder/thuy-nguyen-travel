@@ -35,6 +35,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Production regression checks
+        run: npm run test:regression
+
       - name: Build Next.js
         env:
           NEXT_TELEMETRY_DISABLED: 1
