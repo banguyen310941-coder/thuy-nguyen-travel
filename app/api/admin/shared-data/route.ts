@@ -190,8 +190,8 @@ export async function PUT(request: NextRequest) {
   try {
     const sql = db();
     await Promise.all(records.map((record) => sql`
-      insert into audit_logs(action,entity_type,entity_id,staff_id,after_data)
-      values('shared_state.save',${ENTITY_TYPE},${record.key},${actor.id},${JSON.stringify({ value: record.value, updatedAt, updatedBy: actor.name })}::jsonb)
+      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
+      values(${actor.id},'shared_state.save',${ENTITY_TYPE},${record.key},${JSON.stringify({ value: record.value, updatedAt, updatedBy: actor.name })}::jsonb)
     `));
     return NextResponse.json({ ok: true, updatedAt, saved: records.map((record) => record.key) });
   } catch (error) {
