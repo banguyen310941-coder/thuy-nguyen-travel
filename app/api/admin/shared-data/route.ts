@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { db, hasDatabase } from "@/lib/db";
+import { adminActor, type AdminActor } from "@/lib/server/admin-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const ENTITY_TYPE = "admin_shared_state";
-const MAX_BODY_SIZE = 1_500_000;
+const MAX_BODY_SIZE = 3_800_000;
 const ALLOWED_KEYS = new Set([
   "tn_local_bookings_v1", "tn_local_customer_status_v1",
   "happygo_marketing_budget_proposals_v1", "happygo_marketing_expenses_v1",
@@ -14,20 +14,61 @@ const ALLOWED_KEYS = new Set([
   "happygo_crm_history_v1", "happygo_crm_followups_v1", "happygo_crm_pipeline_v1", "happygo_crm_opportunities_v1",
   "happygo_customer_receipts_v1", "happygo_payment_requests_v1", "happygo_payment_suppliers_v1",
   "happygo_accounting_manual_entries_v1", "happygo_accounting_opening_balances_v1",
-  "happygo_supplier_service_orders_v1", "happygo_inventory_reservations_v1",
+  "happygo_supplier_service_orders_v1", "happygo_inventory_reservations_v1", "happygo_customer_vouchers_v1",
   "happygo_booking_confirm_v1", "happygo_booking_confirm_versions_v1", "happygo_booking_operator_history_v1", "happygo_booking_ops_checklist_v1", "happygo_booking_price_history_v1", "happygo_booking_status_history_v1",
   "happygo_attendance_config_v1", "happygo_attendance_records_v1", "happygo_attendance_notifications_v1",
+  "tn_cms_products_v3_units", "tn_cms_daily_rates_v1", "tn_cms_tours_v3", "tn_cms_articles_v3", "tn_cms_homepage",
+  "happygo_admin_team_chat_v4", "happygo_admin_chat_reads_v4", "happygo_admin_chat_pins_v4", "happygo_admin_chat_groups_v4",
 ]);
+
+const KEY_PERMISSION: Record<string, string | null> = {
+  tn_local_bookings_v1: "bookings",
+  tn_local_customer_status_v1: "customers",
+  happygo_marketing_budget_proposals_v1: "email",
+  happygo_marketing_expenses_v1: "email",
+  happygo_crm_manual_customers_v1: "customers",
+  happygo_crm_sales_assignments_v1: "customers",
+  happygo_crm_auto_assignment_v1: "customers",
+  happygo_crm_sales_availability_v1: "customers",
+  happygo_crm_history_v1: "customers",
+  happygo_crm_followups_v1: "customers",
+  happygo_crm_pipeline_v1: "customers",
+  happygo_crm_opportunities_v1: "customers",
+  happygo_customer_receipts_v1: "receipts",
+  happygo_payment_requests_v1: "payments",
+  happygo_payment_suppliers_v1: "payments",
+  happygo_accounting_manual_entries_v1: "ledger",
+  happygo_accounting_opening_balances_v1: "ledger",
+  happygo_supplier_service_orders_v1: "bookings",
+  happygo_inventory_reservations_v1: "bookings",
+  happygo_customer_vouchers_v1: "bookings",
+  happygo_booking_confirm_v1: "bookings",
+  happygo_booking_confirm_versions_v1: "bookings",
+  happygo_booking_operator_history_v1: "bookings",
+  happygo_booking_ops_checklist_v1: "bookings",
+  happygo_booking_price_history_v1: "bookings",
+  happygo_booking_status_history_v1: "bookings",
+  happygo_attendance_config_v1: "attendance",
+  happygo_attendance_records_v1: "attendance",
+  happygo_attendance_notifications_v1: "attendance",
+  tn_cms_products_v3_units: "products",
+  tn_cms_daily_rates_v1: "rates",
+  tn_cms_tours_v3: "tours",
+  tn_cms_articles_v3: "content",
+  tn_cms_homepage: "settings",
+  happygo_admin_team_chat_v4: null,
+  happygo_admin_chat_reads_v4: null,
+  happygo_admin_chat_pins_v4: null,
+  happygo_admin_chat_groups_v4: null,
+};
 
 type SharedEnvelope = { value: unknown; updatedAt: string; updatedBy?: string };
 
-function authorized(request: NextRequest) {
-  const expected = process.env.ADMIN_API_KEY;
-  const supplied = request.headers.get("x-admin-key") || "";
-  if (!expected) return false;
-  const expectedBytes = Buffer.from(expected);
-  const suppliedBytes = Buffer.from(supplied);
-  return expectedBytes.length === suppliedBytes.length && timingSafeEqual(expectedBytes, suppliedBytes);
+function canUse(actor: AdminActor, key: string) {
+  if (!ALLOWED_KEYS.has(key)) return false;
+  if (actor.role === "owner" || actor.role === "admin" || actor.permissions.includes("*")) return true;
+  const permission = KEY_PERMISSION[key];
+  return permission === null || Boolean(permission && actor.permissions.includes(permission));
 }
 
 function parseEnvelope(value: unknown): SharedEnvelope | null {
@@ -94,8 +135,11 @@ async function latestRecords(sql: ReturnType<typeof db>, requested: Set<string>)
       const relational = await databaseBookings(sql);
       const snapshot = Array.isArray(records.tn_local_bookings_v1?.value) ? records.tn_local_bookings_v1.value as Array<Record<string, unknown>> : [];
       const merged = new Map<string, Record<string, unknown>>();
-      relational.forEach((item) => merged.set(String(item.code), item));
       snapshot.forEach((item) => merged.set(String(item.code || item.id), item));
+      relational.forEach((item) => {
+        const code = String(item.code);
+        merged.set(code, { ...(merged.get(code) || {}), ...item });
+      });
       if (relational.length || snapshot.length) {
         records.tn_local_bookings_v1 = {
           value: [...merged.values()].sort((a, b) => +new Date(String(b.created_at || 0)) - +new Date(String(a.created_at || 0))),
@@ -115,10 +159,12 @@ function unavailable() {
 }
 
 export async function GET(request: NextRequest) {
-  if (!authorized(request)) return NextResponse.json({ error: "Không có quyền truy cập." }, { status: 401 });
   if (!hasDatabase()) return unavailable();
+  const actor = await adminActor(request);
+  if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const raw = request.nextUrl.searchParams.get("keys") || "";
-  const requested = new Set((raw ? raw.split(",") : [...ALLOWED_KEYS]).filter((key) => ALLOWED_KEYS.has(key)));
+  const requestedRaw = (raw ? raw.split(",") : [...ALLOWED_KEYS]).filter((key) => ALLOWED_KEYS.has(key));
+  const requested = new Set(requestedRaw.filter((key) => canUse(actor, key)));
   try {
     const records = await latestRecords(db(), requested);
     return NextResponse.json({ ok: true, records }, { headers: { "Cache-Control": "no-store, max-age=0" } });
@@ -129,23 +175,23 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!authorized(request)) return NextResponse.json({ error: "Không có quyền truy cập." }, { status: 401 });
   if (!hasDatabase()) return unavailable();
+  const actor = await adminActor(request);
+  if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const raw = await request.text();
   if (raw.length > MAX_BODY_SIZE) return NextResponse.json({ error: "Gói dữ liệu quá lớn." }, { status: 413 });
-  let body: { records?: Array<{ key?: unknown; value?: unknown }>; updatedBy?: unknown } = {};
+  let body: { records?: Array<{ key?: unknown; value?: unknown }> } = {};
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 }); }
   const input = Array.isArray(body.records) ? body.records : [];
   if (!input.length || input.length > ALLOWED_KEYS.size) return NextResponse.json({ error: "Danh sách dữ liệu không hợp lệ." }, { status: 400 });
   const records = input.map((record) => ({ key: String(record.key || ""), value: record.value }));
-  if (records.some((record) => !ALLOWED_KEYS.has(record.key))) return NextResponse.json({ error: "Có vùng dữ liệu không được phép." }, { status: 400 });
+  if (records.some((record) => !canUse(actor, record.key))) return NextResponse.json({ error: "Có vùng dữ liệu không được phép." }, { status: 403 });
   const updatedAt = new Date().toISOString();
-  const updatedBy = String(body.updatedBy || "Nhân viên HappyGo").slice(0, 120);
   try {
     const sql = db();
     await Promise.all(records.map((record) => sql`
-      insert into audit_logs(action,entity_type,entity_id,after_data)
-      values('shared_state.save',${ENTITY_TYPE},${record.key},${JSON.stringify({ value: record.value, updatedAt, updatedBy })}::jsonb)
+      insert into audit_logs(action,entity_type,entity_id,staff_id,after_data)
+      values('shared_state.save',${ENTITY_TYPE},${record.key},${actor.id},${JSON.stringify({ value: record.value, updatedAt, updatedBy: actor.name })}::jsonb)
     `));
     return NextResponse.json({ ok: true, updatedAt, saved: records.map((record) => record.key) });
   } catch (error) {
