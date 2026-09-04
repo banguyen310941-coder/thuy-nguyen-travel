@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, hasDatabase } from "@/lib/db";
 import { adminActor, type AdminActor } from "@/lib/server/admin-access";
+import {productionSharedOverrides,reconcileSharedRecord} from '@/lib/server/shared-state-reconcile';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,9 +35,9 @@ const KEY_PERMISSION: Record<string, string | null> = {
   happygo_crm_followups_v1: "customers",
   happygo_crm_pipeline_v1: "customers",
   happygo_crm_opportunities_v1: "customers",
-  happygo_customer_receipts_v1: "receipts",
-  happygo_payment_requests_v1: "payments",
-  happygo_payment_suppliers_v1: "payments",
+  happygo_customer_receipts_v1: "bookings",
+  happygo_payment_requests_v1: "bookings",
+  happygo_payment_suppliers_v1: "bookings",
   happygo_accounting_manual_entries_v1: "ledger",
   happygo_accounting_opening_balances_v1: "ledger",
   happygo_supplier_service_orders_v1: "bookings",
@@ -168,6 +169,7 @@ export async function GET(request: NextRequest) {
   const requested = new Set(requestedRaw.filter((key) => canUse(actor, key)));
   try {
     const records = await latestRecords(db(), requested);
+    Object.assign(records,await productionSharedOverrides(actor,requested));
     return NextResponse.json({ ok: true, records }, { headers: { "Cache-Control": "no-store, max-age=0" } });
   } catch (error) {
     console.error("shared_data_read_failed", error);
@@ -185,11 +187,12 @@ export async function PUT(request: NextRequest) {
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 }); }
   const input = Array.isArray(body.records) ? body.records : [];
   if (!input.length || input.length > ALLOWED_KEYS.size) return NextResponse.json({ error: "Danh sách dữ liệu không hợp lệ." }, { status: 400 });
-  const records = input.map((record) => ({ key: String(record.key || ""), value: record.value }));
-  if (records.some((record) => !canUse(actor, record.key))) return NextResponse.json({ error: "Có vùng dữ liệu không được phép." }, { status: 403 });
+  const records = input.map((record) => ({ key: String(record.key || ""), value: record.value })).filter(record=>canUse(actor,record.key));
+  if(!records.length)return NextResponse.json({error:'Không có vùng dữ liệu được phép.'},{status:403});
   const updatedAt = new Date().toISOString();
   try {
     const sql = db();
+    for(const record of records)await reconcileSharedRecord(actor,record.key,record.value);
     await Promise.all(records.map((record) => sql`
       insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
       values(${actor.id},'shared_state.save',${ENTITY_TYPE},${record.key},${JSON.stringify({ value: record.value, updatedAt, updatedBy: actor.name })}::jsonb)
