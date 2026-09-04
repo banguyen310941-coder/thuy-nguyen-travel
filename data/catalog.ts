@@ -1,51 +1,19 @@
-export type Stay = { slug:string; name:string; location:string; type:'Villa'|'Khách sạn'|'Resort'; image:string; gallery?:string[]; rating:number; summary:string; highlights:string[]; rooms?:string[]; seoTitle?:string; seoDescription?:string; };
+export type Stay={slug:string;name:string;location:string;type:'Villa'|'Khách sạn'|'Resort';image:string;gallery?:string[];rating:number;summary:string;highlights:string[];rooms?:string[];seoTitle?:string;seoDescription?:string};
 export type TourDay={title:string;morning?:string;afternoon?:string;evening?:string;meals?:string;image?:string};
 export type Tour={slug:string;name:string;category:'Tour Trung Quốc'|'Tour trong nước';duration:string;route:string;image:string;gallery?:string[];summary:string;rating?:number;reviewCount?:number;priceFrom?:string;oldPrice?:string;departureFrom?:string;airline?:string;transport?:string[];departureDates?:string[];promotions?:string[];highlights?:string[];itinerary?:TourDay[];included?:string[];excluded?:string[];policies?:string[];faq?:{q:string;a:string}[];seoTitle?:string;seoDescription?:string};
 export type Cruise={slug:string;name:string;bay:string;duration:string;image:string;priceFrom?:string;summary:string};
 
-const img={
- resort:'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85',
- villa:'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=85',
- beach:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
- cruise:'https://images.unsplash.com/photo-1544551763-46a013bb70d5e?auto=format&fit=crop&w=1200&q=85',
- vietnam:'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=85'
-};
-
-export const stays:Stay[]=[
-{slug:'oceanami-villas-beach-club',name:'Oceanami Villas & Beach Club',location:'Phước Hải, Bà Rịa - Vũng Tàu',type:'Villa',image:img.villa,gallery:[img.villa,'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1200&q=85',img.beach],rating:8.8,summary:'Khu nghỉ dưỡng 5 sao tại Phước Hải với hệ thống villa, hồ bơi, khu vui chơi và các hoạt động giải trí dành cho gia đình, nhóm bạn và khách đoàn.',highlights:['Khu nghỉ dưỡng 5 sao','Hồ bơi','Khu vui chơi trẻ em','Trung tâm thể hình','Hoạt động giải trí'],rooms:['Villa 3 phòng ngủ','Villa 4 phòng ngủ','Villa 4 phòng ngủ Beach Front'],seoTitle:'Oceanami Villas & Beach Club - Đặt villa Phước Hải',seoDescription:'Đặt Oceanami Villas & Beach Club tại Phước Hải cùng HappyGo Travel. Tư vấn villa, hạng phòng, tiện ích và giá theo ngày.'},
-{slug:'novaworld-phan-thiet',name:'NovaWorld Phan Thiết',location:'Phan Thiết',type:'Villa',image:'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1200&q=85',rating:9,summary:'Villa nghỉ dưỡng trong quần thể NovaWorld Phan Thiết, phù hợp nhóm gia đình và kỳ nghỉ nhiều thế hệ.',highlights:['Villa nhiều phòng ngủ','Không gian gia đình','Khu vui chơi','Gần biển','Phù hợp nhóm đông'],rooms:['Villa 2 phòng ngủ','Villa 3 phòng ngủ','Villa 4 phòng ngủ']},
-{slug:'vinpearl-resort-nha-trang',name:'Vinpearl Resort Nha Trang',location:'Hòn Tre, Nha Trang, Khánh Hòa',type:'Resort',image:img.resort,rating:8.9,summary:'Resort nghỉ dưỡng biển dành cho gia đình, cặp đôi và khách nghỉ dài ngày tại Nha Trang.',highlights:['Resort biển','Hồ bơi','Gia đình','Nghỉ dưỡng 5 sao','Nha Trang'],rooms:['Deluxe','Grand Deluxe','Villa gia đình']},
-{slug:'vinpearl-resort-spa-phu-quoc',name:'Vinpearl Resort & Spa Phú Quốc',location:'Bãi Dài, Phú Quốc',type:'Resort',image:'https://images.unsplash.com/photo-1580974928064-f0aeef70895a?auto=format&fit=crop&w=1200&q=85',rating:9,summary:'Lựa chọn nghỉ dưỡng tại Bãi Dài, phù hợp kỳ nghỉ biển, gia đình và khách nhóm.',highlights:['Bãi Dài','Hồ bơi','Spa','Gia đình','Nghỉ dưỡng biển']},
-{slug:'flc-sam-son',name:'FLC Sầm Sơn',location:'Sầm Sơn, Thanh Hóa',type:'Resort',image:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=85',rating:8.6,summary:'Khu nghỉ dưỡng biển phù hợp khách lẻ, gia đình, hội nhóm và khách đoàn.',highlights:['Gần biển','Hồ bơi','Khách đoàn','Gia đình','Sầm Sơn']},
-{slug:'flc-quy-nhon',name:'FLC Quy Nhơn',location:'Quy Nhơn, Bình Định',type:'Resort',image:'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=85',rating:8.7,summary:'Resort biển tại Quy Nhơn dành cho nghỉ dưỡng gia đình, nhóm bạn và khách đoàn.',highlights:['Biển Quy Nhơn','Resort','Gia đình','Khách đoàn','Nghỉ dưỡng']}
-];
-
-export const cruises:Cruise[]=[
-{slug:'ambassador-i-ha-long-2n1d',name:'Ambassador I - Vịnh Hạ Long',bay:'Vịnh Hạ Long',duration:'2 ngày 1 đêm',image:img.cruise,priceFrom:'4.500.000đ/khách',summary:'Du thuyền ngủ đêm trên Vịnh Hạ Long, khởi hành hằng ngày theo lịch của hãng.'},
-{slug:'ambassador-ii-ha-long-day',name:'Ambassador II - Vịnh Hạ Long',bay:'Vịnh Hạ Long',duration:'Hành trình 8 tiếng',image:'https://images.unsplash.com/photo-1566847438217-76e82d383f84?auto=format&fit=crop&w=1200&q=85',summary:'Hành trình du thuyền trong ngày trên Vịnh Hạ Long với trải nghiệm cao cấp.'},
-{slug:'ambassador-signature-lan-ha',name:'Ambassador Signature - Vịnh Lan Hạ',bay:'Vịnh Lan Hạ',duration:'2 ngày 1 đêm',image:img.vietnam,priceFrom:'4.500.000đ/khách',summary:'Du thuyền ngủ đêm khám phá Vịnh Lan Hạ, phù hợp cặp đôi, gia đình và nhóm nhỏ.'}
-];
-
-const chinaItinerary:TourDay[]=[
-{title:'Ngày 1: Hà Nội - Bắc Kinh',afternoon:'Tập trung tại sân bay, làm thủ tục và khởi hành đi Bắc Kinh.',evening:'Đến nơi, xe đón đoàn về khách sạn nhận phòng.',meals:'Theo chương trình'},
-{title:'Ngày 2: Bắc Kinh - Vạn Lý Trường Thành',morning:'Tham quan Vạn Lý Trường Thành và các điểm nổi bật.',afternoon:'Khám phá khu trung tâm và phố thương mại.',evening:'Thưởng thức ẩm thực địa phương.',meals:'Sáng / Trưa / Tối'},
-{title:'Ngày 3: Bắc Kinh - Cố Cung',morning:'Tham quan Thiên An Môn và Cố Cung theo lịch thực tế.',afternoon:'Tham quan các công trình biểu tượng của Bắc Kinh.',evening:'Nghỉ đêm tại Bắc Kinh.',meals:'Sáng / Trưa / Tối'},
-{title:'Ngày 4: Bắc Kinh - Hàng Châu',morning:'Di chuyển đến Hàng Châu.',afternoon:'Tham quan Tây Hồ và cảnh quan Giang Nam.',evening:'Tự do khám phá thành phố.',meals:'Sáng / Trưa / Tối'},
-{title:'Ngày 5-7: Ô Trấn - Thượng Hải - Hà Nội',morning:'Tiếp tục hành trình qua Ô Trấn và Thượng Hải.',afternoon:'Tham quan các điểm chính theo lịch trình.',evening:'Ra sân bay và kết thúc chương trình.',meals:'Theo chương trình'}
-];
-
-export const tours:Tour[]=[
-{slug:'bac-kinh-van-ly-truong-thanh',name:'Tinh hoa Trung Quốc: Bắc Kinh - Thượng Hải - Hàng Châu - Ô Trấn',category:'Tour Trung Quốc',duration:'7N6Đ',route:'Hà Nội - Bắc Kinh - Hàng Châu - Ô Trấn - Thượng Hải',image:'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1200&q=85',gallery:['https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1537531383496-f4749b8032cf?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=1200&q=85'],summary:'Hành trình Trung Quốc nhiều điểm đến, kết hợp di sản lịch sử, đô thị hiện đại và cảnh quan Giang Nam.',rating:8.8,reviewCount:23,priceFrom:'21.180.000đ',oldPrice:'21.680.000đ',departureFrom:'Hà Nội',airline:'Vietjet Air',transport:['Máy bay','Tàu','Ô tô'],departureDates:['30/08','21/09','27/09','04/10','18/10'],promotions:['Ưu đãi đặt sớm theo từng thời điểm','Quà tặng trải nghiệm theo chương trình'],highlights:['Khách sạn tiêu chuẩn theo chương trình','Khám phá Vạn Lý Trường Thành','Trải nghiệm Giang Nam và Ô Trấn','Tham quan Thượng Hải hiện đại','Ẩm thực địa phương đặc sắc'],itinerary:chinaItinerary,included:['Vé máy bay/di chuyển theo chương trình','Khách sạn theo tiêu chuẩn tour','Các bữa ăn theo lịch trình','Vé tham quan theo chương trình','Hướng dẫn viên','Bảo hiểm du lịch theo gói'],excluded:['Chi phí cá nhân','Dịch vụ ngoài chương trình','Phụ thu phòng đơn','Các chi phí phát sinh không ghi trong mục bao gồm'],policies:['Đặt cọc theo từng lịch khởi hành','Hoàn hủy áp dụng theo điều kiện của từng chương trình','Giá trẻ em tính theo độ tuổi và dịch vụ sử dụng']},
-{slug:'thuong-hai-hang-chau-o-tran',name:'Thượng Hải - Hàng Châu - Ô Trấn',category:'Tour Trung Quốc',duration:'6N5Đ',route:'Thượng Hải - Hàng Châu - Ô Trấn',image:'https://images.unsplash.com/photo-1537531383496-f4749b8032cf?auto=format&fit=crop&w=1200&q=85',summary:'Tour kết hợp đô thị hiện đại, cảnh quan Giang Nam và cổ trấn nổi tiếng.',priceFrom:'18.900.000đ',departureFrom:'Hà Nội',airline:'Vietjet Air',transport:['Máy bay','Ô tô'],highlights:['Thượng Hải','Tây Hồ','Ô Trấn']},
-{slug:'da-nang-hoi-an-ba-na',name:'Đà Nẵng - Hội An - Bà Nà',category:'Tour trong nước',duration:'4N3Đ',route:'Đà Nẵng - Hội An - Bà Nà',image:img.vietnam,summary:'Tour miền Trung kết hợp biển, phố cổ Hội An và khu du lịch Bà Nà.',priceFrom:'5.490.000đ',departureFrom:'Hà Nội / TP.HCM',transport:['Máy bay','Ô tô'],highlights:['Phố cổ Hội An','Bà Nà Hills','Biển Đà Nẵng']},
-{slug:'phu-quoc-4n3d',name:'Phú Quốc nghỉ dưỡng 4N3Đ',category:'Tour trong nước',duration:'4N3Đ',route:'Phú Quốc',image:'https://images.unsplash.com/photo-1580974928064-f0aeef70895a?auto=format&fit=crop&w=1200&q=85',summary:'Kỳ nghỉ biển tại Phú Quốc kết hợp nghỉ dưỡng và khám phá đảo.',priceFrom:'6.490.000đ',departureFrom:'Hà Nội / TP.HCM',transport:['Máy bay','Ô tô'],highlights:['Biển Phú Quốc','Nghỉ dưỡng','Khám phá đảo']}
-];
+// Legacy/demo product records were intentionally removed on 05/09/2026.
+// New products must come from verified production data supplied by HappyGo Travel.
+export const stays:Stay[]=[];
+export const cruises:Cruise[]=[];
+export const tours:Tour[]=[];
 
 export const destinations=[
-['Phan Thiết','Villa · Resort · Tour','https://www.agoda.com/wp-content/uploads/2024/09/Mui-Ne-beach-Phan-Thiet-Vietnam.jpg'],
-['Hạ Long','Du thuyền · Khách sạn','https://tabippo.net/wp-content/uploads/shutterstock_225015607.jpg'],
-['Phú Quốc','Resort · Nghỉ dưỡng biển','https://phaply.net.vn/uploads/images/blog/banpv2/2025/10/22/1-1761125017.jpg'],
-['Sapa','Tour · Khách sạn','https://estaticos-cdn.prensaiberica.es/clip/9e56d61e-530d-444a-b9a3-40d8aa05f727_source-aspect-ratio_default_0.jpg'],
-['Nha Trang','Vinpearl · Resort · Tour','https://eu-images.contentstack.com/v3/assets/blte218090c2a6fb1e2/blt98177c65f5cfe429/693bef95726d10ef054a3e78/vietnam-nha-trang-stadt-panoramablick-g-827359312.jpg'],
-['Sầm Sơn','FLC · Resort · Biển','https://cdn-i2.congthuong.vn/stores/news_dataimages/2024/042024/16/14/in_article/220d5180941t9774l10-dji-000520240416145732.jpg?rt=20240416152213']
+ ['Phan Thiết','Villa · Resort · Tour','https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85'],
+ ['Hạ Long','Du thuyền · Khách sạn','https://images.unsplash.com/photo-1743485753956-c6e4f75d8dc5?auto=format&fit=crop&w=1200&q=85'],
+ ['Phú Quốc','Resort · Nghỉ dưỡng biển','https://images.unsplash.com/photo-1732243395944-cb3ff9311091?auto=format&fit=crop&w=1200&q=85'],
+ ['Sa Pa','Tour · Khách sạn','https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=1200&q=85'],
+ ['Nha Trang','Khách sạn · Resort · Tour','https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85'],
+ ['Sầm Sơn','Khách sạn · Resort · Biển','https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85']
 ] as const;
