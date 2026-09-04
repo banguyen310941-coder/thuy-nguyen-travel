@@ -39,12 +39,12 @@ export function ratePriceForDate(rate:RateRange,date:Date){
   const weekend=pricingMoney(rate.weekendPrice);
   const sunday=pricingMoney(rate.sundayPrice);
   const holiday=pricingMoney(rate.holidayPrice);
-  if(rate.season==='holiday'&&holiday)return holiday;
-  if(pricingDayKind(date)==='holiday'&&holiday)return holiday;
+  const dayKind=pricingDayKind(date);
+  if(rate.season==='holiday'||dayKind==='holiday')return holiday||generic;
   const day=date.getDay();
-  if(day===0&&sunday)return sunday;
-  if((day===5||day===6)&&weekend)return weekend;
-  return weekday||generic||weekend||sunday||holiday;
+  if(day===0)return sunday||weekday||generic;
+  if(day===5||day===6)return weekend||generic;
+  return weekday||generic;
 }
 
 export function AdminRateCalendar({unitId}:{unitId:string}){
