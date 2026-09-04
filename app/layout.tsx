@@ -45,6 +45,7 @@ import './portal-production.css';
 import './partner-login-v2.css';
 import './public-ui-unified.css';
 import './contact-actions-fix.css';
+import './source-gallery-visible.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
