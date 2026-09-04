@@ -1,10 +1,9 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {getGoogleDriveAccessToken} from '@/lib/server/google-drive';
-
-function authorized(req:NextRequest){const expected=process.env.ADMIN_API_KEY||'';return Boolean(expected)&&(req.headers.get('x-admin-key')||'')===expected}
+import {adminActor} from '@/lib/server/admin-access';
 
 export async function GET(req:NextRequest){
- if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
+ const actor=await adminActor(req,'settings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  const id=req.nextUrl.searchParams.get('id')||'';if(!id)return NextResponse.json({error:'Missing file id'},{status:400});
  try{
   const token=await getGoogleDriveAccessToken();
