@@ -41,6 +41,7 @@ export const SHARED_ADMIN_KEYS = [
   "tn_cms_tours_v3",
   "tn_cms_articles_v3",
   "tn_cms_homepage",
+  "tn_cms_media_images_v2",
   "happygo_admin_team_chat_v4",
   "happygo_admin_chat_reads_v4",
   "happygo_admin_chat_pins_v4",
@@ -80,6 +81,7 @@ export const SHARED_EVENT_KEYS: Record<string, readonly SharedAdminKey[]> = {
   "tn-tours-updated": ["tn_cms_tours_v3"],
   "tn-articles-updated": ["tn_cms_articles_v3"],
   "tn-homepage-updated": ["tn_cms_homepage"],
+  "tn-media-updated": ["tn_cms_media_images_v2"],
   "happygo-team-chat-v4": ["happygo_admin_team_chat_v4", "happygo_admin_chat_reads_v4", "happygo_admin_chat_pins_v4", "happygo_admin_chat_groups_v4"],
 };
 
@@ -174,7 +176,6 @@ export function hasSharedAdminKey() {
 }
 
 export function saveSharedAdminKey(_value: string) {
-  // Remove the historical browser secret if it is still present.
   try { localStorage.removeItem(ADMIN_API_KEY_STORAGE); } catch {}
 }
 
