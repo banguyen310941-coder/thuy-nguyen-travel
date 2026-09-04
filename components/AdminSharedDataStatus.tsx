@@ -3,28 +3,26 @@
 import { useEffect, useState } from "react";
 import type { AdminStaff } from "@/components/AdminSalesAccess";
 import {
-  ADMIN_API_KEY_STORAGE,
   SHARED_ADMIN_KEYS,
   SHARED_EVENT_KEYS,
   SHARED_STATUS_EVENT,
   isApplyingSharedData,
   queueSharedKeys,
-  saveSharedAdminKey,
+  scanSharedChanges,
   syncSharedData,
   type SharedSyncDetail,
 } from "@/lib/admin-shared-data";
 
 const initialStatus: SharedSyncDetail = {
   state: "idle",
-  message: "Dữ liệu dùng chung chưa được kiểm tra.",
+  message: "Đang kiểm tra dữ liệu production dùng chung.",
 };
 
 export function AdminSharedDataStatus({ staff }: { staff: AdminStaff }) {
   const [status, setStatus] = useState<SharedSyncDetail>(initialStatus);
-  const [key, setKey] = useState("");
 
   useEffect(() => {
-    setKey(localStorage.getItem(ADMIN_API_KEY_STORAGE) || "");
+    try { localStorage.removeItem("tn_admin_api_key"); } catch {}
     const statusListener = (event: Event) => setStatus((event as CustomEvent<SharedSyncDetail>).detail);
     const listeners = Object.entries(SHARED_EVENT_KEYS).map(([event, keys]) => {
       const listener = () => {
@@ -39,22 +37,19 @@ export function AdminSharedDataStatus({ staff }: { staff: AdminStaff }) {
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", visibility);
     refresh();
-    const timer = window.setInterval(refresh, 45000);
+    const refreshTimer = window.setInterval(refresh, 30000);
+    const scanTimer = window.setInterval(() => scanSharedChanges(staff.name), 2500);
     return () => {
       listeners.forEach(([event, listener]) => window.removeEventListener(event, listener));
       window.removeEventListener(SHARED_STATUS_EVENT, statusListener);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", visibility);
-      window.clearInterval(timer);
+      window.clearInterval(refreshTimer);
+      window.clearInterval(scanTimer);
     };
   }, [staff.name]);
 
-  async function saveAndSync() {
-    saveSharedAdminKey(key);
-    await syncSharedData(SHARED_ADMIN_KEYS, staff.name);
-  }
-
-  const badge = status.state === "synced" ? "Đã đồng bộ" : status.state === "syncing" ? "Đang đồng bộ" : status.state === "missing-key" || status.state === "idle" ? "Chưa kết nối" : "Lỗi đồng bộ";
+  const badge = status.state === "synced" ? "Đã đồng bộ" : status.state === "syncing" ? "Đang đồng bộ" : status.state === "error" ? "Lỗi đồng bộ" : "Đang kết nối";
 
   return (
     <details className="admin-shared-data" data-state={status.state}>
@@ -63,19 +58,14 @@ export function AdminSharedDataStatus({ staff }: { staff: AdminStaff }) {
         <span>{badge}</span>
       </summary>
       <div className="admin-shared-data-panel">
-        <small>DỮ LIỆU DÙNG CHUNG</small>
-        <h3>{status.state === "synced" ? "Đã kết nối dữ liệu công ty" : "Kết nối các thiết bị làm việc"}</h3>
+        <small>DỮ LIỆU PRODUCTION DÙNG CHUNG</small>
+        <h3>{status.state === "synced" ? "Đã kết nối dữ liệu công ty" : "Đang kết nối các thiết bị làm việc"}</h3>
         <p>{status.message}</p>
         {status.at ? <time>Gần nhất: {new Date(status.at).toLocaleString("vi-VN")}</time> : null}
-        <label>
-          Khóa nội bộ
-          <input type="password" value={key} onChange={(event) => setKey(event.target.value)} placeholder="Nhập ADMIN_API_KEY" autoComplete="off" />
-        </label>
         <div>
-          <button className="admin-primary" onClick={saveAndSync} disabled={status.state === "syncing"}>Lưu & đồng bộ</button>
-          <button onClick={() => void syncSharedData(SHARED_ADMIN_KEYS, staff.name)} disabled={status.state === "syncing" || !key.trim()}>Đồng bộ ngay</button>
+          <button className="admin-primary" onClick={() => void syncSharedData(SHARED_ADMIN_KEYS, staff.name)} disabled={status.state === "syncing"}>Đồng bộ ngay</button>
         </div>
-        <em>Đồng bộ Marketing, CRM, booking, phiếu thu, kế toán và chấm công. Mật khẩu nhân viên không được gửi lên đây.</em>
+        <em>Dùng phiên đăng nhập HttpOnly hiện tại; không còn nhập hoặc lưu ADMIN_API_KEY trên trình duyệt. CRM, Điều hành, NCC, Voucher, CMS, lịch giá, chấm công và chat được đồng bộ giữa các thiết bị theo quyền tài khoản.</em>
       </div>
     </details>
   );
