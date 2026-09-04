@@ -20,6 +20,7 @@ import './happygo-footer.css';
 import './partner.css';
 import './partner-enhancements.css';
 import './partner-product-editor.css';
+import './product-flow-editor.css';
 import './unified-product-units.css';
 import './customer-account.css';
 import './happygo-info.css';
