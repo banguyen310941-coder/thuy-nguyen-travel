@@ -8,6 +8,7 @@ import './booking-live.css';
 import './checkout.css';
 import './tour-rich.css';
 import './product-detail-v2.css';
+import './public-product-sync.css';
 import './units-public.css';
 import './fixes.css';
 import './rate-public.css';
@@ -74,12 +75,12 @@ export async function generateMetadata():Promise<Metadata>{
   metadataBase:new URL(base),title:{default:title,template:`%s | ${brand}`},description,applicationName:brand,
   authors:[{name:brand,url:base}],creator:brand,publisher:brand,category:'travel',keywords,alternates:{canonical:'/'},manifest:'/manifest.webmanifest',icons:{icon:'/icon.svg',apple:'/icon.svg'},appleWebApp:{capable:true,statusBarStyle:'default',title:brand.slice(0,20)},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
   openGraph:{title,description,type:'website',locale:'vi_VN',siteName:brand,url:base,...(image?{images:[{url:image}]}:{})},
-  twitter:{card:'summary_large_image',title,description,...(image?{images:[image]}:{})},other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-vercel-20260904'}
+  twitter:{card:'summary_large_image',title,description,...(image?{images:[image]}:{})},other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-public-products-20260904'}
  };
 }
 
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
  const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=safeUrl(String(seo?.canonicalBase||DEFAULT_SITE),DEFAULT_SITE);const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,url:siteUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
- return <html lang="vi"><body id="top" data-ui-version="happygo-vercel-20260904"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
+ return <html lang="vi"><body id="top" data-ui-version="happygo-public-products-20260904"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
 }
