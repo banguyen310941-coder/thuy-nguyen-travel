@@ -16,11 +16,15 @@ function migrateBrand(value:Partial<SiteSettings>|null|undefined):SiteSettings{
 export function useSiteSettings(){
  const [settings,setSettings]=useState<SiteSettings>(defaultSiteSettings);
  useEffect(()=>{
-  const load=()=>{try{const raw=localStorage.getItem(key);const next=migrateBrand(raw?JSON.parse(raw):null);setSettings(next);if(raw){const before=JSON.stringify(JSON.parse(raw));const after=JSON.stringify(next);if(before!==after){localStorage.setItem(key,after);window.dispatchEvent(new Event('tn-site-settings-updated'))}}}catch{setSettings(defaultSiteSettings)}};
-  load();
-  window.addEventListener('tn-site-settings-updated',load);
-  window.addEventListener('storage',load);
-  return()=>{window.removeEventListener('tn-site-settings-updated',load);window.removeEventListener('storage',load)};
+  let alive=true;
+  const loadLocal=()=>{try{const raw=localStorage.getItem(key);const next=migrateBrand(raw?JSON.parse(raw):null);if(alive)setSettings(next)}catch{if(alive)setSettings(defaultSiteSettings)}};
+  const loadServer=async()=>{try{const response=await fetch('/api/site-config',{cache:'no-store'});const json=await response.json();if(!response.ok||!json.site||!alive)return;const next=migrateBrand(json.site);localStorage.setItem(key,JSON.stringify(next));setSettings(next);window.dispatchEvent(new Event('tn-site-settings-updated'))}catch{}};
+  loadLocal();void loadServer();
+  const refresh=()=>{loadLocal();void loadServer()};
+  window.addEventListener('tn-site-settings-updated',loadLocal);
+  window.addEventListener('storage',loadLocal);
+  window.addEventListener('focus',refresh);
+  return()=>{alive=false;window.removeEventListener('tn-site-settings-updated',loadLocal);window.removeEventListener('storage',loadLocal);window.removeEventListener('focus',refresh)};
  },[]);
  return settings;
 }
