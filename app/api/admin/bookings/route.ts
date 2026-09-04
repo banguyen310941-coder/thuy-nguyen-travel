@@ -26,16 +26,7 @@ function mapBooking(row:any,showCost:boolean){
 
 async function rowsForActor(actor:{id:string;role:string}){
  const sql=db();
- const selectAll=sql`
-  select b.*,
-   coalesce(jsonb_agg(jsonb_build_object(
-    'id',bi.id::text,'productName',bi.product_name_snapshot,'unitName',coalesce(bi.unit_name_snapshot,''),'quantity',bi.quantity,
-    'sellingPrice',bi.selling_price_vnd,'costPrice',bi.cost_price_vnd,'kind',coalesce(bi.data_snapshot->>'kind','')
-   ) order by bi.id) filter (where bi.id is not null),'[]'::jsonb) as items
-  from bookings b left join booking_items bi on bi.booking_id=b.id
-  group by b.id order by b.created_at desc limit 500`;
- if(actor.role!=='sales')return selectAll;
- return sql`
+ if(actor.role==='sales')return sql`
   select b.*,
    coalesce(jsonb_agg(jsonb_build_object(
     'id',bi.id::text,'productName',bi.product_name_snapshot,'unitName',coalesce(bi.unit_name_snapshot,''),'quantity',bi.quantity,
@@ -43,6 +34,14 @@ async function rowsForActor(actor:{id:string;role:string}){
    ) order by bi.id) filter (where bi.id is not null),'[]'::jsonb) as items
   from bookings b left join booking_items bi on bi.booking_id=b.id
   where b.sales_staff_id=${actor.id}
+  group by b.id order by b.created_at desc limit 500`;
+ return sql`
+  select b.*,
+   coalesce(jsonb_agg(jsonb_build_object(
+    'id',bi.id::text,'productName',bi.product_name_snapshot,'unitName',coalesce(bi.unit_name_snapshot,''),'quantity',bi.quantity,
+    'sellingPrice',bi.selling_price_vnd,'costPrice',bi.cost_price_vnd,'kind',coalesce(bi.data_snapshot->>'kind','')
+   ) order by bi.id) filter (where bi.id is not null),'[]'::jsonb) as items
+  from bookings b left join booking_items bi on bi.booking_id=b.id
   group by b.id order by b.created_at desc limit 500`;
 }
 
