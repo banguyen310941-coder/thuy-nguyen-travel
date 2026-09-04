@@ -13,9 +13,9 @@ function envelope(value:unknown){
  if(!parsed||typeof parsed!=='object'||!('value' in parsed))return null;
  return (parsed as {value?:unknown}).value;
 }
-function visibleList(value:unknown,statusField='status'){
+function visibleList(value:unknown){
  if(!Array.isArray(value))return [];
- return value.filter((item:any)=>String(item?.[statusField]||'').toLowerCase()==='published');
+ return value.filter((item:any)=>String(item?.status||'').toLowerCase()==='published');
 }
 
 export async function GET(){
@@ -25,13 +25,13 @@ export async function GET(){
   const rows=await sql`
    select distinct on (entity_id) entity_id,after_data,created_at
    from audit_logs
-   where entity_type='admin_shared_state' and entity_id = any(${KEYS as unknown as string[]})
+   where entity_type='admin_shared_state'
    order by entity_id,created_at desc,id desc
   `;
   const state:Partial<Record<Key,unknown>>={};
   for(const row of rows){
-   const key=String(row.entity_id) as Key;if(!KEYS.includes(key))continue;
-   const value=envelope(row.after_data);
+   const rawKey=String(row.entity_id);if(!KEYS.some(key=>key===rawKey))continue;
+   const key=rawKey as Key;const value=envelope(row.after_data);
    if(key==='tn_cms_products_v3_units')state[key]=visibleList(value);
    else if(key==='tn_cms_tours_v3')state[key]=visibleList(value);
    else if(key==='tn_cms_articles_v3'){
