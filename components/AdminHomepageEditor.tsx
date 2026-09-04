@@ -4,39 +4,29 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { defaultHomeCms, type HomeCmsData } from '@/components/HomeCmsHero';
 
-const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
-
 export function AdminHomepageEditor(){
   const [form,setForm]=useState<HomeCmsData>(defaultHomeCms);
   const [message,setMessage]=useState('');
-  const [key,setKey]=useState('');
 
   useEffect(()=>{
     const local=localStorage.getItem('tn_cms_homepage');
     if(local){try{setForm({...defaultHomeCms,...JSON.parse(local)})}catch{}}
-    setKey(localStorage.getItem('tn_admin_api_key')||'');
-    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(v?.value)setForm({...defaultHomeCms,...v.value})}).catch(()=>{});}
   },[]);
 
   function change<K extends keyof HomeCmsData>(name:K,value:HomeCmsData[K]){setForm(v=>({...v,[name]:value}));}
   function notify(){window.dispatchEvent(new Event('tn-homepage-updated'));}
 
-  async function save(){
+  function save(){
     localStorage.setItem('tn_cms_homepage',JSON.stringify(form));
     notify();
-    if(API_BASE&&key){
-      const response=await fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify({value:form})});
-      if(response.ok){setMessage('Đã lưu & xuất bản lên website. Trang chủ đang mở sẽ tự cập nhật.');return;}
-      setMessage('Đã lưu bản xem thử trên máy này; backend chưa lưu được.');return;
-    }
-    setMessage('Đã lưu & cập nhật trang chủ trên máy này. Không cần tải lại trang đang mở.');
+    setMessage('Đã lưu và đưa vào hàng đợi đồng bộ production. Website công khai sẽ tự nhận bản mới.');
   }
 
-  function reset(){setForm(defaultHomeCms);localStorage.removeItem('tn_cms_homepage');notify();setMessage('Đã khôi phục nội dung mặc định và cập nhật trang chủ.');}
+  function reset(){setForm(defaultHomeCms);localStorage.setItem('tn_cms_homepage',JSON.stringify(defaultHomeCms));notify();setMessage('Đã khôi phục nội dung mặc định và đồng bộ lại trang chủ.');}
   const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={e=>change(name,e.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
 
   return <section className="admin-panel cms-home-editor">
-    <div className="admin-panel-head"><div><h2>Giao diện trang chủ</h2><p>Chỉnh từng khối giống WordPress: nội dung, ảnh, tiêu đề và bật/tắt hiển thị.</p></div><Link className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</Link></div>
+    <div className="admin-panel-head"><div><small>TRANG CHỦ · PRODUCTION SYNC</small><h2>Giao diện trang chủ</h2><p>Chỉnh từng khối giống WordPress. Nội dung được đồng bộ production theo phiên quản trị, không còn dùng khóa API trên trình duyệt.</p></div><Link className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</Link></div>
 
     <div className="cms-editor-grid">
       <div className="cms-fields">
@@ -55,7 +45,6 @@ export function AdminHomepageEditor(){
         <div className="cms-group"><h3>6. Tour du lịch</h3><Toggle name="toursEnabled" label="Hiển thị tour hot"/><label>Tiêu đề<input value={form.toursTitle} onChange={e=>change('toursTitle',e.target.value)}/></label></div>
         <div className="cms-group"><h3>7. CTA cuối trang</h3><Toggle name="ctaEnabled" label="Hiển thị khối tư vấn cuối trang"/><label>Nhãn nhỏ<input value={form.ctaEyebrow} onChange={e=>change('ctaEyebrow',e.target.value)}/></label><label>Tiêu đề<input value={form.ctaTitle} onChange={e=>change('ctaTitle',e.target.value)}/></label><label>Mô tả<textarea rows={2} value={form.ctaText} onChange={e=>change('ctaText',e.target.value)}/></label><div className="admin-form-row"><label>Hotline<input value={form.hotline} onChange={e=>change('hotline',e.target.value)}/></label><label>Zalo<input value={form.zalo} onChange={e=>change('zalo',e.target.value)}/></label></div></div>
 
-        {API_BASE&&<label>Khóa quản trị API<input type="password" value={key} onChange={e=>{setKey(e.target.value);localStorage.setItem('tn_admin_api_key',e.target.value)}} placeholder="ADMIN_API_KEY"/></label>}
         <div className="editor-actions"><button type="button" onClick={reset}>Khôi phục mặc định</button><button className="admin-primary" type="button" onClick={save}>Lưu & xuất bản</button></div>
         {message&&<p className="cms-message">{message}</p>}
       </div>
