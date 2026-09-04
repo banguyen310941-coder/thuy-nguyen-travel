@@ -15,7 +15,7 @@ export async function POST(req:NextRequest){
     const rows=await sql`select p.id,p.name,p.email,p.phone,p.status,p.created_at,a.password_hash,a.contact_name,a.website,a.tax_code,a.address from partners p join partner_accounts a on a.partner_id=p.id where lower(p.email)=lower(${email}) limit 1`;
     const row=rows[0];
     if(!row||!verifyPassword(password,String(row.password_hash||'')))return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401});
-    if(row.status==='blocked'||row.status==='rejected')return NextResponse.json({error:'Tài khoản hiện chưa thể đăng nhập. Vui lòng liên hệ HappyGo.'},{status:403});
+    if(row.status==='blocked')return NextResponse.json({error:'Tài khoản đã bị khóa. Vui lòng liên hệ HappyGo để được hỗ trợ.'},{status:403});
     await sql`update partner_accounts set last_login_at=now(),updated_at=now() where partner_id=${row.id}`;
     const response=NextResponse.json({ok:true,partner:{id:String(row.id),name:row.name,email:row.email,phone:row.phone,status:row.status,contact:row.contact_name||'',website:row.website||'',taxCode:row.tax_code||'',address:row.address||'',createdAt:row.created_at}});
     setSessionCookie(response,COOKIE,'partner',String(row.id));
