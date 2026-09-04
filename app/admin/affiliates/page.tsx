@@ -1,2 +1,9 @@
 import {AdminAffiliateManager} from '@/components/AdminAffiliateManager';
-export default function AdminAffiliatesPage(){return <main className="admin-main affiliate-admin-page"><AdminAffiliateManager/></main>}
+import {AdminAffiliatePayoutRequests} from '@/components/AdminAffiliatePayoutRequests';
+
+export default function AdminAffiliatesPage(){
+ return <main className="admin-main affiliate-admin-page">
+  <AdminAffiliatePayoutRequests/>
+  <AdminAffiliateManager/>
+ </main>;
+}
