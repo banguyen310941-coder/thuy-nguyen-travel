@@ -1,60 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { defaultHomeCms, type HomeCmsData } from '@/components/HomeCmsHero';
+import {useEffect,useState} from 'react';
+import {defaultHomeCms,type HomeCmsData} from '@/components/HomeCmsHero';
+
+type ApiResult={ok?:boolean;value?:HomeCmsData|null;updatedAt?:string;error?:string};
+async function api(value?:HomeCmsData){const response=await fetch('/api/admin/homepage',value?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value})}:{cache:'no-store'});const data=await response.json().catch(()=>({})) as ApiResult;if(!response.ok)throw new Error(data.error||'Không thể xử lý trang chủ production.');return data}
+function mirror(value:HomeCmsData){try{localStorage.setItem('tn_cms_homepage',JSON.stringify(value));window.dispatchEvent(new Event('tn-homepage-updated'));window.dispatchEvent(new Event('storage'))}catch{}}
 
 export function AdminHomepageEditor(){
-  const [form,setForm]=useState<HomeCmsData>(defaultHomeCms);
-  const [message,setMessage]=useState('');
-
-  useEffect(()=>{
-    const local=localStorage.getItem('tn_cms_homepage');
-    if(local){try{setForm({...defaultHomeCms,...JSON.parse(local)})}catch{}}
-  },[]);
-
-  function change<K extends keyof HomeCmsData>(name:K,value:HomeCmsData[K]){setForm(v=>({...v,[name]:value}));}
-  function notify(){window.dispatchEvent(new Event('tn-homepage-updated'));}
-
-  function save(){
-    localStorage.setItem('tn_cms_homepage',JSON.stringify(form));
-    notify();
-    setMessage('Đã lưu và đưa vào hàng đợi đồng bộ production. Website công khai sẽ tự nhận bản mới.');
-  }
-
-  function reset(){setForm(defaultHomeCms);localStorage.setItem('tn_cms_homepage',JSON.stringify(defaultHomeCms));notify();setMessage('Đã khôi phục nội dung mặc định và đồng bộ lại trang chủ.');}
-  const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={e=>change(name,e.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
-
-  return <section className="admin-panel cms-home-editor">
-    <div className="admin-panel-head"><div><small>TRANG CHỦ · PRODUCTION SYNC</small><h2>Giao diện trang chủ</h2><p>Chỉnh từng khối giống WordPress. Nội dung được đồng bộ production theo phiên quản trị, không còn dùng khóa API trên trình duyệt.</p></div><Link className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</Link></div>
-
-    <div className="cms-editor-grid">
-      <div className="cms-fields">
-        <div className="cms-group"><h3>1. Banner chính</h3>
-          <label>Nhãn nhỏ<input value={form.eyebrow} onChange={e=>change('eyebrow',e.target.value)}/></label>
-          <label>Tiêu đề chính<textarea rows={2} value={form.title} onChange={e=>change('title',e.target.value)}/></label>
-          <label>Mô tả banner<textarea rows={3} value={form.subtitle} onChange={e=>change('subtitle',e.target.value)}/></label>
-          <div className="admin-form-row"><label>Dòng ghi chú<input value={form.noteTitle} onChange={e=>change('noteTitle',e.target.value)}/></label><label>Nội dung ghi chú<input value={form.noteText} onChange={e=>change('noteText',e.target.value)}/></label></div>
-          <label>Ảnh banner (URL)<input value={form.heroImage} onChange={e=>change('heroImage',e.target.value)}/></label>
-        </div>
-
-        <div className="cms-group"><h3>2. Dịch vụ nổi bật</h3><Toggle name="servicesEnabled" label="Hiển thị khối dịch vụ"/><label>Tiêu đề<input value={form.servicesTitle} onChange={e=>change('servicesTitle',e.target.value)}/></label><label>Mô tả<input value={form.servicesSubtitle} onChange={e=>change('servicesSubtitle',e.target.value)}/></label></div>
-        <div className="cms-group"><h3>3. Điểm đến</h3><Toggle name="destinationsEnabled" label="Hiển thị điểm đến phổ biến"/><label>Tiêu đề<input value={form.destinationsTitle} onChange={e=>change('destinationsTitle',e.target.value)}/></label></div>
-        <div className="cms-group"><h3>4. Sản phẩm nổi bật</h3><Toggle name="productsEnabled" label="Hiển thị sản phẩm nổi bật"/><label>Tiêu đề<input value={form.productsTitle} onChange={e=>change('productsTitle',e.target.value)}/></label></div>
-        <div className="cms-group"><h3>5. Du thuyền</h3><Toggle name="cruisesEnabled" label="Hiển thị du thuyền nổi bật"/><label>Tiêu đề<input value={form.cruisesTitle} onChange={e=>change('cruisesTitle',e.target.value)}/></label><label>Mô tả<input value={form.cruisesSubtitle} onChange={e=>change('cruisesSubtitle',e.target.value)}/></label></div>
-        <div className="cms-group"><h3>6. Tour du lịch</h3><Toggle name="toursEnabled" label="Hiển thị tour hot"/><label>Tiêu đề<input value={form.toursTitle} onChange={e=>change('toursTitle',e.target.value)}/></label></div>
-        <div className="cms-group"><h3>7. CTA cuối trang</h3><Toggle name="ctaEnabled" label="Hiển thị khối tư vấn cuối trang"/><label>Nhãn nhỏ<input value={form.ctaEyebrow} onChange={e=>change('ctaEyebrow',e.target.value)}/></label><label>Tiêu đề<input value={form.ctaTitle} onChange={e=>change('ctaTitle',e.target.value)}/></label><label>Mô tả<textarea rows={2} value={form.ctaText} onChange={e=>change('ctaText',e.target.value)}/></label><div className="admin-form-row"><label>Hotline<input value={form.hotline} onChange={e=>change('hotline',e.target.value)}/></label><label>Zalo<input value={form.zalo} onChange={e=>change('zalo',e.target.value)}/></label></div></div>
-
-        <div className="editor-actions"><button type="button" onClick={reset}>Khôi phục mặc định</button><button className="admin-primary" type="button" onClick={save}>Lưu & xuất bản</button></div>
-        {message&&<p className="cms-message">{message}</p>}
-      </div>
-
-      <div className="cms-preview-stack">
-        <div className="cms-live-preview" style={{backgroundImage:`linear-gradient(90deg,rgba(4,55,105,.68),rgba(4,55,105,.12)),url(${form.heroImage})`}}><div><small>{form.eyebrow}</small><h2>{form.title}</h2><p>{form.subtitle}</p><span>{form.noteTitle} — <b>{form.noteText}</b></span></div></div>
-        <div className="cms-section-map"><h3>Cấu trúc trang chủ</h3>{[
-          ['Banner chính',true],['Dịch vụ nổi bật',form.servicesEnabled],['Điểm đến phổ biến',form.destinationsEnabled],['Sản phẩm nổi bật',form.productsEnabled],['Du thuyền nổi bật',form.cruisesEnabled],['Tour du lịch hot',form.toursEnabled],['CTA cuối trang',form.ctaEnabled]
-        ].map(([label,on],i)=><div key={String(label)} className={on?'on':'off'}><b>{i+1}</b><span>{String(label)}</span><em>{on?'Hiển thị':'Ẩn'}</em></div>)}</div>
-      </div>
-    </div>
-  </section>;
+ const[form,setForm]=useState<HomeCmsData>(defaultHomeCms),[message,setMessage]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
+ useEffect(()=>{let alive=true;void(async()=>{try{const result=await api();if(!alive)return;const value={...defaultHomeCms,...(result.value||{})};setForm(value);mirror(value)}catch(error){if(alive)setMessage(error instanceof Error?error.message:'Không đọc được trang chủ production.')}finally{if(alive)setLoading(false)}})();return()=>{alive=false}},[]);
+ function change<K extends keyof HomeCmsData>(name:K,value:HomeCmsData[K]){setForm(current=>({...current,[name]:value}))}
+ async function saveValue(value:HomeCmsData,success:string){setBusy(true);setMessage('');try{const result=await api(value),saved={...defaultHomeCms,...(result.value||value)};setForm(saved);mirror(saved);setMessage(success)}catch(error){setMessage(error instanceof Error?error.message:'Không thể lưu trang chủ production.')}finally{setBusy(false)}}
+ function save(){void saveValue(form,'Đã lưu trực tiếp lên production. Website công khai sẽ nhận nội dung mới qua site-state.')}
+ function reset(){if(!confirm('Khôi phục toàn bộ nội dung trang chủ về mặc định?'))return;void saveValue(defaultHomeCms,'Đã khôi phục nội dung mặc định trên production.')}
+ const Toggle=({name,label}:{name:keyof HomeCmsData;label:string})=><label className="cms-toggle"><input type="checkbox" checked={Boolean(form[name])} onChange={event=>change(name,event.target.checked as never)}/><span><b>{label}</b><small>{form[name]?'Đang hiển thị':'Đang ẩn'}</small></span></label>;
+ return <section className="admin-panel cms-home-editor">
+  <div className="admin-panel-head"><div><small>TRANG CHỦ · SERVER PRODUCTION</small><h2>Giao diện trang chủ</h2><p>Nội dung được đọc và lưu trực tiếp trên server bằng phiên quản trị hiện tại; localStorage chỉ còn là cache hiển thị tương thích.</p></div><Link className="cms-preview-link" href="/" target="_blank">Mở trang chủ ↗</Link></div>
+  {loading&&<p className="admin-api-note">Đang tải nội dung trang chủ production...</p>}
+  <div className="cms-editor-grid"><div className="cms-fields">
+   <div className="cms-group"><h3>1. Banner chính</h3><label>Nhãn nhỏ<input value={form.eyebrow} onChange={event=>change('eyebrow',event.target.value)}/></label><label>Tiêu đề chính<textarea rows={2} value={form.title} onChange={event=>change('title',event.target.value)}/></label><label>Mô tả banner<textarea rows={3} value={form.subtitle} onChange={event=>change('subtitle',event.target.value)}/></label><div className="admin-form-row"><label>Dòng ghi chú<input value={form.noteTitle} onChange={event=>change('noteTitle',event.target.value)}/></label><label>Nội dung ghi chú<input value={form.noteText} onChange={event=>change('noteText',event.target.value)}/></label></div><label>Ảnh banner (URL)<input value={form.heroImage} onChange={event=>change('heroImage',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>2. Dịch vụ nổi bật</h3><Toggle name="servicesEnabled" label="Hiển thị khối dịch vụ"/><label>Tiêu đề<input value={form.servicesTitle} onChange={event=>change('servicesTitle',event.target.value)}/></label><label>Mô tả<input value={form.servicesSubtitle} onChange={event=>change('servicesSubtitle',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>3. Điểm đến</h3><Toggle name="destinationsEnabled" label="Hiển thị điểm đến phổ biến"/><label>Tiêu đề<input value={form.destinationsTitle} onChange={event=>change('destinationsTitle',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>4. Sản phẩm nổi bật</h3><Toggle name="productsEnabled" label="Hiển thị sản phẩm nổi bật"/><label>Tiêu đề<input value={form.productsTitle} onChange={event=>change('productsTitle',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>5. Du thuyền</h3><Toggle name="cruisesEnabled" label="Hiển thị du thuyền nổi bật"/><label>Tiêu đề<input value={form.cruisesTitle} onChange={event=>change('cruisesTitle',event.target.value)}/></label><label>Mô tả<input value={form.cruisesSubtitle} onChange={event=>change('cruisesSubtitle',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>6. Tour du lịch</h3><Toggle name="toursEnabled" label="Hiển thị tour hot"/><label>Tiêu đề<input value={form.toursTitle} onChange={event=>change('toursTitle',event.target.value)}/></label></div>
+   <div className="cms-group"><h3>7. CTA cuối trang</h3><Toggle name="ctaEnabled" label="Hiển thị khối tư vấn cuối trang"/><label>Nhãn nhỏ<input value={form.ctaEyebrow} onChange={event=>change('ctaEyebrow',event.target.value)}/></label><label>Tiêu đề<input value={form.ctaTitle} onChange={event=>change('ctaTitle',event.target.value)}/></label><label>Mô tả<textarea rows={2} value={form.ctaText} onChange={event=>change('ctaText',event.target.value)}/></label><div className="admin-form-row"><label>Hotline<input value={form.hotline} onChange={event=>change('hotline',event.target.value)}/></label><label>Zalo<input value={form.zalo} onChange={event=>change('zalo',event.target.value)}/></label></div></div>
+   <div className="editor-actions"><button type="button" disabled={busy} onClick={reset}>Khôi phục mặc định</button><button className="admin-primary" type="button" disabled={busy||loading} onClick={save}>{busy?'Đang lưu...':'Lưu & xuất bản'}</button></div>{message&&<p className="cms-message">{message}</p>}
+  </div><div className="cms-preview-stack"><div className="cms-live-preview" style={{backgroundImage:`linear-gradient(90deg,rgba(4,55,105,.68),rgba(4,55,105,.12)),url(${form.heroImage})`}}><div><small>{form.eyebrow}</small><h2>{form.title}</h2><p>{form.subtitle}</p><span>{form.noteTitle} — <b>{form.noteText}</b></span></div></div><div className="cms-section-map"><h3>Cấu trúc trang chủ</h3>{[['Banner chính',true],['Dịch vụ nổi bật',form.servicesEnabled],['Điểm đến phổ biến',form.destinationsEnabled],['Sản phẩm nổi bật',form.productsEnabled],['Du thuyền nổi bật',form.cruisesEnabled],['Tour du lịch hot',form.toursEnabled],['CTA cuối trang',form.ctaEnabled]].map(([label,on],index)=><div key={String(label)} className={on?'on':'off'}><b>{index+1}</b><span>{String(label)}</span><em>{on?'Hiển thị':'Ẩn'}</em></div>)}</div></div></div>
+ </section>
 }
