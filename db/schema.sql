@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS staff (
   email text NOT NULL UNIQUE,
   phone text,
   password_hash text NOT NULL,
-  role text NOT NULL CHECK (role IN ('owner','admin','sales','content','operations','accounting')),
+  role text NOT NULL CHECK (role IN ('owner','admin','sales','content','operations','accounting','affiliate')),
   department text,
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive','locked')),
   permissions jsonb NOT NULL DEFAULT '[]'::jsonb,
