@@ -24,7 +24,11 @@ export async function GET(req:NextRequest){
     (select count(*) from payments where status='paid')::int receipts,
     (select count(*) from payment_requests)::int payment_requests,
     (select count(*) from accounting_entries where voided_at is null)::int accounting_entries,
-    (select count(*) from customer_accounts where status='active')::int customer_accounts`,
+    (select count(*) from customer_accounts where status='active')::int customer_accounts,
+    (select count(*) from affiliates)::int affiliates,
+    (select count(*) from affiliates where status='active')::int active_affiliates,
+    (select count(*) from affiliate_referrals)::int affiliate_referrals,
+    (select coalesce(sum(balance),0) from affiliates)::bigint affiliate_balance`,
    sql`select entity_id,max(created_at) updated_at from audit_logs where entity_type='admin_shared_state' group by entity_id`
   ]);
   const c=counts[0] as any,sharedKeys=new Set(shared.map((row:any)=>String(row.entity_id))),sharedCount=sharedKeys.size;
@@ -35,11 +39,12 @@ export async function GET(req:NextRequest){
   const drive=isGoogleDriveConfigured(),email=Boolean(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM);
   const modules=[
    {id:'database',label:'Neon PostgreSQL',state:'ok',detail:'Kết nối đọc/ghi production',count:null},
-   {id:'auth',label:'Tài khoản & phân quyền',state:Number(c.staff)>0?'ok':'warning',detail:`${Number(c.staff||0)} tài khoản nhân viên đang hoạt động`,count:Number(c.staff||0)},
+   {id:'auth',label:'Tài khoản & phân quyền',state:Number(c.staff)>0?'ok':'warning',detail:`${Number(c.staff||0)} tài khoản nhân viên đang hoạt động · đăng nhập có giới hạn thử sai`,count:Number(c.staff||0)},
    {id:'crm',label:'CRM & khách hàng',state:'ok',detail:'Dữ liệu chuẩn lưu trên Neon',count:Number(c.customers||0)},
    {id:'bookings',label:'Booking & Điều hành',state:'ok',detail:'Booking chuẩn trên Neon + trạng thái vận hành dùng chung',count:Number(c.bookings||0)},
    {id:'finance',label:'Phiếu thu · Đề xuất chi · Kế toán',state:'ok',detail:`${Number(c.receipts||0)} phiếu thu · ${Number(c.payment_requests||0)} đề xuất · ${Number(c.accounting_entries||0)} bút toán`,count:Number(c.accounting_entries||0)},
    {id:'partners',label:'Đối tác & sản phẩm đối tác',state:'ok',detail:`Tài khoản, duyệt, giá và hỗ trợ trên Neon · ${Number(c.partner_products||0)} sản phẩm đối tác`,count:Number(c.partners||0)},
+   {id:'affiliates',label:'Cộng tác viên & hoa hồng',state:'ok',detail:`${Number(c.active_affiliates||0)}/${Number(c.affiliates||0)} CTV hoạt động · ${Number(c.affiliate_referrals||0)} referral · số dư chờ chi ${Number(c.affiliate_balance||0).toLocaleString('vi-VN')}đ`,count:Number(c.affiliates||0)},
    {id:'customer_accounts',label:'Tài khoản khách hàng',state:'ok',detail:'Đăng nhập và lịch sử booking theo session server',count:Number(c.customer_accounts||0)},
    {id:'catalog',label:'Sản phẩm nội bộ',state:'ok',detail:`Neon products/product_units · ${Number(c.internal_products||0)} sản phẩm · ${Number(c.internal_units||0)} đơn vị bán`,count:Number(c.internal_products||0)},
    {id:'rates',label:'Lịch giá & tồn',state:'ok',detail:`Neon rate_rules · ${Number(c.internal_rates||0)} khoảng giá đang lưu`,count:Number(c.internal_rates||0)},
