@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {PartnerProductionPortal} from '@/components/PartnerProductionPortal';
+import {PartnerEntryPage} from '@/components/PartnerEntryPage';
 
 export const metadata:Metadata={
   title:'Cổng đối tác',
@@ -8,5 +8,5 @@ export const metadata:Metadata={
 };
 
 export default function PartnerPage(){
-  return <PartnerProductionPortal/>;
+  return <PartnerEntryPage/>;
 }
