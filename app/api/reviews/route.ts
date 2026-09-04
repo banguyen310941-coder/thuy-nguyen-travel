@@ -56,7 +56,6 @@ export async function GET(req:NextRequest){
   const reviews=rows.map(r=>({id:String(r.id),customerName:String(r.customer_name||'Khách hàng'),rating:Number(r.rating||0),comment:String(r.comment||''),verified:Boolean(r.verified),bookingCode:String(r.booking_code||''),createdAt:String(r.created_at)}));
   const average=reviews.length?reviews.reduce((sum,r)=>sum+r.rating,0)/reviews.length:null;
   const booking=actor?await completedBooking(sql,actor.customerId,slug,productName):null;
-  const mine=actor?reviews.find(r=>String(rows.find(x=>String(x.id)===r.id)?.customer_name||'')===actor.name&&rows.find(x=>String(x.id)===r.id)?.id)||null:null;
   const myRows=actor?await sql`select id,rating,comment from customer_reviews where product_slug=${slug} and customer_id=${actor.customerId} limit 1`:[];
   const my=myRows[0]?{id:String(myRows[0].id),rating:Number(myRows[0].rating),comment:String(myRows[0].comment||'')}:null;
   return NextResponse.json({ok:true,reviews,average,count:reviews.length,authenticated:Boolean(actor),accountName:actor?.name||'',eligible:Boolean(booking),bookingCode:booking?.code||'',mine:my});
