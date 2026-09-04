@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import {useSiteSettings} from '@/components/useSiteSettings';
+import {formatPhone,useSiteSettings} from '@/components/useSiteSettings';
 import {BookingCartBadge} from '@/components/BookingCart';
 import {DemoTourSchedules} from '@/components/DemoTourSchedules';
 import {ApprovedPartnerCatalogSync} from '@/components/ApprovedPartnerCatalogSync';
@@ -16,6 +16,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith('/admin')) return <><DemoTourSchedules/>{children}</>;
   if (pathname.startsWith('/partner')) return <><DemoTourSchedules/>{children}</>;
   if (pathname.startsWith('/affiliate')) return <>{children}</>;
-  const zalo=settings.zalo.replace(/\D/g,'');
-  return <><AffiliateAttributionCapture/><SiteProductionStateSync/><ApprovedPartnerCatalogSync/><DemoTourSchedules/><Header /><main>{children}</main><Footer /><BookingCartBadge/><div className="floating-actions" aria-label="Liên hệ nhanh"><a className="zalo-float" href={`https://zalo.me/${zalo}`} target="_blank" rel="noreferrer" aria-label="Chat Zalo" title="Chat Zalo"><span className="zalo-word">Zalo</span><span className="contact-label"><small>Tư vấn nhanh</small><b>Chat Zalo</b></span></a></div></>;
+  const phone=settings.hotline.replace(/\D/g,'');
+  const zalo=settings.zalo.replace(/\D/g,'')||phone;
+  return <><AffiliateAttributionCapture/><SiteProductionStateSync/><ApprovedPartnerCatalogSync/><DemoTourSchedules/><Header /><main>{children}</main><Footer /><BookingCartBadge/><div className="floating-actions" aria-label="Liên hệ nhanh"><a className="call-float" href={`tel:${phone}`} aria-label={`Gọi ${formatPhone(settings.hotline)}`} title={`Gọi ${formatPhone(settings.hotline)}`}><span>☎</span><span className="contact-label"><small>Hotline tư vấn</small><b>{formatPhone(settings.hotline)}</b></span></a><a className="zalo-float" href={`https://zalo.me/${zalo}`} target="_blank" rel="noreferrer" aria-label="Chat Zalo" title="Chat Zalo"><span className="zalo-word">Zalo</span><span className="contact-label"><small>Tư vấn nhanh</small><b>Chat Zalo</b></span></a></div></>;
 }
