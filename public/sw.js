@@ -1,4 +1,4 @@
-const CACHE='happygo-shell-v3';
+const CACHE='happygo-shell-v4';
 const SHELL=['/','/admin/','/manifest.webmanifest','/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -14,6 +14,13 @@ self.addEventListener('fetch',event=>{
   if(req.method!=='GET')return;
   const url=new URL(req.url);
   if(url.origin!==self.location.origin)return;
+
+  // Production data must never be served from the PWA cache. Catalog, pricing,
+  // authentication and admin APIs are dynamic and must always hit the network.
+  if(url.pathname.startsWith('/api/')){
+    event.respondWith(fetch(req));
+    return;
+  }
 
   if(req.mode==='navigate'){
     event.respondWith(fetch(req).then(res=>{
