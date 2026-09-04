@@ -1,98 +1,38 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';import {CUSTOMER_ACCOUNTS_KEY,readCustomerAccounts,type CustomerAccount} from '@/components/CustomerAccount';import {AdminCrmHistory} from '@/components/AdminCrmHistory';import {AdminCrmOpportunity} from '@/components/AdminCrmOpportunity';import {SALES_AVAILABILITY_EVENT,autoAssignCustomer,autoAssignCustomers,canViewCustomer,customerKey,isOwner,isSaleReceivingCustomers,readAssignments,readCurrentStaff,readSalesAutoSettings,salesStaff,setSalesAutoEnabled,writeAssignments,type AdminStaff,type SalesAssignment,type SalesAutoSettings} from '@/components/AdminSalesAccess';
-type Customer={id:number;customer_name:string;phone:string;email?:string|null;status:'lead'|'contacting'|'customer'|'inactive';note?:string|null;booking_count:number;latest_booking_at?:string|null;source?:string;createdByName?:string;createdAt?:string};type Booking={id:number;code:string;product:string;status:string;created_at:string;start_date?:string|null;end_date?:string|null;customer_name?:string;phone?:string;email?:string|null};type LocalBooking=Booking&{customer_name:string;phone:string;email?:string|null};const LOCAL_BOOKINGS='tn_local_bookings_v1',LOCAL_CUSTOMER_STATUS='tn_local_customer_status_v1',MANUAL_CUSTOMERS='happygo_crm_manual_customers_v1';function read<T>(k:string,f:T):T{try{const x=JSON.parse(localStorage.getItem(k)||'');return x??f}catch{return f}}function readBookings():LocalBooking[]{return read(LOCAL_BOOKINGS,[])}function readStatuses():Record<string,Customer['status']>{return read(LOCAL_CUSTOMER_STATUS,{})}function readManual():Customer[]{const x=read<Customer[]>(MANUAL_CUSTOMERS,[]);return Array.isArray(x)?x:[]}function localCustomers(){const bookings=readBookings(),statuses=readStatuses(),map=new Map<string,Customer>();readManual().forEach(c=>{const key=customerKey(c.phone,c.email);if(key&&key!=='email:')map.set(key,{...c,status:statuses[c.phone.replace(/\D/g,'')]||c.status||'lead'})});bookings.forEach((b,index)=>{const key=customerKey(b.phone,b.email);if(!key||key==='email:')return;const current=map.get(key);map.set(key,{id:current?.id||Number(String(Date.now()).slice(-7))+index,customer_name:b.customer_name||current?.customer_name||'Khách hàng',phone:b.phone,email:b.email||current?.email||'',status:statuses[(b.phone||'').replace(/\D/g,'')]||current?.status||'lead',note:current?.note,source:current?.source||'Website / Booking',createdByName:current?.createdByName,createdAt:current?.createdAt,booking_count:(current?.booking_count||0)+1,latest_booking_at:b.created_at})});return Array.from(map.values())}
-type CrmMarketingCampaign={id:string;campaign:string;channel:string;month:string;status:string};
-function marketingCampaigns(){const map=new Map<string,CrmMarketingCampaign>();read<CrmMarketingCampaign[]>('happygo_marketing_budget_proposals_v1',[]).filter(item=>item.status==='approved'&&item.campaign.trim()).sort((a,b)=>b.month.localeCompare(a.month)).forEach(item=>{const key=item.campaign.trim().toLowerCase();if(!map.has(key))map.set(key,item)});return[...map.values()]}
-export function AdminCustomers(){const[items,setItems]=useState<Customer[]>([]),[accounts,setAccounts]=useState<CustomerAccount[]>([]),[staff,setStaff]=useState<AdminStaff[]>([]),[current,setCurrent]=useState<AdminStaff|null>(null),[assignments,setAssignments]=useState<Record<string,SalesAssignment>>({}),[auto,setAuto]=useState<SalesAutoSettings>(readSalesAutoSettings()),[q,setQ]=useState(''),[selected,setSelected]=useState<Customer|null>(null),[history,setHistory]=useState<Booking[]>([]),[showAccount,setShowAccount]=useState(false),[showLead,setShowLead]=useState(false),[name,setName]=useState(''),[phone,setPhone]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[source,setSource]=useState('Facebook'),[leadNote,setLeadNote]=useState(''),[leadSale,setLeadSale]=useState(''),[msg,setMsg]=useState('');const load=()=>{const customers=localCustomers();if(readSalesAutoSettings().enabled)autoAssignCustomers(customers);setItems(customers);setAccounts(readCustomerAccounts());setStaff(salesStaff());setCurrent(readCurrentStaff());setAssignments(readAssignments());setAuto(readSalesAutoSettings())};useEffect(()=>{load();const es=['tn-bookings-updated','happygo-customer-auth','tn-staff-updated','happygo-crm-assignment','happygo-admin-auth','happygo-crm-auto-assignment',SALES_AVAILABILITY_EVENT,'happygo-crm-customers-updated','happygo-marketing-budget-updated'];es.forEach(e=>window.addEventListener(e,load));return()=>es.forEach(e=>window.removeEventListener(e,load))},[]);const owner=isOwner(current),availableStaff=staff.filter(s=>isSaleReceivingCustomers(s.id));const visible=useMemo(()=>items.filter(c=>{const key=customerKey(c.phone,c.email);return(!q||`${c.customer_name} ${c.phone} ${c.email||''} ${c.source||''}`.toLowerCase().includes(q.toLowerCase()))&&Boolean(current&&canViewCustomer(current,key,assignments))}),[items,q,current,assignments]);function toggleAuto(){if(!owner)return;const enabled=!auto.enabled;if(enabled&&!availableStaff.length){setMsg('Chưa có nhân viên Sale đang bật nhận khách để chia tự động.');return}setSalesAutoEnabled(enabled);if(enabled)autoAssignCustomers(items);setAuto(readSalesAutoSettings());setAssignments(readAssignments());setMsg(enabled?'Đã bật chia khách xoay vòng.':'Đã tắt chia khách tự động.')}function distributeNow(){if(!owner)return;if(!availableStaff.length){setMsg('Không có Sale đang bật nhận khách.');return}const before=Object.keys(readAssignments()).length;autoAssignCustomers(items);const next=readAssignments(),added=Object.keys(next).length-before;setAssignments(next);setAuto(readSalesAutoSettings());setMsg(added?`Đã tự động phân ${added} khách chưa có Sale.`:'Không có khách cần phân.')}function saveAccounts(next:CustomerAccount[]){localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify(next));setAccounts(next);window.dispatchEvent(new Event('happygo-customer-auth'))}function createAccount(){const mail=email.trim().toLowerCase();if(!name.trim()||!phone.trim()||!mail||password.length<6)return setMsg('Nhập đủ tên, điện thoại, email và mật khẩu từ 6 ký tự.');if(accounts.some(x=>x.email.toLowerCase()===mail))return setMsg('Email đã có tài khoản.');saveAccounts([...accounts,{id:`cus_${Date.now()}`,name:name.trim(),phone:phone.trim(),email:mail,password,createdAt:new Date().toISOString(),status:'active'}]);setName('');setPhone('');setEmail('');setPassword('');setShowAccount(false);setMsg('Đã tạo tài khoản khách hàng.')}function createLead(){if(!current)return;if(owner&&leadSale&&!isSaleReceivingCustomers(leadSale))return setMsg('Sale này đang tạm ngưng nhận khách. Hãy chọn Sale khác.');const n=name.trim(),p=phone.trim(),mail=email.trim().toLowerCase();if(!n||(!p&&!mail))return setMsg('Nhập tên khách và ít nhất SĐT hoặc email.');const key=customerKey(p,mail);if(items.some(c=>customerKey(c.phone,c.email)===key))return setMsg('Khách này đã có trong CRM. Hãy mở hồ sơ hiện có để tránh trùng dữ liệu.');const manual=readManual(),c:Customer={id:Date.now(),customer_name:n,phone:p,email:mail,status:'lead',note:leadNote.trim(),booking_count:0,source:source.trim()||'Nhập thủ công',createdByName:current.name,createdAt:new Date().toISOString()};localStorage.setItem(MANUAL_CUSTOMERS,JSON.stringify([c,...manual]));if(owner&&leadSale){const s=staff.find(x=>x.id===leadSale);if(s){const a=readAssignments();a[key]={customerKey:key,staffId:s.id,staffName:s.name,assignedAt:new Date().toISOString(),source:'manual'};writeAssignments(a)}}else if(!owner){const a=readAssignments();a[key]={customerKey:key,staffId:current.id,staffName:current.name,assignedAt:new Date().toISOString(),source:'manual'};writeAssignments(a)}else autoAssignCustomer(p,mail);setName('');setPhone('');setEmail('');setSource('Facebook');setLeadNote('');setLeadSale('');setShowLead(false);setMsg(`Đã thêm khách ${n} vào CRM.`);window.dispatchEvent(new Event('happygo-crm-customers-updated'));load()}function assign(c:Customer,staffId:string){if(!owner)return;if(staffId&&!isSaleReceivingCustomers(staffId)){setMsg('Sale này đang tạm ngưng nhận khách. Hãy chọn Sale khác.');return}const key=customerKey(c.phone,c.email),next={...assignments};if(!staffId)delete next[key];else{const s=staff.find(x=>x.id===staffId);if(s)next[key]={customerKey:key,staffId:s.id,staffName:s.name,assignedAt:new Date().toISOString(),source:'manual'}}writeAssignments(next);setAssignments(next)}function open(c:Customer){if(!current||!canViewCustomer(current,customerKey(c.phone,c.email),assignments))return;setSelected(c);const p=c.phone.replace(/\D/g,'');setHistory(readBookings().filter(b=>p?(b.phone||'').replace(/\D/g,'')===p:Boolean(c.email&&b.email?.toLowerCase()===c.email.toLowerCase())))}
-return <section className="admin-panel">
-<div className="admin-panel-head">
-<div>
-<h2>Khách hàng / CRM</h2>
-<p>{owner?'Quản lý khách từ website, Facebook, Zalo, hotline, giới thiệu, khách vãng lai và các nguồn khác.':'Khách được giao cho bạn, booking liên quan và lịch sử chăm sóc.'}</p>
-</div>
-<div className="receipt-actions">
-<button className="admin-primary" onClick={()=>{setShowLead(v=>!v);setShowAccount(false)}}>+ Nhập khách hàng</button>{owner&&<button className="admin-secondary" onClick={()=>{setShowAccount(v=>!v);setShowLead(false)}}>Tạo tài khoản đăng nhập</button>}</div>
-</div>{owner&&<div className="crm-auto-box">
-<div>
-<small>PHÂN KHÁCH TỰ ĐỘNG</small>
-<b>{auto.enabled?'Đang bật · Xoay vòng Sale':'Đang tắt'}</b>
-<span>{availableStaff.length}/{staff.length} Sale đang nhận khách · đã tự động phân {auto.assignedCount||0} lượt</span>
-</div>
-<div>
-<button className={auto.enabled?'admin-primary':'admin-secondary'} onClick={toggleAuto}>{auto.enabled?'Tắt tự động':'Bật tự động'}</button>
-<button className="admin-secondary" onClick={distributeNow} disabled={!auto.enabled}>Phân khách chưa giao ngay</button>
-</div>
-</div>}{showLead&&<div className="admin-form-row">
-<label>Họ tên *<input value={name} onChange={e=>setName(e.target.value)} placeholder="Nguyễn Văn A"/>
-</label>
-<label>Điện thoại<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="09..."/>
-</label>
-<label>Email<input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Không bắt buộc nếu có SĐT"/>
-</label>
-<label>Nguồn / chiến dịch<select value={source} onChange={e=>setSource(e.target.value)}>
-<optgroup label="Chiến dịch Marketing đã duyệt">{marketingCampaigns().map(item=><option key={item.id} value={item.campaign}>{item.campaign} · {item.channel} · {item.month}</option>)}</optgroup>
-<optgroup label="Nguồn chưa gắn chiến dịch">
-<option>Facebook</option>
-<option>Zalo</option>
-<option>Hotline</option>
-<option>Khách giới thiệu</option>
-<option>Khách cũ quay lại</option>
-<option>Đối tác</option>
-<option>Khách vãng lai</option>
-<option>Google</option>
-<option>TikTok</option>
-<option>Website</option>
-<option>Khác</option>
-</optgroup>
-</select>
-</label>{owner&&<label>Giao cho Sale<select value={leadSale} onChange={e=>setLeadSale(e.target.value)}>
-<option value="">Tự động / chưa giao</option>{staff.map(s=>
-<option key={s.id} value={s.id} disabled={!isSaleReceivingCustomers(s.id)}>{s.name}{isSaleReceivingCustomers(s.id)?'':' · tạm ngưng'}</option>)}</select>
-</label>}<label>Ghi chú nhu cầu<input value={leadNote} onChange={e=>setLeadNote(e.target.value)} placeholder="Đi đâu, ngày dự kiến, số khách, ngân sách..."/>
-</label>
-<button className="admin-primary" onClick={createLead}>Lưu vào CRM</button>
-</div>}{showAccount&&owner&&<div className="admin-form-row">
-<label>Họ tên<input value={name} onChange={e=>setName(e.target.value)}/>
-</label>
-<label>Điện thoại<input value={phone} onChange={e=>setPhone(e.target.value)}/>
-</label>
-<label>Email<input value={email} onChange={e=>setEmail(e.target.value)}/>
-</label>
-<label>Mật khẩu tạm<input type="password" value={password} onChange={e=>setPassword(e.target.value)}/>
-</label>
-<button className="admin-primary" onClick={createAccount}>Tạo tài khoản</button>
-</div>}{msg&&<p className="admin-api-note">{msg}</p>}<div className="admin-list-toolbar">
-<input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên, điện thoại, email, nguồn khách"/>
-<span>{visible.length} khách</span>
-</div>
-<div className="admin-customer-grid">{visible.map(c=>{const a=assignments[customerKey(c.phone,c.email)];return <article className="admin-customer-card crm-assigned-card" key={`${c.id}-${c.phone}-${c.email}`}>
-<div>
-<b>{c.customer_name}</b>{c.phone?<a href={`tel:${c.phone.replace(/\D/g,'')}`}>{c.phone}</a>:<small>Không có SĐT</small>}<small>{c.email||'Không có email'}</small>{c.source&&<small>Nguồn: <b>{c.source}</b>
-</small>}</div>
-<div>
-<span>{c.booking_count} booking</span>
-<small>{a?`Sale: ${a.staffName}${a.source==='round_robin'?' · Tự động':''}`:'Chưa phân Sale'}</small>
-</div>{owner&&<label className="crm-assign">
-<small>Phân cho Sale</small>
-<select value={a?.staffId||''} onChange={e=>assign(c,e.target.value)}>
-<option value="">— Chưa phân —</option>{staff.map(s=>
-<option key={s.id} value={s.id} disabled={!isSaleReceivingCustomers(s.id)}>{s.name}{isSaleReceivingCustomers(s.id)?'':' · tạm ngưng'}</option>)}</select>
-</label>}<button onClick={()=>open(c)}>Hồ sơ chăm sóc</button>
-</article>})}</div>{!visible.length&&<div className="admin-empty-state">Chưa có khách phù hợp.</div>}{selected&&<div className="admin-customer-detail crm-customer-profile">
-<div className="admin-panel-head">
-<div>
-<h3>{selected.customer_name}</h3>
-<p>{selected.phone||'Không SĐT'} · {selected.email||'Không email'}{selected.source?` · Nguồn: ${selected.source}`:''}</p>{selected.note&&<p>Nhu cầu ban đầu: {selected.note}</p>}</div>
-<button onClick={()=>setSelected(null)}>Đóng</button>
-</div>
-<AdminCrmOpportunity phone={selected.phone} email={selected.email} customerName={selected.customer_name} source={selected.source}/>
-<h4>Booking liên quan</h4>
-<div className="admin-table">{history.map(b=>
-<div key={b.id}>
-<b>{b.code}</b>
-<span>{b.product}</span>
-<span>{b.start_date||'—'} → {b.end_date||'—'}</span>
-<em>{b.status}</em>
-</div>)}</div>
-<AdminCrmHistory phone={selected.phone} email={selected.email} customerName={selected.customer_name}/>
-</div>}</section>}
+import {useEffect,useMemo,useState} from 'react';
+
+type Activity={id:string;type:string;content:string;nextFollowUpAt?:string|null;staffId?:string;staffName?:string;createdAt:string};
+type Assignment={staffId:string;staffName:string;source:string;assignedAt:string};
+type Customer={id:string;name:string;phone:string;email:string;status:'lead'|'contacting'|'customer'|'inactive';source:string;note:string;createdAt:string;updatedAt:string;bookingCount:number;latestBookingAt:string;assignment:Assignment|null;activities:Activity[]};
+type Sale={id:string;name:string;email:string};
+type Rotation={enabled:boolean;lastStaffId:string;assignedCount:number};
+const labels:Record<Customer['status'],string>={lead:'Lead mới',contacting:'Đang chăm sóc',customer:'Khách hàng',inactive:'Ngưng theo dõi'};
+const sources=['Facebook','Zalo','Hotline','Khách giới thiệu','Khách cũ quay lại','Đối tác','Khách vãng lai','Google','TikTok','Website','Khác'];
+function date(v?:string){if(!v)return'—';const d=new Date(v);return Number.isNaN(+d)?v:d.toLocaleString('vi-VN')}
+async function api(body?:unknown){const r=await fetch('/api/admin/crm',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Không thể xử lý CRM.');return j}
+
+export function AdminCustomers(){
+ const[items,setItems]=useState<Customer[]>([]),[sales,setSales]=useState<Sale[]>([]),[rotation,setRotation]=useState<Rotation>({enabled:false,lastStaffId:'',assignedCount:0}),[manage,setManage]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[showLead,setShowLead]=useState(false),[selected,setSelected]=useState<Customer|null>(null);
+ const[name,setName]=useState(''),[phone,setPhone]=useState(''),[email,setEmail]=useState(''),[source,setSource]=useState('Facebook'),[note,setNote]=useState(''),[saleId,setSaleId]=useState('');
+ const[activity,setActivity]=useState(''),[activityType,setActivityType]=useState('note'),[followUp,setFollowUp]=useState('');
+ async function load(){setLoading(true);try{const j=await api();setItems(j.customers||[]);setSales(j.sales||[]);setRotation(j.rotation||{enabled:false,lastStaffId:'',assignedCount:0});setManage(Boolean(j.capabilities?.manage));if(selected){const next=(j.customers||[]).find((x:Customer)=>x.id===selected.id);if(next)setSelected(next)}}catch(e){setMsg(e instanceof Error?e.message:'Không đọc được CRM.')}finally{setLoading(false)}}
+ useEffect(()=>{void load()},[]);
+ const visible=useMemo(()=>items.filter(c=>!q||`${c.name} ${c.phone} ${c.email} ${c.source} ${c.assignment?.staffName||''}`.toLowerCase().includes(q.toLowerCase())),[items,q]);
+ async function act(body:unknown,success:string){setBusy(true);setMsg('');try{const j=await api(body);setMsg(success.replace('{count}',String(j.count??'')));await load();return true}catch(e){setMsg(e instanceof Error?e.message:'Không thể cập nhật.');return false}finally{setBusy(false)}}
+ async function create(){if(await act({action:'create',name,phone,email,source,note,salesStaffId:saleId},`Đã thêm ${name.trim()||'khách hàng'} vào CRM production.`)){setName('');setPhone('');setEmail('');setSource('Facebook');setNote('');setSaleId('');setShowLead(false)}}
+ async function assign(c:Customer,id:string){await act({action:'assign',customerId:c.id,staffId:id},id?'Đã phân Sale.':'Đã bỏ phân Sale.')}
+ async function status(c:Customer,value:Customer['status']){await act({action:'status',customerId:c.id,status:value},'Đã cập nhật trạng thái khách.')}
+ async function toggleAuto(){await act({action:'toggleAuto',enabled:!rotation.enabled},!rotation.enabled?'Đã bật chia khách xoay vòng trên server.':'Đã tắt chia khách tự động.')}
+ async function distribute(){await act({action:'distribute'},'Đã phân {count} khách chưa có Sale.')}
+ async function addActivity(){if(!selected||!activity.trim())return;const ok=await act({action:'activity',customerId:selected.id,type:activityType,content:activity,nextFollowUpAt:followUp},'Đã lưu lịch sử chăm sóc.');if(ok){setActivity('');setFollowUp('')}}
+ return <section className="admin-panel">
+  <div className="admin-panel-head"><div><small>CRM PRODUCTION</small><h2>Khách hàng & phân Sale</h2><p>Dữ liệu khách, phân Sale và lịch sử chăm sóc được lưu trực tiếp trên Neon và dùng chung trên mọi thiết bị.</p></div><button className="admin-primary" onClick={()=>setShowLead(v=>!v)}>+ Nhập khách hàng</button></div>
+  {manage&&<div className="crm-auto-box"><div><small>PHÂN KHÁCH TỰ ĐỘNG</small><b>{rotation.enabled?'Đang bật · Xoay vòng Sale':'Đang tắt'}</b><span>{sales.length} Sale đang hoạt động · đã tự động phân {rotation.assignedCount} lượt</span></div><div><button className={rotation.enabled?'admin-primary':'admin-secondary'} disabled={busy} onClick={toggleAuto}>{rotation.enabled?'Tắt tự động':'Bật tự động'}</button><button className="admin-secondary" disabled={busy||!rotation.enabled} onClick={distribute}>Phân khách chưa giao ngay</button></div></div>}
+  {showLead&&<div className="admin-form-row"><label>Họ tên *<input value={name} onChange={e=>setName(e.target.value)} placeholder="Nguyễn Văn A"/></label><label>Điện thoại<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="09..."/></label><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Nguồn<select value={source} onChange={e=>setSource(e.target.value)}>{sources.map(x=><option key={x}>{x}</option>)}</select></label>{manage&&<label>Giao cho Sale<select value={saleId} onChange={e=>setSaleId(e.target.value)}><option value="">Tự động / chưa giao</option>{sales.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}<label>Nhu cầu ban đầu<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Đi đâu, ngày dự kiến, số khách, ngân sách..."/></label><button className="admin-primary" disabled={busy} onClick={create}>{busy?'Đang lưu...':'Lưu vào CRM'}</button></div>}
+  {msg&&<p className="admin-api-note">{msg}</p>}
+  <div className="admin-list-toolbar"><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên, SĐT, email, nguồn hoặc Sale"/><span>{loading?'Đang tải...':`${visible.length} khách`}</span></div>
+  <div className="admin-customer-grid">{visible.map(c=><article className="admin-customer-card crm-assigned-card" key={c.id}><div><b>{c.name}</b>{c.phone?<a href={`tel:${c.phone.replace(/\D/g,'')}`}>{c.phone}</a>:<small>Không có SĐT</small>}<small>{c.email||'Không có email'}</small><small>Nguồn: <b>{c.source||'—'}</b></small></div><div><span>{c.bookingCount} booking</span><small>{c.assignment?`Sale: ${c.assignment.staffName}${c.assignment.source==='round_robin'?' · Tự động':''}`:'Chưa phân Sale'}</small><small>Cập nhật: {date(c.updatedAt)}</small></div><label><small>Trạng thái</small><select value={c.status} disabled={busy} onChange={e=>void status(c,e.target.value as Customer['status'])}>{Object.entries(labels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>{manage&&<label className="crm-assign"><small>Phân cho Sale</small><select value={c.assignment?.staffId||''} disabled={busy} onChange={e=>void assign(c,e.target.value)}><option value="">— Chưa phân —</option>{sales.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}<button onClick={()=>setSelected(c)}>Hồ sơ chăm sóc</button></article>)}</div>
+  {!loading&&!visible.length&&<div className="admin-empty-state">Chưa có khách phù hợp.</div>}
+  {selected&&<div className="admin-customer-detail crm-customer-profile"><div className="admin-panel-head"><div><h3>{selected.name}</h3><p>{selected.phone||'Không SĐT'} · {selected.email||'Không email'} · {labels[selected.status]}</p>{selected.note&&<p>Nhu cầu ban đầu: {selected.note}</p>}</div><button onClick={()=>setSelected(null)}>Đóng</button></div><div className="admin-form-row"><label>Loại chăm sóc<select value={activityType} onChange={e=>setActivityType(e.target.value)}><option value="call">Gọi điện</option><option value="message">Nhắn tin</option><option value="quote">Gửi báo giá</option><option value="note">Ghi chú</option><option value="follow_up">Hẹn chăm sóc</option></select></label><label>Nội dung<input value={activity} onChange={e=>setActivity(e.target.value)} placeholder="Nội dung trao đổi với khách"/></label><label>Nhắc lại lúc<input type="datetime-local" value={followUp} onChange={e=>setFollowUp(e.target.value)}/></label><button className="admin-primary" disabled={busy||!activity.trim()} onClick={addActivity}>Lưu chăm sóc</button></div><h4>Lịch sử CRM</h4><div className="admin-table">{selected.activities?.map(a=><div key={a.id}><b>{a.type}</b><span>{a.content}</span><span>{a.staffName||'Hệ thống'}</span><em>{date(a.createdAt)}{a.nextFollowUpAt?` · Hẹn ${date(a.nextFollowUpAt)}`:''}</em></div>)}</div>{!selected.activities?.length&&<div className="admin-empty-state">Chưa có lịch sử chăm sóc.</div>}</div>}
+ </section>
+}
