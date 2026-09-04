@@ -39,6 +39,7 @@ import './marketing-sales-funnel.css';
 import './today-work.css';
 import './admin-shared-data.css';
 import './portal-production.css';
+import './partner-login-v2.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
