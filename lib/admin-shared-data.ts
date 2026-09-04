@@ -1,9 +1,10 @@
 "use client";
 
+// Kept only so older components compile while the app finishes removing the legacy key UI.
 export const ADMIN_API_KEY_STORAGE = "tn_admin_api_key";
-export const SHARED_PENDING_STORAGE = "happygo_admin_shared_pending_v1";
+export const SHARED_PENDING_STORAGE = "happygo_admin_shared_pending_v2";
 export const SHARED_STATUS_EVENT = "happygo-admin-shared-status";
-const SHARED_BOOTSTRAP_STORAGE = "happygo_admin_shared_bootstrapped_v1";
+const SHARED_BOOTSTRAP_STORAGE = "happygo_admin_shared_bootstrapped_v2";
 
 export const SHARED_ADMIN_KEYS = [
   "tn_local_bookings_v1",
@@ -25,6 +26,7 @@ export const SHARED_ADMIN_KEYS = [
   "happygo_accounting_opening_balances_v1",
   "happygo_supplier_service_orders_v1",
   "happygo_inventory_reservations_v1",
+  "happygo_customer_vouchers_v1",
   "happygo_booking_confirm_v1",
   "happygo_booking_confirm_versions_v1",
   "happygo_booking_operator_history_v1",
@@ -34,6 +36,15 @@ export const SHARED_ADMIN_KEYS = [
   "happygo_attendance_config_v1",
   "happygo_attendance_records_v1",
   "happygo_attendance_notifications_v1",
+  "tn_cms_products_v3_units",
+  "tn_cms_daily_rates_v1",
+  "tn_cms_tours_v3",
+  "tn_cms_articles_v3",
+  "tn_cms_homepage",
+  "happygo_admin_team_chat_v4",
+  "happygo_admin_chat_reads_v4",
+  "happygo_admin_chat_pins_v4",
+  "happygo_admin_chat_groups_v4",
 ] as const;
 
 export type SharedAdminKey = (typeof SHARED_ADMIN_KEYS)[number];
@@ -55,6 +66,7 @@ export const SHARED_EVENT_KEYS: Record<string, readonly SharedAdminKey[]> = {
   "happygo-accounting-updated": ["happygo_accounting_manual_entries_v1", "happygo_accounting_opening_balances_v1"],
   "happygo-marketing-budget-updated": ["happygo_marketing_budget_proposals_v1", "happygo_marketing_expenses_v1"],
   "happygo-supplier-orders-updated": ["happygo_supplier_service_orders_v1"],
+  "happygo-customer-vouchers-updated": ["happygo_customer_vouchers_v1"],
   "tn-inventory-updated": ["happygo_inventory_reservations_v1"],
   "happygo-booking-confirm-version-updated": ["happygo_booking_confirm_v1", "happygo_booking_confirm_versions_v1"],
   "happygo-booking-confirm-updated": ["happygo_booking_confirm_v1"],
@@ -63,6 +75,12 @@ export const SHARED_EVENT_KEYS: Record<string, readonly SharedAdminKey[]> = {
   "happygo-booking-price-history-updated": ["happygo_booking_price_history_v1"],
   "happygo-booking-status-history-updated": ["happygo_booking_status_history_v1"],
   "happygo-attendance-updated": ["happygo_attendance_config_v1", "happygo_attendance_records_v1", "happygo_attendance_notifications_v1"],
+  "tn-products-updated": ["tn_cms_products_v3_units"],
+  "tn-rates-updated": ["tn_cms_daily_rates_v1"],
+  "tn-tours-updated": ["tn_cms_tours_v3"],
+  "tn-articles-updated": ["tn_cms_articles_v3"],
+  "tn-homepage-updated": ["tn_cms_homepage"],
+  "happygo-team-chat-v4": ["happygo_admin_team_chat_v4", "happygo_admin_chat_reads_v4", "happygo_admin_chat_pins_v4", "happygo_admin_chat_groups_v4"],
 };
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
@@ -70,6 +88,7 @@ let applyingRemote = false;
 let flushTimer: number | undefined;
 let syncInFlight: Promise<boolean> | null = null;
 const queued = new Set<SharedAdminKey>();
+const fingerprints = new Map<SharedAdminKey, string | null>();
 
 function notify(detail: SharedSyncDetail) {
   window.dispatchEvent(new CustomEvent<SharedSyncDetail>(SHARED_STATUS_EVENT, { detail }));
@@ -102,14 +121,13 @@ function meaningful(value: unknown) {
 
 function mergeBookings(remote: unknown, local: unknown) {
   if (!Array.isArray(remote) || !Array.isArray(local)) return remote;
-  const merged = new Map<string, unknown>();
-  remote.forEach((item: any) => merged.set(String(item?.code || item?.id || Math.random()), item));
+  const merged = new Map<string, Record<string, unknown>>();
   local.forEach((item: any) => merged.set(String(item?.code || item?.id || Math.random()), item));
+  remote.forEach((item: any) => {
+    const key = String(item?.code || item?.id || Math.random());
+    merged.set(key, { ...(merged.get(key) || {}), ...item });
+  });
   return [...merged.values()].sort((a: any, b: any) => +new Date(b?.created_at || 0) - +new Date(a?.created_at || 0));
-}
-
-function adminKey() {
-  return localStorage.getItem(ADMIN_API_KEY_STORAGE)?.trim() || "";
 }
 
 function eventNamesFor(keys: readonly SharedAdminKey[]) {
@@ -133,6 +151,7 @@ function applyRemote(records: Partial<Record<SharedAdminKey, RemoteRecord>>) {
         localStorage.setItem(key, serialized);
         changed.push(key);
       }
+      fingerprints.set(key, serialized);
     }
   } finally {
     applyingRemote = false;
@@ -142,27 +161,42 @@ function applyRemote(records: Partial<Record<SharedAdminKey, RemoteRecord>>) {
 }
 
 async function request(path: string, init?: RequestInit) {
-  const key = adminKey();
-  if (!key) throw new Error("MISSING_KEY");
   return fetch(`${API_BASE}/api/admin/shared-data${path}`, {
     ...init,
+    credentials: "same-origin",
     cache: "no-store",
-    headers: { "Content-Type": "application/json", "x-admin-key": key, ...(init?.headers || {}) },
+    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
   });
 }
 
 export function hasSharedAdminKey() {
-  return Boolean(adminKey());
+  return true;
 }
 
-export function saveSharedAdminKey(value: string) {
-  const key = value.trim();
-  if (key) localStorage.setItem(ADMIN_API_KEY_STORAGE, key);
-  else localStorage.removeItem(ADMIN_API_KEY_STORAGE);
+export function saveSharedAdminKey(_value: string) {
+  // Remove the historical browser secret if it is still present.
+  try { localStorage.removeItem(ADMIN_API_KEY_STORAGE); } catch {}
 }
 
 export function isApplyingSharedData() {
   return applyingRemote;
+}
+
+export function scanSharedChanges(updatedBy = "Nhân viên HappyGo") {
+  if (applyingRemote) return;
+  const changed: SharedAdminKey[] = [];
+  for (const key of SHARED_ADMIN_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!fingerprints.has(key)) {
+      fingerprints.set(key, raw);
+      continue;
+    }
+    if (fingerprints.get(key) !== raw) {
+      fingerprints.set(key, raw);
+      changed.push(key);
+    }
+  }
+  if (changed.length) queueSharedKeys(changed, updatedBy);
 }
 
 export async function pushSharedKeys(keys: readonly SharedAdminKey[], updatedBy = "Nhân viên HappyGo") {
@@ -170,10 +204,6 @@ export async function pushSharedKeys(keys: readonly SharedAdminKey[], updatedBy 
   const pending = readPending();
   unique.forEach((key) => pending.add(key));
   savePending(pending);
-  if (!adminKey()) {
-    notify({ state: "missing-key", message: "Cần nhập khóa đồng bộ nội bộ." });
-    return false;
-  }
   const records = unique.flatMap((key) => {
     const value = localValue(key);
     return value === undefined ? [] : [{ key, value }];
@@ -186,15 +216,16 @@ export async function pushSharedKeys(keys: readonly SharedAdminKey[], updatedBy 
   notify({ state: "syncing", message: "Đang lưu dữ liệu dùng chung..." });
   try {
     const response = await request("", { method: "PUT", body: JSON.stringify({ records, updatedBy }) });
-    if (!response.ok) throw new Error(response.status === 401 ? "INVALID_KEY" : `HTTP_${response.status}`);
+    if (!response.ok) throw new Error(response.status === 401 ? "SESSION" : response.status === 403 ? "PERMISSION" : `HTTP_${response.status}`);
     unique.forEach((key) => pending.delete(key));
     savePending(pending);
+    unique.forEach((key) => fingerprints.set(key, localStorage.getItem(key)));
     const at = new Date().toISOString();
-    notify({ state: "synced", message: "Dữ liệu đã lưu dùng chung.", at });
+    notify({ state: "synced", message: "Dữ liệu đã lưu dùng chung trên production.", at });
     return true;
   } catch (error) {
-    const invalid = error instanceof Error && error.message === "INVALID_KEY";
-    notify({ state: "error", message: invalid ? "Khóa đồng bộ không đúng." : "Chưa thể lưu lên máy chủ; dữ liệu vẫn an toàn trên thiết bị này." });
+    const code = error instanceof Error ? error.message : "";
+    notify({ state: "error", message: code === "SESSION" ? "Phiên quản trị đã hết hạn." : code === "PERMISSION" ? "Tài khoản chưa có quyền đồng bộ vùng dữ liệu này." : "Chưa thể lưu lên máy chủ; dữ liệu vẫn an toàn trên thiết bị này." });
     return false;
   }
 }
@@ -202,22 +233,18 @@ export async function pushSharedKeys(keys: readonly SharedAdminKey[], updatedBy 
 export function queueSharedKeys(keys: readonly SharedAdminKey[], updatedBy?: string) {
   if (applyingRemote) return;
   const pending = readPending();
-  keys.forEach((key) => { queued.add(key); pending.add(key); });
+  keys.forEach((key) => { queued.add(key); pending.add(key); fingerprints.set(key, localStorage.getItem(key)); });
   savePending(pending);
   if (flushTimer) window.clearTimeout(flushTimer);
   flushTimer = window.setTimeout(() => {
     const next = [...queued];
     queued.clear();
     void pushSharedKeys(next, updatedBy);
-  }, 450);
+  }, 500);
 }
 
 async function runSharedSync(keys: readonly SharedAdminKey[], updatedBy: string) {
   const unique = [...new Set(keys)];
-  if (!adminKey()) {
-    notify({ state: "missing-key", message: "Nhập khóa nội bộ để dùng dữ liệu chung giữa các thiết bị." });
-    return false;
-  }
   notify({ state: "syncing", message: "Đang đồng bộ dữ liệu công ty..." });
   const pending = readPending();
   const pendingKeys = unique.filter((key) => pending.has(key) || queued.has(key));
@@ -225,7 +252,7 @@ async function runSharedSync(keys: readonly SharedAdminKey[], updatedBy: string)
   try {
     const query = encodeURIComponent(unique.join(","));
     const response = await request(`?keys=${query}`);
-    if (!response.ok) throw new Error(response.status === 401 ? "INVALID_KEY" : `HTTP_${response.status}`);
+    if (!response.ok) throw new Error(response.status === 401 ? "SESSION" : `HTTP_${response.status}`);
     const data = await response.json() as { records?: Partial<Record<SharedAdminKey, RemoteRecord>> };
     const records = data.records || {};
     const bootstrapped = localStorage.getItem(SHARED_BOOTSTRAP_STORAGE) === "1";
@@ -240,13 +267,14 @@ async function runSharedSync(keys: readonly SharedAdminKey[], updatedBy: string)
     applyRemote(records);
     const initial = unique.filter((key) => (!(key in records) && meaningful(localValue(key))) || (mergedLegacyBookings && key === "tn_local_bookings_v1"));
     if (initial.length && !(await pushSharedKeys(initial, updatedBy))) return false;
+    unique.forEach((key) => fingerprints.set(key, localStorage.getItem(key)));
     localStorage.setItem(SHARED_BOOTSTRAP_STORAGE, "1");
     const at = new Date().toISOString();
-    notify({ state: "synced", message: "Đang dùng dữ liệu chung của công ty.", at });
+    notify({ state: "synced", message: "Đang dùng dữ liệu production chung giữa các thiết bị.", at });
     return true;
   } catch (error) {
-    const invalid = error instanceof Error && error.message === "INVALID_KEY";
-    notify({ state: "error", message: invalid ? "Khóa đồng bộ không đúng." : "Không kết nối được dữ liệu chung; đang dùng bản trên thiết bị." });
+    const code = error instanceof Error ? error.message : "";
+    notify({ state: "error", message: code === "SESSION" ? "Phiên quản trị đã hết hạn." : "Không kết nối được dữ liệu chung; đang dùng bản trên thiết bị." });
     return false;
   }
 }
