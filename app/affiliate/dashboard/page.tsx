@@ -1,2 +1,4 @@
 import {AffiliateDashboard} from '@/components/AffiliateDashboard';
-export default function AffiliateDashboardPage(){return <AffiliateDashboard/>}
+import {AffiliateSalesToolkitDrawer} from '@/components/AffiliateSalesToolkitDrawer';
+
+export default function AffiliateDashboardPage(){return <><AffiliateDashboard/><AffiliateSalesToolkitDrawer/></>}
