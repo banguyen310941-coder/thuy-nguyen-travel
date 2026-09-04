@@ -1,0 +1,237 @@
+/* HappyGo Admin action language: make interactive controls visually obvious without turning status text into actions. */
+.admin-production-shell{
+  --hg-action:#0874c9;
+  --hg-action-hover:#0664ae;
+  --hg-action-soft:#eef7ff;
+  --hg-action-border:#b9d8ee;
+  --hg-danger:#b42318;
+  --hg-danger-soft:#fff3f2;
+  --hg-danger-border:#f5b9b4;
+  --hg-neutral:#415a70;
+  --hg-neutral-soft:#f7fafc;
+}
+
+/* Generic action groups: buttons and links should read the same way. */
+.admin-production-shell .admin-main :is(
+  .admin-top-actions,
+  .admin-panel-head,
+  .receipt-actions,
+  .booking-note-actions,
+  .admin-partner-actions,
+  .partner-review-actions,
+  .partner-account-actions,
+  .admin-form-actions,
+  .editor-actions,
+  .media-actions,
+  .rate-actions,
+  .crm-actions,
+  .support-actions,
+  .finance-actions,
+  .toolbar-actions,
+  .action-row
+) > a,
+.admin-production-shell .admin-main a[class*="-action"],
+.admin-production-shell .admin-main a[class*="-button"],
+.admin-production-shell .admin-main a[class*="-btn"]{
+  min-height:40px;
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:9px 13px;
+  border:1px solid var(--hg-action-border);
+  border-radius:10px;
+  background:#fff;
+  color:#17649f;
+  text-decoration:none!important;
+  font-size:12px;
+  font-weight:850;
+  line-height:1.2;
+  cursor:pointer;
+  box-shadow:0 1px 2px rgba(23,50,77,.04);
+  transition:.15s ease;
+}
+.admin-production-shell .admin-main :is(
+  .admin-top-actions,
+  .admin-panel-head,
+  .receipt-actions,
+  .booking-note-actions,
+  .admin-partner-actions,
+  .partner-review-actions,
+  .partner-account-actions,
+  .admin-form-actions,
+  .editor-actions,
+  .media-actions,
+  .rate-actions,
+  .crm-actions,
+  .support-actions,
+  .finance-actions,
+  .toolbar-actions,
+  .action-row
+) > a:hover,
+.admin-production-shell .admin-main a[class*="-action"]:hover,
+.admin-production-shell .admin-main a[class*="-button"]:hover,
+.admin-production-shell .admin-main a[class*="-btn"]:hover{
+  border-color:#7fb9df;
+  background:var(--hg-action-soft);
+  color:#075f9f;
+  box-shadow:0 4px 12px rgba(8,116,201,.10);
+  transform:translateY(-1px);
+}
+
+/* Clear hierarchy: one primary action, supporting secondary actions, destructive actions. */
+.admin-production-shell .admin-main :is(.admin-primary,button.primary,a.primary,a.admin-primary){
+  background:var(--hg-action)!important;
+  border-color:var(--hg-action)!important;
+  color:#fff!important;
+  box-shadow:0 4px 12px rgba(8,116,201,.18);
+}
+.admin-production-shell .admin-main :is(.admin-primary,button.primary,a.primary,a.admin-primary):hover{
+  background:var(--hg-action-hover)!important;
+  border-color:var(--hg-action-hover)!important;
+  color:#fff!important;
+}
+.admin-production-shell .admin-main :is(.admin-secondary,button.secondary,a.secondary){
+  background:#fff!important;
+  border-color:var(--hg-action-border)!important;
+  color:#17649f!important;
+}
+.admin-production-shell .admin-main :is(.danger,.delete,.remove,.destructive,[class*="danger"],[class*="delete"]):is(button,a){
+  background:var(--hg-danger-soft)!important;
+  border-color:var(--hg-danger-border)!important;
+  color:var(--hg-danger)!important;
+}
+
+/* Small text links that are actually useful actions become compact buttons. */
+.admin-production-shell .partner-profile-info-grid a[href^="tel:"],
+.admin-production-shell .partner-profile-info-grid a[href^="mailto:"],
+.admin-production-shell .partner-profile-info-grid a[target="_blank"]{
+  width:max-content;
+  max-width:100%;
+  min-height:32px;
+  display:inline-flex;
+  align-items:center;
+  padding:6px 9px;
+  border:1px solid #c9deed;
+  border-radius:8px;
+  background:#f4faff;
+  color:#0967aa;
+  text-decoration:none!important;
+  font-size:11px;
+  font-weight:850;
+}
+.admin-production-shell .partner-profile-info-grid a:hover{background:#e9f6ff;text-decoration:none!important}
+
+/* Details/summary is a disclosure action, so render it as one instead of plain text. */
+.admin-production-shell .admin-main details > summary{
+  width:max-content;
+  max-width:100%;
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-top:8px;
+  padding:7px 10px;
+  border:1px solid #d4e1eb;
+  border-radius:9px;
+  background:#f8fbfd;
+  color:#345a77;
+  font-size:11px;
+  font-weight:850;
+  cursor:pointer;
+  user-select:none;
+  list-style:none;
+}
+.admin-production-shell .admin-main details > summary::-webkit-details-marker{display:none}
+.admin-production-shell .admin-main details > summary::after{content:'▾';font-size:10px;transition:transform .15s ease}
+.admin-production-shell .admin-main details[open] > summary::after{transform:rotate(180deg)}
+.admin-production-shell .admin-main details > summary:hover{border-color:#9dc8e5;background:#eef8ff;color:#0a67a7}
+
+/* Status is intentionally NOT button-shaped: compact badges distinguish read-only state from actions. */
+.admin-production-shell .admin-main :is(
+  .partner-admin-status,
+  .admin-production-badge,
+  .status-badge,
+  .booking-status-badge,
+  .crm-status,
+  [class*="status-pill"],
+  [class*="status-chip"]
+){
+  min-height:26px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+  line-height:1.1;
+  letter-spacing:.1px;
+  cursor:default;
+}
+
+/* Normalize action rows so controls are easy to scan and do not run together. */
+.admin-production-shell .admin-main :is(
+  .receipt-actions,
+  .booking-note-actions,
+  .admin-partner-actions,
+  .partner-review-actions,
+  .admin-form-actions,
+  .editor-actions,
+  .media-actions,
+  .rate-actions,
+  .crm-actions,
+  .support-actions,
+  .finance-actions,
+  .toolbar-actions,
+  .action-row
+){
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+
+/* Button text should stay readable; icon-only controls remain compact. */
+.admin-production-shell .admin-main button:not(.admin-install-close){white-space:normal;text-align:center}
+.admin-production-shell .admin-main button[aria-label]:empty{width:40px;padding:0!important}
+
+/* Login links are actions too. */
+.admin-production-login .admin-login-card > a,
+.admin-production-login .admin-login-branding > a{
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:max-content;
+  padding:9px 13px;
+  border:1px solid #cbdbe8;
+  border-radius:10px;
+  background:#fff;
+  color:#17649f;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:850;
+}
+.admin-production-login .admin-login-card > a:hover,
+.admin-production-login .admin-login-branding > a:hover{background:#f2f9ff;border-color:#8fbddd}
+
+@media(max-width:820px){
+  .admin-production-shell .admin-main :is(
+    .receipt-actions,
+    .booking-note-actions,
+    .admin-partner-actions,
+    .partner-review-actions,
+    .admin-form-actions,
+    .editor-actions,
+    .media-actions,
+    .rate-actions,
+    .crm-actions,
+    .support-actions,
+    .finance-actions,
+    .toolbar-actions,
+    .action-row
+  ) > :is(button,a){flex:1 1 140px}
+  .admin-production-shell .admin-main details > summary{width:100%;justify-content:space-between}
+}
