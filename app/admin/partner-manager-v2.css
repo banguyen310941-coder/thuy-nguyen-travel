@@ -1,0 +1,142 @@
+/* HappyGo Admin Partner Manager v2 - readability and action hierarchy */
+.admin-partner-production{display:grid;gap:18px}
+.admin-partner-production .admin-partner-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0}
+.admin-partner-production .admin-partner-kpis article{position:relative;min-height:116px;padding:18px 20px;border:1px solid #dce7ef;border-radius:16px;background:#fff;box-shadow:0 5px 18px #17324d0a;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr auto;column-gap:14px;align-items:start;overflow:hidden}
+.admin-partner-production .admin-partner-kpis article:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#0b78c8}
+.admin-partner-production .admin-partner-kpis article:nth-child(2):before{background:#f59e0b}
+.admin-partner-production .admin-partner-kpis article:nth-child(3):before{background:#8b5cf6}
+.admin-partner-production .admin-partner-kpis article:nth-child(4):before{background:#16a34a}
+.admin-partner-production .admin-partner-kpis span{grid-column:1;font-size:11px;font-weight:900;letter-spacing:.25px;color:#587084;line-height:1.35}
+.admin-partner-production .admin-partner-kpis b{grid-column:2;grid-row:1/3;align-self:center;font-size:34px;line-height:1;color:#143b59;letter-spacing:-1px}
+.admin-partner-production .admin-partner-kpis small{grid-column:1;align-self:end;font-size:10px;color:#8a9aa8;font-weight:700}
+
+.admin-partner-production .admin-partner-grid{display:grid;grid-template-columns:minmax(300px,.8fr) minmax(0,1.7fr);gap:18px;align-items:start}
+.admin-partner-production .admin-panel{margin:0}
+.admin-partner-production .admin-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid #e8eef3}
+.admin-partner-production .admin-panel-head h2{margin:3px 0 5px;font-size:20px;color:#163b58}
+.admin-partner-production .admin-panel-head p{margin:0;color:#7c91a2;line-height:1.5}
+.admin-partner-production .admin-panel-head>select{width:auto;min-width:150px;flex:0 0 auto}
+
+.admin-partner-production .admin-partner-list{display:grid;gap:9px}
+.admin-partner-production .admin-partner-list>button{width:100%;min-height:82px!important;padding:13px 14px!important;border:1px solid #e1e9f0!important;border-radius:13px!important;background:#fff!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;box-shadow:none!important}
+.admin-partner-production .admin-partner-list>button:hover{border-color:#9dc7e5!important;background:#f8fcff!important;transform:translateY(-1px)}
+.admin-partner-production .admin-partner-list>button.active{border-color:#4c9ed8!important;background:#eef8ff!important;box-shadow:0 0 0 3px #1687d313!important}
+.admin-partner-production .admin-partner-list>button>div{display:grid;gap:4px;min-width:0}
+.admin-partner-production .admin-partner-list>button b{font-size:14px;color:#173f5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-partner-production .admin-partner-list>button span{font-size:11px;color:#60798d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-partner-production .admin-partner-list>button small{font-size:10px;color:#90a0ad;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.admin-partner-production .partner-admin-status{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:5px 9px;border-radius:999px;font-style:normal;font-size:9px;font-weight:900;white-space:nowrap;border:1px solid #dce5ec;background:#f5f8fa;color:#526b7f}
+.admin-partner-production .partner-admin-status.pending,.admin-partner-product-review .partner-admin-status.pending,.admin-partner-production .partner-admin-status.review,.admin-partner-product-review .partner-admin-status.review{background:#fff8e8;border-color:#f4d795;color:#9a6500}
+.admin-partner-production .partner-admin-status.active,.admin-partner-product-review .partner-admin-status.active,.admin-partner-production .partner-admin-status.approved,.admin-partner-product-review .partner-admin-status.approved{background:#ecfdf3;border-color:#b8e5c7;color:#137333}
+.admin-partner-production .partner-admin-status.rejected,.admin-partner-product-review .partner-admin-status.rejected{background:#fff5eb;border-color:#ffd0a8;color:#a65300}
+.admin-partner-production .partner-admin-status.blocked,.admin-partner-product-review .partner-admin-status.blocked{background:#fff1f2;border-color:#fecdd3;color:#b42318}
+.admin-partner-production .partner-admin-status.draft,.admin-partner-product-review .partner-admin-status.draft{background:#f1f5f9;border-color:#dbe3ea;color:#64748b}
+
+.admin-partner-production .admin-partner-detail{padding:22px}
+.admin-partner-production .partner-profile-header{grid-template-columns:56px minmax(0,1fr) auto;gap:15px;padding:0 0 18px}
+.admin-partner-production .partner-profile-avatar{width:56px;height:56px;border-radius:15px;font-size:17px}
+.admin-partner-production .partner-profile-title h2{font-size:22px;line-height:1.2}
+.admin-partner-production .partner-profile-title p{font-size:11px!important;line-height:1.45}
+.admin-partner-production .partner-profile-sections{gap:14px;margin:16px 0}
+.admin-partner-production .partner-profile-sections>section{padding:16px;border-radius:14px;background:#fbfdff}
+.admin-partner-production .partner-profile-section-head{margin-bottom:13px;padding-bottom:11px}
+.admin-partner-production .partner-profile-section-head b{font-size:13px}
+.admin-partner-production .partner-profile-section-head small{font-size:10px}
+.admin-partner-production .partner-profile-info-grid{gap:9px}
+.admin-partner-production .partner-profile-info-grid article{min-height:64px;padding:11px 12px;gap:6px}
+.admin-partner-production .partner-profile-info-grid small{font-size:9px!important}
+.admin-partner-production .partner-profile-info-grid b{font-size:12px;line-height:1.45}
+.admin-partner-production .partner-profile-info-grid a{display:inline-flex!important;width:max-content;max-width:100%;min-height:32px;align-items:center;padding:6px 9px;border:1px solid #cfe2f1;border-radius:9px;background:#f5fbff;color:#0870bd!important;text-decoration:none!important;font-size:11px!important;font-weight:850!important}
+.admin-partner-production .partner-profile-info-grid a:hover{background:#eaf6ff;border-color:#95c5e5}
+
+.admin-partner-production .partner-profile-commerce{margin:16px 0;padding:17px 18px;border-radius:14px;grid-template-columns:minmax(0,1fr) minmax(160px,.4fr)}
+.admin-partner-production .partner-profile-commerce small{font-size:9px}
+.admin-partner-production .partner-profile-commerce b{font-size:21px;line-height:1.2}
+.admin-partner-production .partner-profile-commerce span{font-size:11px;line-height:1.45}
+.admin-partner-production .partner-profile-progress{height:10px}
+
+.admin-partner-production .admin-partner-products{display:grid;gap:9px}
+.admin-partner-production .partner-products-heading{padding:2px 0 4px}
+.admin-partner-production .partner-products-heading b{font-size:14px}
+.admin-partner-production .partner-products-heading small{font-size:10px}
+.admin-partner-production .admin-partner-products>button{width:100%;min-height:82px!important;padding:13px 14px!important;border:1px solid #e0e8ef!important;border-radius:13px!important;background:#fff!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;text-align:left}
+.admin-partner-production .admin-partner-products>button:hover{border-color:#90c1e3!important;background:#f8fcff!important;transform:translateY(-1px)}
+.admin-partner-production .admin-partner-products>button>div{display:grid;gap:4px;min-width:0}
+.admin-partner-production .admin-partner-products>button b{font-size:13px;color:#173f5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-partner-production .admin-partner-products>button span{font-size:11px;color:#5f788c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-partner-production .admin-partner-products>button small{font-size:10px;color:#90a0ad}
+.admin-partner-production .admin-partner-products>button strong{display:inline-flex;align-items:center;min-height:34px;padding:7px 10px;border-radius:9px;background:#eef7fd;color:#0874c9;font-size:10px;white-space:nowrap}
+
+.admin-partner-production .partner-account-actions{margin-top:18px;padding-top:18px;border-top:1px solid #e4ebf1;grid-template-columns:minmax(210px,.7fr) minmax(0,1.3fr);gap:18px}
+.admin-partner-production .partner-account-actions>div:first-child b{font-size:13px}
+.admin-partner-production .partner-account-actions>div:first-child small{font-size:10px;line-height:1.5}
+.admin-partner-production .admin-partner-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.admin-partner-production .admin-partner-actions button{min-height:38px!important;padding:8px 11px!important}
+.admin-partner-production .admin-partner-actions button:nth-child(2){border-color:#fecaca!important;background:#fff7f7!important;color:#b42318!important}
+.admin-partner-production .admin-partner-actions .primary{border-color:#0874c9!important;background:#0874c9!important;color:#fff!important}
+.admin-partner-production .admin-partner-note.production{padding:13px 15px;border:1px solid #cfe6f6;border-radius:12px;background:#f2f9fe;color:#3d6684;font-size:11px;line-height:1.55}
+
+/* Product review */
+.admin-partner-product-review{display:grid;gap:16px}
+.admin-partner-product-review .admin-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding-bottom:16px;border-bottom:1px solid #e6edf3}
+.admin-partner-product-review .review-back{display:inline-flex!important;width:max-content;min-height:34px!important;padding:7px 10px!important;margin-bottom:10px;border-radius:9px!important}
+.admin-partner-product-review .admin-panel-head h2{margin:4px 0 5px;font-size:23px;color:#153b58}
+.admin-partner-product-review .admin-panel-head p{margin:0;color:#71889a}
+.admin-partner-product-review .partner-review-hero{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.2fr);gap:18px;padding:16px;border:1px solid #e1e9f0;border-radius:15px;background:#fbfdff}
+.admin-partner-product-review .partner-review-hero>img,.admin-partner-product-review .review-no-image{width:100%;height:230px;object-fit:cover;border-radius:12px;background:#edf3f7}
+.admin-partner-product-review .review-no-image{display:grid;place-items:center;color:#8295a4;font-weight:800}
+.admin-partner-product-review .partner-review-hero h3{margin:2px 0 10px;font-size:17px;color:#173f5f}
+.admin-partner-product-review .partner-review-hero p{color:#61788a;line-height:1.6}
+.admin-partner-product-review .partner-review-hero dl{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 0}
+.admin-partner-product-review .partner-review-hero dl>div{padding:10px 11px;border:1px solid #e2e9ef;border-radius:10px;background:#fff}
+.admin-partner-product-review .partner-review-hero dt{font-size:9px;font-weight:900;color:#8a9ba8;text-transform:uppercase;letter-spacing:.35px}
+.admin-partner-product-review .partner-review-hero dd{margin:5px 0 0;font-size:12px;font-weight:800;color:#274b67;overflow-wrap:anywhere}
+.admin-partner-product-review .partner-review-section{padding:16px;border:1px solid #e2e9ef;border-radius:14px;background:#fff}
+.admin-partner-product-review .partner-review-section h3{margin:0 0 12px;color:#173f5f;font-size:16px}
+.admin-partner-product-review .review-two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.admin-partner-product-review .review-two>div{padding:14px;border-radius:12px;background:#f8fbfd}
+.admin-partner-product-review .review-two p{margin:8px 0;color:#536d80;font-size:12px;line-height:1.5}
+.admin-partner-product-review .partner-review-gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.admin-partner-product-review .partner-review-gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px}
+.admin-partner-product-review .partner-review-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;padding-top:2px}
+.admin-partner-product-review .partner-review-actions button{min-height:40px!important}
+.admin-partner-product-review .partner-review-actions button:first-child{border-color:#fed7aa!important;background:#fff9f2!important;color:#9a4f00!important}
+.admin-partner-product-review .partner-review-actions .primary{border-color:#0874c9!important;background:#0874c9!important;color:#fff!important}
+
+@media(max-width:1180px){
+ .admin-partner-production .admin-partner-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-partner-production .admin-partner-grid{grid-template-columns:minmax(280px,.75fr) minmax(0,1.25fr)}
+ .admin-partner-production .partner-profile-sections{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+ .admin-partner-production .admin-partner-grid{grid-template-columns:1fr}
+ .admin-partner-production .partner-account-actions{grid-template-columns:1fr}
+ .admin-partner-production .admin-partner-actions{justify-content:flex-start}
+ .admin-partner-product-review .partner-review-hero{grid-template-columns:1fr}
+ .admin-partner-product-review .review-two{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .admin-partner-production{gap:12px}
+ .admin-partner-production .admin-partner-kpis{grid-template-columns:1fr 1fr;gap:9px}
+ .admin-partner-production .admin-partner-kpis article{min-height:98px;padding:14px 14px 13px}
+ .admin-partner-production .admin-partner-kpis b{font-size:28px}
+ .admin-partner-production .admin-partner-kpis span{font-size:10px}
+ .admin-partner-production .admin-panel-head{display:grid;grid-template-columns:1fr;gap:10px}
+ .admin-partner-production .admin-panel-head>select{width:100%}
+ .admin-partner-production .partner-profile-header{grid-template-columns:48px minmax(0,1fr);align-items:start}
+ .admin-partner-production .partner-profile-avatar{width:48px;height:48px}
+ .admin-partner-production .partner-profile-header>.partner-admin-status{grid-column:1/-1;width:max-content}
+ .admin-partner-production .partner-profile-info-grid{grid-template-columns:1fr}
+ .admin-partner-production .partner-profile-info-grid article.wide{grid-column:auto}
+ .admin-partner-production .partner-profile-commerce{grid-template-columns:1fr;gap:12px}
+ .admin-partner-production .admin-partner-products>button{grid-template-columns:minmax(0,1fr) auto!important}
+ .admin-partner-production .admin-partner-products>button strong{grid-column:1/-1;width:max-content}
+ .admin-partner-production .admin-partner-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+ .admin-partner-production .admin-partner-actions button{width:100%}
+ .admin-partner-product-review .partner-review-hero{padding:11px}
+ .admin-partner-product-review .partner-review-hero dl{grid-template-columns:1fr}
+ .admin-partner-product-review .partner-review-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-partner-product-review .partner-review-actions{display:grid;grid-template-columns:1fr;width:100%}
+ .admin-partner-product-review .partner-review-actions button{width:100%}
+}
