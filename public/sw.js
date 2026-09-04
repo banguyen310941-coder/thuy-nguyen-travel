@@ -1,5 +1,5 @@
-const CACHE='happygo-shell-v4';
-const SHELL=['/','/admin/','/manifest.webmanifest','/icon.svg'];
+const CACHE='happygo-shell-v5';
+const SHELL=['/','/admin','/admin/','/manifest.webmanifest','/admin/manifest.webmanifest','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -27,7 +27,12 @@ self.addEventListener('fetch',event=>{
       const copy=res.clone();
       caches.open(CACHE).then(cache=>cache.put(req,copy));
       return res;
-    }).catch(()=>caches.match(req).then(res=>res||caches.match('/'))));
+    }).catch(async()=>{
+      const exact=await caches.match(req);
+      if(exact)return exact;
+      if(url.pathname.startsWith('/admin'))return (await caches.match('/admin'))||(await caches.match('/admin/'))||(await caches.match('/'));
+      return caches.match('/');
+    }));
     return;
   }
 
