@@ -40,9 +40,9 @@ export async function GET(req:NextRequest){
    {id:'catalog',label:'Sản phẩm nội bộ',state:'ok',detail:`Neon products/product_units · ${Number(c.internal_products||0)} sản phẩm · ${Number(c.internal_units||0)} đơn vị bán`,count:Number(c.internal_products||0)},
    {id:'rates',label:'Lịch giá & tồn',state:'ok',detail:`Neon rate_rules · ${Number(c.internal_rates||0)} khoảng giá đang lưu`,count:Number(c.internal_rates||0)},
    {id:'content',label:'Trang chủ · Tour CMS · Bài viết',state:'ok',detail:hasContent?'Đã có snapshot nội dung production; public site-state đang phục vụ website':'Hạ tầng server sẵn sàng; chưa phát sinh nội dung CMS mới',count:null},
-   {id:'media',label:'Media ảnh',state:drive?'ok':'optional',detail:drive?'Có storage qua Google Drive; manifest Media dùng chung trên server':hasMedia?'Manifest Media đã đồng bộ; upload file cloud chờ hoàn tất Drive OAuth':'Có thể dùng URL ảnh; upload file cloud chờ hoàn tất Drive OAuth',count:null},
+   {id:'media',label:'Media file storage',state:'optional',detail:hasMedia?'Danh mục ảnh đang được đồng bộ; upload file cloud chưa nối storage riêng':'Có thể dùng URL ảnh; upload file cloud chưa nối storage riêng',count:null},
    {id:'email',label:'Email Resend',state:email?'ok':'warning',detail:email?'Server đã có cấu hình gửi mail':'Chưa đủ biến môi trường gửi mail',count:null},
-   {id:'drive',label:'Google Drive',state:drive?'ok':'optional',detail:drive?'OAuth/Service Account đã cấu hình':'Tích hợp file tùy chọn; chưa hoàn tất OAuth',count:null},
+   {id:'drive',label:'Google Drive',state:drive?'ok':'optional',detail:drive?'OAuth/Service Account đã cấu hình cho luồng đọc Drive':'Tích hợp đọc file tùy chọn; chưa hoàn tất OAuth',count:null},
   ];
   return NextResponse.json({ok:true,database:true,serverTime:String(ping[0]?.now||''),modules});
  }catch(error){console.error('system_health_failed',error);return NextResponse.json({ok:false,error:'Không kiểm tra được trạng thái production.'},{status:500})}
