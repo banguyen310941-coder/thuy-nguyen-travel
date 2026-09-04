@@ -9,8 +9,10 @@ function hostSet(req:NextRequest){
 }
 
 function sameOrigin(req:NextRequest){
+ const fetchSite=String(req.headers.get('sec-fetch-site')||'').toLowerCase();
+ if(fetchSite==='cross-site')return false;
  const origin=req.headers.get('origin');
- // Native clients, cron jobs and signed server-to-server calls normally do not send Origin.
+ // Native clients, cron jobs and signed server-to-server calls normally send neither Origin nor Sec-Fetch-Site.
  if(!origin)return true;
  try{return hostSet(req).has(new URL(origin).host.toLowerCase())}catch{return false}
 }
