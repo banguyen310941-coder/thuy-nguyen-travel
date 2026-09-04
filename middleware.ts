@@ -26,5 +26,6 @@ export const config={
   '/api/partner/:path*',
   '/api/affiliate/:path*',
   '/api/bookings/:path*',
+  '/api/payments/:path*',
  ],
 };
