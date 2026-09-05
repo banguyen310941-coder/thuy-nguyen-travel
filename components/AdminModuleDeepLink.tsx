@@ -1,14 +1,11 @@
 'use client';
 
 import {useEffect} from 'react';
-import {usePathname,useSearchParams} from 'next/navigation';
 
 export function AdminModuleDeepLink(){
-  const pathname=usePathname();
-  const search=useSearchParams();
-
   useEffect(()=>{
-    if(pathname!=='/admin'||search.get('module')!=='network')return;
+    const url=new URL(window.location.href);
+    if(url.pathname!=='/admin'||url.searchParams.get('module')!=='network')return;
     let stopped=false;
     let attempts=0;
     const open=()=>{
@@ -21,7 +18,7 @@ export function AdminModuleDeepLink(){
     };
     open();
     return()=>{stopped=true};
-  },[pathname,search]);
+  },[]);
 
   return null;
 }
