@@ -1,6 +1,29 @@
 import type {Metadata} from 'next';
 import Link from 'next/link';
 import {ContactCtaGroup} from '@/components/ContactCtaGroup';
+
 const canonical='https://happygo.vn/diem-den/vung-tau';
-export const metadata:Metadata={title:'Villa Vũng Tàu: Aria Resort, villa hồ bơi & kinh nghiệm thuê gần biển',description:'Kinh nghiệm thuê villa Vũng Tàu, Aria Resort, chọn villa hồ bơi riêng, gần biển, đúng sức chứa và kiểm tra giá theo ngày cùng HappyGo Travel.',keywords:['villa Vũng Tàu','Aria Resort Vũng Tàu','villa hồ bơi Vũng Tàu','villa gần biển Vũng Tàu'],alternates:{canonical},openGraph:{title:'Villa Vũng Tàu & Aria Resort | HappyGo Travel',description:'Kinh nghiệm chọn villa Vũng Tàu gần biển, hồ bơi và đúng nhu cầu nhóm.',url:canonical,type:'website',locale:'vi_VN'}};
-export default function Page(){const schema=[{'@context':'https://schema.org','@type':'TouristDestination',name:'Vũng Tàu',description:'Điểm du lịch biển phù hợp nghỉ dưỡng villa, resort và khách sạn.',url:canonical},{'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement':[{'@type':'ListItem',position:1,name:'Trang chủ',item:'https://happygo.vn'},{'@type':'ListItem',position:2,name:'Điểm đến',item:'https://happygo.vn/diem-den'},{'@type':'ListItem',position:3,name:'Vũng Tàu',item:canonical}]}];return <main className="subpage"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><section className="sub-hero"><div className="container"><div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / <Link href="/diem-den">Điểm đến</Link> / Vũng Tàu</div><div className="sub-hero-grid"><div><span className="sub-kicker">VILLA VŨNG TÀU</span><h1>Villa Vũng Tàu: hồ bơi riêng, gần biển và Aria Resort</h1><p>Với nhóm gia đình hoặc bạn bè, nên chọn villa theo sức chứa, số giường, hồ bơi, khoảng cách ra biển và quy định sử dụng tiện ích thay vì chỉ nhìn số phòng ngủ.</p></div><ContactCtaGroup callLabel="Tư vấn villa Vũng Tàu"/></div></div></section><section className="sub-section white"><div className="container article-container"><div className="article-content"><h2>Chọn villa Vũng Tàu theo vị trí và tiện ích</h2><p>Villa gần biển phù hợp khi ưu tiên di chuyển ngắn; villa hồ bơi riêng phù hợp nhóm cần không gian sinh hoạt tại căn. Cần xác nhận giờ sử dụng hồ bơi, BBQ, karaoke và các khoản phụ thu nếu có.</p><h2>Aria Resort Vũng Tàu</h2><p>Với các căn trong Aria Resort, mã căn giúp đối chiếu chính xác ảnh, cấu hình phòng và tiện ích. HappyGo Travel ưu tiên ghi rõ mã căn khi nguồn ảnh và thông tin đã được xác minh.</p><h2>Xem dịch vụ và cẩm nang</h2><div className="article-actions"><Link href="/luu-tru?q=V%C5%A9ng%20T%C3%A0u&type=villa">Xem villa Vũng Tàu</Link><Link href="/cam-nang/danh-muc/vung-tau">Cẩm nang Vũng Tàu</Link><Link href="/cam-nang/villa-vung-tau-kinh-nghiem-thue-ho-boi-gan-bien">Kinh nghiệm thuê villa Vũng Tàu</Link></div></div><div className="sub-cta"><div><h2>Cần kiểm tra villa Aria Resort?</h2><p>Gửi ngày ở và số khách để HappyGo Travel kiểm tra căn phù hợp.</p></div><ContactCtaGroup mode="footer" callLabel="Gọi tư vấn" zaloLabel="Chat Zalo"/></div></div></section></main>}
+
+export const metadata:Metadata={
+ title:'Villa Vũng Tàu: Aria Resort, villa hồ bơi & kinh nghiệm thuê gần biển',
+ description:'Kinh nghiệm thuê villa Vũng Tàu, Aria Resort, chọn villa hồ bơi riêng, gần biển, đúng sức chứa và kiểm tra giá theo ngày cùng HappyGo Travel.',
+ keywords:['villa Vũng Tàu','Aria Resort Vũng Tàu','villa hồ bơi Vũng Tàu','villa gần biển Vũng Tàu'],
+ alternates:{canonical},
+ openGraph:{title:'Villa Vũng Tàu & Aria Resort | HappyGo Travel',description:'Kinh nghiệm chọn villa Vũng Tàu gần biển, hồ bơi và đúng nhu cầu nhóm.',url:canonical,type:'website',locale:'vi_VN'}
+};
+
+export default function Page(){
+ const schema=[
+  {'@context':'https://schema.org','@type':'TouristDestination',name:'Vũng Tàu',description:'Điểm du lịch biển phù hợp nghỉ dưỡng villa, resort và khách sạn.',url:canonical},
+  {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[
+   {'@type':'ListItem',position:1,name:'Trang chủ',item:'https://happygo.vn'},
+   {'@type':'ListItem',position:2,name:'Điểm đến',item:'https://happygo.vn/diem-den'},
+   {'@type':'ListItem',position:3,name:'Vũng Tàu',item:canonical}
+  ]}
+ ];
+ return <main className="subpage">
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+  <section className="sub-hero"><div className="container"><div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / <Link href="/diem-den">Điểm đến</Link> / Vũng Tàu</div><div className="sub-hero-grid"><div><span className="sub-kicker">VILLA VŨNG TÀU</span><h1>Villa Vũng Tàu: hồ bơi riêng, gần biển và Aria Resort</h1><p>Với nhóm gia đình hoặc bạn bè, nên chọn villa theo sức chứa, số giường, hồ bơi, khoảng cách ra biển và quy định sử dụng tiện ích thay vì chỉ nhìn số phòng ngủ.</p></div><ContactCtaGroup callLabel="Tư vấn villa Vũng Tàu"/></div></div></section>
+  <section className="sub-section white"><div className="container article-container"><div className="article-content"><h2>Chọn villa Vũng Tàu theo vị trí và tiện ích</h2><p>Villa gần biển phù hợp khi ưu tiên di chuyển ngắn; villa hồ bơi riêng phù hợp nhóm cần không gian sinh hoạt tại căn. Cần xác nhận giờ sử dụng hồ bơi, BBQ, karaoke và các khoản phụ thu nếu có.</p><h2>Aria Resort Vũng Tàu</h2><p>Với các căn trong Aria Resort, mã căn giúp đối chiếu chính xác ảnh, cấu hình phòng và tiện ích. HappyGo Travel ưu tiên ghi rõ mã căn khi nguồn ảnh và thông tin đã được xác minh.</p><h2>Xem dịch vụ và cẩm nang</h2><div className="article-actions"><Link href="/luu-tru?q=V%C5%A9ng%20T%C3%A0u&type=villa">Xem villa Vũng Tàu</Link><Link href="/cam-nang/danh-muc/vung-tau">Cẩm nang Vũng Tàu</Link><Link href="/cam-nang/villa-vung-tau-kinh-nghiem-thue-ho-boi-gan-bien">Kinh nghiệm thuê villa Vũng Tàu</Link></div></div><div className="sub-cta"><div><h2>Cần kiểm tra villa Aria Resort?</h2><p>Gửi ngày ở và số khách để HappyGo Travel kiểm tra căn phù hợp.</p></div><ContactCtaGroup mode="footer" callLabel="Gọi tư vấn" zaloLabel="Chat Zalo"/></div></div></section>
+ </main>;
+}
