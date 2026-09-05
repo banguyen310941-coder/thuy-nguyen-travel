@@ -3,11 +3,11 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 
-type Villa={id:string;slug:string;name:string;place:string;cover:string;publicPrice:number;affiliateLink:string};
+type Product={id:string;slug:string;type:string;name:string;place:string;cover:string;publicPrice:number;affiliateLink:string};
 type Referral={id:string;bookingCode:string;bookingStatus:string;villaName:string;customerPhone:string;commissionAmount:number;status:string;createdAt:string;creditedAt:string};
 type Payout={id:string;amount:number;status:string;payoutDate:string;receiptUrl:string;createdAt:string};
 type Affiliate={name:string;email:string;referralCode:string;phone:string;zalo:string;balance:number;totalCommission:number;commissionRate:number;status:string;bankAccount:string;bankName:string;accountHolder:string};
-type Dashboard={affiliate:Affiliate;stats:{clicks:number;closedOrders:number};villas:Villa[];referrals:Referral[];payouts:Payout[]};
+type Dashboard={affiliate:Affiliate;stats:{clicks:number;closedOrders:number};products?:Product[];villas:Product[];referrals:Referral[];payouts:Payout[]};
 type ProfileForm={phone:string;zalo:string;bankAccount:string;bankName:string;accountHolder:string};
 
 const money=(v:number)=>new Intl.NumberFormat('vi-VN').format(Math.round(v))+'đ';
@@ -15,6 +15,7 @@ const date=(v:string)=>v?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',time
 const statusLabel=(v:string)=>({pending:'Chờ xử lý',approved:'Đã duyệt',paid:'Đã thanh toán',cancelled:'Đã hủy',new:'Mới',contacting:'Đang tư vấn',confirmed:'Đã xác nhận',completed:'Hoàn tất'} as Record<string,string>)[v]||v;
 const profileOf=(a:Affiliate):ProfileForm=>({phone:a.phone||'',zalo:a.zalo||'',bankAccount:a.bankAccount||'',bankName:a.bankName||'',accountHolder:a.accountHolder||''});
 const last4=(v:string)=>v?`•••• ${v.slice(-4)}`:'chưa có số tài khoản';
+const productIcon=(type:string)=>/hotel|khách sạn/i.test(type)?'🏨':/cruise|du thuyền/i.test(type)?'🛳️':/tour/i.test(type)?'🧳':'🏡';
 
 export function AffiliateDashboard(){
  const router=useRouter();
@@ -45,7 +46,7 @@ export function AffiliateDashboard(){
  },[load]);
 
  async function logout(){loadRequest.current++;await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
- async function copy(v:Villa){try{await navigator.clipboard.writeText(v.affiliateLink);setCopied(v.id);setTimeout(()=>setCopied(''),1800)}catch{setMsg('Không thể copy link trên trình duyệt này.')}}
+ async function copy(v:Product){try{await navigator.clipboard.writeText(v.affiliateLink);setCopied(v.id);setTimeout(()=>setCopied(''),1800)}catch{setMsg('Không thể copy link trên trình duyệt này.')}}
  async function action(payload:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
   try{
@@ -76,7 +77,7 @@ export function AffiliateDashboard(){
   }finally{payoutLock.current=false}
  }
 
- const villas=useMemo(()=>{const n=q.trim().toLowerCase();return(data?.villas||[]).filter(v=>!n||`${v.name} ${v.place}`.toLowerCase().includes(n))},[data,q]);
+ const products=useMemo(()=>{const n=q.trim().toLowerCase(),list=data?.products?.length?data.products:data?.villas||[];return list.filter(v=>!n||`${v.name} ${v.place} ${v.type}`.toLowerCase().includes(n))},[data,q]);
  if(busy&&!data)return <main className="affiliate-shell"><div className="affiliate-loading">Đang tải Dashboard CTV...</div></main>;
  if(!data)return <main className="affiliate-shell"><div className="affiliate-loading">{msg||'Không có dữ liệu CTV.'}</div></main>;
 
@@ -105,16 +106,16 @@ export function AffiliateDashboard(){
    </section>
 
    <section className="affiliate-panel">
-    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn villa để copy link</h2><p>Link tự gắn mã CTV và villa. Khách đặt sau khi truy cập link sẽ được ghi nhận referral.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên villa / khu vực"/></div>
+    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn sản phẩm để copy link</h2><p>Link tự gắn mã CTV và sản phẩm. Tour, villa, khách sạn và du thuyền công khai đều có thể ghi nhận referral.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên / khu vực / loại sản phẩm"/></div>
     <div className="affiliate-villa-grid">
-     {villas.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>🏡</span>}</div><div className="affiliate-villa-body"><small>{v.place||'Villa & Resort'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink}/><button onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div></div></article>)}
-     {!villas.length&&<div className="affiliate-empty">Chưa có villa phù hợp.</div>}
+     {products.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>{productIcon(v.type)}</span>}</div><div className="affiliate-villa-body"><small>{[v.type,v.place].filter(Boolean).join(' · ')||'Sản phẩm du lịch'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink}/><button onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div></div></article>)}
+     {!products.length&&<div className="affiliate-empty">Chưa có sản phẩm phù hợp.</div>}
     </div>
    </section>
 
    <section className="affiliate-panel">
     <div className="affiliate-panel-head"><div><small>LỊCH SỬ ĐƠN HÀNG</small><h2>Booking & trạng thái duyệt tiền</h2></div></div>
-    <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Booking</th><th>Villa</th><th>Khách</th><th>Trạng thái booking</th><th>Hoa hồng</th><th>Duyệt tiền</th><th>Ngày</th></tr></thead><tbody>{data.referrals.map(r=><tr key={r.id}><td><b>{r.bookingCode}</b></td><td>{r.villaName}</td><td>{r.customerPhone||'—'}</td><td><span className={`affiliate-status ${r.bookingStatus}`}>{statusLabel(r.bookingStatus)}</span></td><td><b>{money(r.commissionAmount)}</b></td><td><span className={`affiliate-status ${r.status}`}>{statusLabel(r.status)}</span></td><td>{date(r.createdAt)}</td></tr>)}{!data.referrals.length&&<tr><td colSpan={7}>Chưa có booking affiliate.</td></tr>}</tbody></table></div>
+    <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Booking</th><th>Sản phẩm</th><th>Khách</th><th>Trạng thái booking</th><th>Hoa hồng</th><th>Duyệt tiền</th><th>Ngày</th></tr></thead><tbody>{data.referrals.map(r=><tr key={r.id}><td><b>{r.bookingCode}</b></td><td>{r.villaName}</td><td>{r.customerPhone||'—'}</td><td><span className={`affiliate-status ${r.bookingStatus}`}>{statusLabel(r.bookingStatus)}</span></td><td><b>{money(r.commissionAmount)}</b></td><td><span className={`affiliate-status ${r.status}`}>{statusLabel(r.status)}</span></td><td>{date(r.createdAt)}</td></tr>)}{!data.referrals.length&&<tr><td colSpan={7}>Chưa có booking affiliate.</td></tr>}</tbody></table></div>
    </section>
 
    <section className="affiliate-two">
