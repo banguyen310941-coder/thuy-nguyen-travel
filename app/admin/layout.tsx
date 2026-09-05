@@ -27,6 +27,7 @@ import './partner-manager-v2.css';
 import './affiliate-admin.css';
 import './affiliate-payout-queue.css';
 import './affiliate-applications.css';
+import './network-workspace.css';
 
 export const metadata:Metadata={title:'Quản trị HappyGo Travel',description:'Ứng dụng quản trị và điều hành HappyGo Travel.',applicationName:'HappyGo Travel Admin',manifest:'/admin/manifest.webmanifest',appleWebApp:{capable:true,statusBarStyle:'default',title:'HappyGo Admin'},robots:{index:false,follow:false,nocache:true}};
 export default function AdminLayout({children}:{children:React.ReactNode}){return <><PortalWorkspaceBar scope="admin" status="Production"/><AdminModuleDeepLink/><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/>{children}</>}
