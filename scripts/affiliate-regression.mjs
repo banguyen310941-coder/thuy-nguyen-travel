@@ -8,6 +8,9 @@ const has=(text,needle)=>text.includes(needle);
 const affiliateApi=read('app/api/admin/affiliates/route.ts');
 const assignmentApi=read('app/api/admin/affiliate-assignments/route.ts');
 const followupApi=read('app/api/admin/affiliate-followups/route.ts');
+const loginApi=read('app/api/affiliate/auth/login/route.ts');
+const registerApi=read('app/api/affiliate/auth/register/route.ts');
+const affiliateServer=read('lib/server/affiliate.ts');
 const workspace=read('components/AdminNetworkWorkspace.tsx');
 const manager=read('components/AdminAffiliateManager.tsx');
 const applications=read('components/AdminAffiliateApplications.tsx');
@@ -33,6 +36,15 @@ check(has(followupApi,"where a.sales_owner_id=${actor.id}"),'Lịch chăm sóc p
 check(has(followupApi,"String(affiliate.sales_owner_id||'')!==actor.id"),'Server phải chặn Sale ghi chăm sóc ngoài phạm vi.');
 check(has(followupApi,"'affiliate.followup.create'"),'Ghi chú chăm sóc phải ghi audit log.');
 
+check(has(registerApi,"'affiliate','affiliate','inactive'"),'CTV tự đăng ký phải tạo staff ở trạng thái inactive.');
+check(has(registerApi,"5,'pending' from new_staff"),'CTV tự đăng ký phải tạo hồ sơ affiliate ở trạng thái pending.');
+check(has(registerApi,"status:'pending'"),'API đăng ký phải trả trạng thái Chờ duyệt.');
+check(has(loginApi,"row.staff_status!=='active'||row.affiliate_status!=='active'"),'Đăng nhập CTV phải chặn staff hoặc affiliate chưa active.');
+check(has(loginApi,'setSessionCookie(response,AFFILIATE_SESSION_COOKIE'), 'Chỉ login hợp lệ mới được cấp session CTV.');
+check(has(affiliateServer,"a.status='active' and s.status='active' and s.role='affiliate'"),'Session CTV đang tồn tại phải bị vô hiệu ngay khi hồ sơ hoặc staff không còn active.');
+check(has(affiliateServer,"select id from affiliates where id=${attr.affiliateId} and status='active'"),'Attribution chỉ được ghi nhận cho CTV đang active.');
+check(has(affiliateServer,"ar.status='pending' and a.status='active' and b.status='completed'"),'Hoa hồng chỉ được ghi có cho CTV active và booking completed.');
+
 check(has(workspace,"access.canAffiliates||access.canAffiliateFinance"),'Finance-only phải vào được tab CTV/Affiliate.');
 check(has(workspace,"access.canAffiliates&&<><AdminAffiliateAssignments/><AdminAffiliateFollowups/></>"),'Finance-only không được thấy phân công Sale và lịch chăm sóc.');
 check(has(workspace,'<AdminAffiliateManager canManage={access.canAffiliates} canFinance={access.canAffiliateFinance}/>'),'Workspace phải truyền riêng quyền hồ sơ và tài chính.');
@@ -54,4 +66,4 @@ if(failures.length){
  console.error('\nCTV / Affiliate regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV / Affiliate regression OK: ownership, Admin approval, finance permissions, follow-up scope and payout idempotency are guarded.');
+console.log('CTV / Affiliate regression OK: ownership, Admin approval, login state, finance permissions, follow-up scope and payout idempotency are guarded.');
