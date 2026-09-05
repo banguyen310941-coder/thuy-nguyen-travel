@@ -24,6 +24,10 @@ check(has(affiliateApi,'const canApprove=elevated(actor)'),'CTV API phải tách
 check(has(affiliateApi,"status=canApprove?requestedStatus:'pending'"),'CTV do Sale tạo phải bị ép về trạng thái Chờ duyệt.');
 check(has(affiliateApi,"if(requestedStatus!==String(current.status)&&!canApprove)"),'Server phải chặn Sale tự kích hoạt hoặc khóa CTV.');
 check(has(affiliateApi,"Chỉ Admin/Owner được kích hoạt hoặc khóa hồ sơ CTV."),'CTV API phải trả thông báo rõ khi Sale đổi trạng thái trái quyền.');
+check(has(affiliateApi,"const staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive'"),'Trạng thái staff CTV phải được suy ra từ trạng thái hồ sơ affiliate.');
+check(has(affiliateApi,"'affiliate','affiliate',${staffStatus},'[\"affiliate\"]'::jsonb"),'CTV tạo từ Admin/Sale phải lưu staff_status đồng bộ ngay khi tạo.');
+check(has(affiliateApi,'update staff set phone=${phone||null},status=${staffStatus},updated_at=now()'),'Duyệt/khóa CTV phải đồng bộ staff.status trong cùng câu lệnh cập nhật hồ sơ.');
+check(has(affiliateApi,'where id=(select user_id from changed)'),'Đồng bộ staff.status phải đúng staff thuộc hồ sơ CTV vừa thay đổi.');
 check(has(affiliateApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Thanh toán CTV phải giữ advisory lock chống double-submit.');
 check(has(affiliateApi,"after_data->>'requestId'=${requestId}"),'Thanh toán CTV phải giữ idempotency bằng requestId.');
 check(has(affiliateApi,"status='pending'"),'Luồng payout phải kiểm tra yêu cầu đang chờ trước khi chi.');
@@ -66,4 +70,4 @@ if(failures.length){
  console.error('\nCTV / Affiliate regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV / Affiliate regression OK: ownership, Admin approval, login state, finance permissions, follow-up scope and payout idempotency are guarded.');
+console.log('CTV / Affiliate regression OK: ownership, Admin approval, staff/login state, finance permissions, follow-up scope and payout idempotency are guarded.');
