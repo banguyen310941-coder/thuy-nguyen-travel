@@ -17,6 +17,7 @@ import './cms-public.css';
 import './cms-fixes.css';
 import './cms-home-fixes.css';
 import './guide-portal.css';
+import './guide-seo-v2.css';
 import './happygo-brand.css';
 import './happygo-footer.css';
 import './partner.css';
