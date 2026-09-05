@@ -28,6 +28,8 @@ check(has(affiliateApi,"const staffStatus=status==='active'?'active':status==='b
 check(has(affiliateApi,"'affiliate','affiliate',${staffStatus},'[\"affiliate\"]'::jsonb"),'CTV tạo từ Admin/Sale phải lưu staff_status đồng bộ ngay khi tạo.');
 check(has(affiliateApi,'update staff set phone=${phone||null},status=${staffStatus},updated_at=now()'),'Duyệt/khóa CTV phải đồng bộ staff.status trong cùng câu lệnh cập nhật hồ sơ.');
 check(has(affiliateApi,'where id=(select user_id from changed)'),'Đồng bộ staff.status phải đúng staff thuộc hồ sơ CTV vừa thay đổi.');
+check(has(affiliateApi,"status==='active'?'affiliate.approve':status==='blocked'?'affiliate.block':'affiliate.pending'"),'Audit trạng thái CTV phải tách duyệt, khóa và trả về chờ duyệt.');
+check(has(affiliateApi,'${auditAction}'),'Audit log cập nhật CTV phải dùng action theo thay đổi trạng thái.');
 check(has(affiliateApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Thanh toán CTV phải giữ advisory lock chống double-submit.');
 check(has(affiliateApi,"after_data->>'requestId'=${requestId}"),'Thanh toán CTV phải giữ idempotency bằng requestId.');
 check(has(affiliateApi,"status='pending'"),'Luồng payout phải kiểm tra yêu cầu đang chờ trước khi chi.');
@@ -62,6 +64,8 @@ check(has(manager,'const requestId=crypto.randomUUID()'),'UI thanh toán phải 
 
 check(has(applications,'if(!canApprove)return null'),'Hàng chờ duyệt CTV phải ẩn hoàn toàn với Sale.');
 check(has(applications,'Boolean(d.approvalAccess)'),'Hàng chờ duyệt phải dựa trên quyền duyệt do server trả về.');
+check(has(applications,"salesOwnerName?:string"),'Hàng chờ duyệt phải nhận thông tin Sale phụ trách từ API.');
+check(has(applications,"Sale phụ trách: <b>{a.salesOwnerName||'Chưa phân công'}</b>"),'Admin phải thấy Sale phụ trách ngay trên hồ sơ CTV chờ duyệt.');
 
 check(has(schema,'affiliate_followups'),'Schema repo phải chứa bảng affiliate_followups.');
 check(has(schema,'sales_owner_id'),'Schema repo phải chứa ownership Sale cho CTV.');
@@ -70,4 +74,4 @@ if(failures.length){
  console.error('\nCTV / Affiliate regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV / Affiliate regression OK: ownership, Admin approval, staff/login state, finance permissions, follow-up scope and payout idempotency are guarded.');
+console.log('CTV / Affiliate regression OK: ownership, Admin approval audit, staff/login state, Sale owner visibility, finance permissions, follow-up scope and payout idempotency are guarded.');

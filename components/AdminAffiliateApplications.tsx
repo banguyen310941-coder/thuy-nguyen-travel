@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useState} from 'react';
 
-type Affiliate={id:string;name:string;email:string;phone:string;zalo:string;referralCode:string;status:string;createdAt:string};
+type Affiliate={id:string;name:string;email:string;phone:string;zalo:string;referralCode:string;status:string;createdAt:string;salesOwnerId?:string;salesOwnerName?:string};
 type Payload={approvalAccess?:boolean;affiliates:Affiliate[]};
 const date=(v:string)=>v?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',timeStyle:'short'}).format(new Date(v)):'—';
 
@@ -36,7 +36,7 @@ export function AdminAffiliateApplications(){
   <div className="admin-panel-head"><div><small>CTV · HỒ SƠ ĐĂNG KÝ MỚI</small><h2>CTV chờ duyệt</h2><p>Chỉ Admin/Owner được kích hoạt hoặc khóa hồ sơ; Sale phụ trách tiếp tục chăm sóc sau khi được duyệt.</p></div><span className="affiliate-application-count">{items.length} chờ duyệt</span></div>
   {message&&<p className="admin-api-note">{message}</p>}
   <div className="affiliate-application-grid">{items.map(a=><article key={a.id}>
-   <div><small>{date(a.createdAt)} · {a.referralCode}</small><h3>{a.name}</h3><p>{a.email}</p><span>{a.phone||'Chưa có SĐT'}{a.zalo?` · Zalo ${a.zalo}`:''}</span></div>
+   <div><small>{date(a.createdAt)} · {a.referralCode}</small><h3>{a.name}</h3><p>{a.email}</p><span>{a.phone||'Chưa có SĐT'}{a.zalo?` · Zalo ${a.zalo}`:''}</span><span>Sale phụ trách: <b>{a.salesOwnerName||'Chưa phân công'}</b></span></div>
    <div className="affiliate-application-actions"><button type="button" onClick={()=>void resolve(a,'blocked')} disabled={busy}>Khóa hồ sơ</button><button type="button" className="approve" onClick={()=>void resolve(a,'active')} disabled={busy}>✓ Kích hoạt</button></div>
   </article>)}</div>
  </section>;

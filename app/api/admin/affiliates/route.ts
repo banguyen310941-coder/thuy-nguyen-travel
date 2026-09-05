@@ -101,8 +101,10 @@ export async function POST(req:NextRequest){
    const requestedStatus=statuses.has(String(body.status))?String(body.status):String(current.status);
    if(requestedStatus!==String(current.status)&&!canApprove)return NextResponse.json({error:'Chỉ Admin/Owner được kích hoạt hoặc khóa hồ sơ CTV.'},{status:403});
    const status=canApprove?requestedStatus:String(current.status),rate=requestedRate,phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
+   const statusChanged=status!==String(current.status);
+   const auditAction=statusChanged?(status==='active'?'affiliate.approve':status==='blocked'?'affiliate.block':'affiliate.pending'):'affiliate.update';
    await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_account=${bankAccount||null},bank_name=${bankName||null},account_holder=${accountHolder||null},commission_rate=${rate},status=${status},updated_at=now() where id=${id} returning user_id) update staff set phone=${phone||null},status=${staffStatus},updated_at=now() where id=(select user_id from changed)`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'affiliate.update','affiliate',${id},${JSON.stringify({status:current.status,commissionRate:currentRate})}::jsonb,${JSON.stringify({status,commissionRate:rate})}::jsonb)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},${auditAction},'affiliate',${id},${JSON.stringify({status:current.status,commissionRate:currentRate,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb,${JSON.stringify({status,commissionRate:rate,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb)`;
    return NextResponse.json({ok:true});
   }
 
