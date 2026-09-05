@@ -157,7 +157,9 @@ export async function POST(req:NextRequest){
   if(action==='resolve_payout'){
    const payoutId=String(body.payoutId||''),decision=String(body.decision||''),receiptUrl=safeUrl(String(body.receiptUrl||'').trim());
    if(!uuid.test(payoutId)||!['paid','cancelled'].includes(decision))return NextResponse.json({error:'Yêu cầu thanh toán không hợp lệ.'},{status:400});
-   const payoutScope=(await sql`select cp.affiliate_id from commission_payouts cp join affiliates a on a.id=cp.affiliate_id where cp.id=${payoutId} and (${canSeeAll} or a.sales_owner_id=${actor.id}) limit 1`)[0];
+   const payoutScope=canSeeAll
+    ?(await sql`select cp.affiliate_id from commission_payouts cp where cp.id=${payoutId} limit 1`)[0]
+    :(await sql`select cp.affiliate_id from commission_payouts cp join affiliates a on a.id=cp.affiliate_id where cp.id=${payoutId} and a.sales_owner_id=${actor.id} limit 1`)[0];
    if(!payoutScope)return NextResponse.json({error:'Yêu cầu thanh toán này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
    if(decision==='cancelled'){
