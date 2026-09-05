@@ -16,5 +16,5 @@ export function CustomerAccountBadge(){
   const refresh=()=>void load();window.addEventListener('happygo-customer-auth',refresh);
   return()=>{alive=false;window.removeEventListener('happygo-customer-auth',refresh)};
  },[]);
- return <Link href="/account" className="customer-account-link">👤 {name||'Tài khoản'}</Link>;
+ return <Link href="/tai-khoan" className="customer-account-link">👤 {name||'Tài khoản'}</Link>;
 }
