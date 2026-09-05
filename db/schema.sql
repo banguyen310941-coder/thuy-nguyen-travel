@@ -92,3 +92,73 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   entity_id text NOT NULL, before_data jsonb, after_data jsonb, ip_address inet, created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS audit_entity_idx ON audit_logs(entity_type,entity_id,created_at DESC);
+
+-- CTV / Affiliate production model.
+CREATE TABLE IF NOT EXISTS affiliates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE REFERENCES staff(id) ON DELETE CASCADE,
+  sales_owner_id uuid REFERENCES staff(id) ON DELETE SET NULL,
+  referral_code text NOT NULL UNIQUE,
+  phone text,
+  zalo text,
+  bank_account text,
+  bank_name text,
+  account_holder text,
+  total_commission bigint NOT NULL DEFAULT 0 CHECK(total_commission>=0),
+  balance bigint NOT NULL DEFAULT 0 CHECK(balance>=0),
+  commission_rate numeric(6,2) NOT NULL DEFAULT 5.00 CHECK(commission_rate>=0 AND commission_rate<=100),
+  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active','blocked')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS affiliates_sales_owner_idx ON affiliates(sales_owner_id,status,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS affiliate_clicks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
+  villa_id uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  visitor_key text NOT NULL,
+  clicked_on date NOT NULL DEFAULT CURRENT_DATE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(affiliate_id,villa_id,visitor_key,clicked_on)
+);
+CREATE INDEX IF NOT EXISTS affiliate_clicks_affiliate_idx ON affiliate_clicks(affiliate_id,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS affiliate_referrals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
+  booking_id uuid NOT NULL UNIQUE REFERENCES bookings(id) ON DELETE CASCADE,
+  villa_id uuid REFERENCES products(id) ON DELETE SET NULL,
+  customer_phone text,
+  commission_amount bigint NOT NULL DEFAULT 0 CHECK(commission_amount>=0),
+  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','paid','cancelled')),
+  credited_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS affiliate_referrals_affiliate_idx ON affiliate_referrals(affiliate_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS affiliate_referrals_status_idx ON affiliate_referrals(status,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS commission_payouts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
+  amount bigint NOT NULL CHECK(amount>0),
+  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','paid','cancelled')),
+  payout_date timestamptz,
+  receipt_url text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS commission_payouts_affiliate_idx ON commission_payouts(affiliate_id,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS affiliate_followups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
+  staff_id uuid REFERENCES staff(id) ON DELETE SET NULL,
+  type text NOT NULL DEFAULT 'note' CHECK(type IN ('note','call','zalo','email','meeting','other')),
+  content text NOT NULL,
+  next_follow_up_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS affiliate_followups_affiliate_idx ON affiliate_followups(affiliate_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS affiliate_followups_next_idx ON affiliate_followups(next_follow_up_at) WHERE next_follow_up_at IS NOT NULL;

@@ -38,6 +38,12 @@ jobs:
       - name: Production regression checks
         run: npm run test:regression
 
+      - name: CTV / Affiliate regression checks
+        run: npm run test:affiliate
+
+      - name: SEO regression checks
+        run: npm run test:seo
+
       - name: Build Next.js
         env:
           NEXT_TELEMETRY_DISABLED: 1
