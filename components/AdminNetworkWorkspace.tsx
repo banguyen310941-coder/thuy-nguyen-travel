@@ -6,6 +6,7 @@ import {AdminNetworkOperations} from '@/components/AdminNetworkOperations';
 import {AdminPartnerManager} from '@/components/AdminPartnerManager';
 import {PartnerSupportCenter} from '@/components/PartnerSupportCenter';
 import {AdminAffiliateManager} from '@/components/AdminAffiliateManager';
+import {AdminNetworkStatusLegend} from '@/components/AdminNetworkStatusLegend';
 
 type Tab='overview'|'partners'|'support'|'affiliates';
 
@@ -42,7 +43,7 @@ export function AdminNetworkWorkspace(){
     <nav className="admin-network-tabs" aria-label="Mạng lưới hợp tác">
       {tabs.map(item=><button key={item.id} type="button" className={tab===item.id?'active':''} onClick={()=>choose(item.id)}><b>{item.label}</b><small>{item.hint}</small></button>)}
     </nav>
-    {tab==='overview'&&<AdminNetworkOperations/>}
+    {tab==='overview'&&<><AdminNetworkStatusLegend/><AdminNetworkOperations/></>}
     {tab==='partners'&&<AdminPartnerManager/>}
     {tab==='support'&&<PartnerSupportCenter/>}
     {tab==='affiliates'&&<AdminAffiliateManager/>}
