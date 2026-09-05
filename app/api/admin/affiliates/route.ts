@@ -19,8 +19,9 @@ export async function GET(req:NextRequest){
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  const manageAccess=Boolean(profileActor);
  const financeAccess=Boolean(financeActor);
+ const approvalAccess=elevated(actor);
  const financeOnly=financeAccess&&!manageAccess;
- const canSeeAll=elevated(actor)||financeOnly;
+ const canSeeAll=approvalAccess||financeOnly;
  try{
   const sql=db();
   const affiliates=canSeeAll
@@ -37,6 +38,7 @@ export async function GET(req:NextRequest){
    ok:true,
    manageAccess,
    financeAccess,
+   approvalAccess,
    ownershipScope:canSeeAll?'all':'assigned',
    currentStaffId:actor.id,
    affiliates:items,
@@ -58,8 +60,9 @@ export async function POST(req:NextRequest){
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  const canManage=Boolean(profileActor);
  const canFinance=Boolean(financeActor);
+ const canApprove=elevated(actor);
  const financeOnly=canFinance&&!canManage;
- const canSeeAll=elevated(actor)||financeOnly;
+ const canSeeAll=canApprove||financeOnly;
  const body=await req.json().catch(()=>({}));
  const action=String(body.action||'');
  if(['payout','resolve_payout','reconcile'].includes(action)&&!canFinance)return NextResponse.json({error:'Bạn không có quyền Tài chính CTV.'},{status:403});
@@ -68,16 +71,16 @@ export async function POST(req:NextRequest){
  try{
   if(action==='create'){
    if(!canManage)return NextResponse.json({error:'Bạn không có quyền quản lý hồ sơ CTV.'},{status:403});
-   const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),status=statuses.has(String(body.status))?String(body.status):'active',rate=Math.max(0,Math.min(100,Number(body.commissionRate)||5));
+   const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),requestedStatus=statuses.has(String(body.status))?String(body.status):'pending',status=canApprove?requestedStatus:'pending',rate=Math.max(0,Math.min(100,Number(body.commissionRate)||5));
    if(!canFinance&&rate!==5)return NextResponse.json({error:'Bạn không có quyền đặt tỷ lệ hoa hồng CTV.'},{status:403});
    if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<8)return NextResponse.json({error:'Tên, email hoặc mật khẩu CTV chưa hợp lệ.'},{status:400});
    if(referralCode.length<4)return NextResponse.json({error:'Mã giới thiệu cần ít nhất 4 ký tự.'},{status:400});
    const staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
-   const ownerId=elevated(actor)?null:actor.id;
+   const ownerId=canApprove?null:actor.id;
    const rows=await sql`with new_staff as (insert into staff(name,email,phone,password_hash,role,department,status,permissions) values(${name},${email},${phone||null},${hashPassword(password)},'affiliate','affiliate',${staffStatus},'["affiliate"]'::jsonb) returning id) insert into affiliates(user_id,sales_owner_id,referral_code,phone,zalo,bank_account,bank_name,account_holder,commission_rate,status) select id,${ownerId},${referralCode},${phone||null},${zalo||null},${bankAccount||null},${bankName||null},${accountHolder||null},${rate},${status} from new_staff returning id,user_id,referral_code,sales_owner_id`;
    const saved=rows[0];
    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.create','affiliate',${String(saved.id)},${JSON.stringify({name,email,referralCode,commissionRate:rate,status,salesOwnerId:saved.sales_owner_id?String(saved.sales_owner_id):''})}::jsonb)`;
-   return NextResponse.json({ok:true,id:String(saved.id),referralCode:String(saved.referral_code)});
+   return NextResponse.json({ok:true,id:String(saved.id),referralCode:String(saved.referral_code),status});
   }
 
   if(action==='update'){
@@ -95,7 +98,9 @@ export async function POST(req:NextRequest){
    }
    if(!await ownsAffiliate(id))return NextResponse.json({error:'CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(!canFinance&&requestedRate!==currentRate)return NextResponse.json({error:'Bạn không có quyền thay đổi tỷ lệ hoa hồng CTV.'},{status:403});
-   const status=statuses.has(String(body.status))?String(body.status):String(current.status),rate=requestedRate,phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
+   const requestedStatus=statuses.has(String(body.status))?String(body.status):String(current.status);
+   if(requestedStatus!==String(current.status)&&!canApprove)return NextResponse.json({error:'Chỉ Admin/Owner được kích hoạt hoặc khóa hồ sơ CTV.'},{status:403});
+   const status=canApprove?requestedStatus:String(current.status),rate=requestedRate,phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
    await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_account=${bankAccount||null},bank_name=${bankName||null},account_holder=${accountHolder||null},commission_rate=${rate},status=${status},updated_at=now() where id=${id} returning user_id) update staff set phone=${phone||null},status=${staffStatus},updated_at=now() where id=(select user_id from changed)`;
    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'affiliate.update','affiliate',${id},${JSON.stringify({status:current.status,commissionRate:currentRate})}::jsonb,${JSON.stringify({status,commissionRate:rate})}::jsonb)`;
    return NextResponse.json({ok:true});
