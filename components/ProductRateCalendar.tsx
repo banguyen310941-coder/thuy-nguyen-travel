@@ -3,9 +3,21 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
 import {RATE_KEY,ratePriceForDate,type RateRange} from '@/components/AdminRateCalendar';
-import {pricingDateKey} from '@/lib/pricing-calendar';
+import {pricingDateKey,seasonalUnitPrice} from '@/lib/pricing-calendar';
 
-type Unit={id:string;code?:string;name:string;status?:string};
+type Unit={
+  id:string;
+  code?:string;
+  name:string;
+  weekdayPrice?:string;
+  weekendPrice?:string;
+  holidayPrice?:string;
+  lowWeekdayPrice?:string;
+  lowWeekendPrice?:string;
+  highWeekdayPrice?:string;
+  highWeekendPrice?:string;
+  status?:string;
+};
 const readRates=():RateRange[]=>{try{const raw=JSON.parse(localStorage.getItem(RATE_KEY)||'[]');return Array.isArray(raw)?raw:[]}catch{return[]}};
 const compact=(n:number)=>n>=1000000?`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:1}).format(n/1000000)}tr`:`${Math.round(n/1000)}k`;
 const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric'}).format(date);
@@ -68,7 +80,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
 
   if(!unit)return null;
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
-    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng ngày lưu trú.</b> Chọn ngày có giá để xem hạng phòng và gửi yêu cầu đặt phòng.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
+    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng ngày lưu trú.</b> Giá production theo ngày được ưu tiên; ngày chưa có giá riêng sẽ lấy bảng giá đang cấu hình của đúng hạng phòng.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
     <div className="prc-month"><button type="button" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>‹</button><b>{monthName(month)}</b><button type="button" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>›</button></div>
     <div className="prc-weekdays">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><span key={x}>{x}</span>)}</div>
     <div className="prc-grid">{cells.map((date,index)=>{
@@ -76,14 +88,16 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
       const key=pricingDateKey(date);
       const rate=rateFor(key);
       const unavailable=Boolean(rate&&(rate.status!=='available'||Number(rate.quantity||0)<=0));
-      const price=rate&&!unavailable?ratePriceForDate(rate,date):0;
-      const missing=ratesLoaded&&(!rate||(!unavailable&&!price));
-      const loading=!ratesLoaded;
+      const override=rate&&!unavailable?ratePriceForDate(rate,date):0;
+      const base=unavailable?0:seasonalUnitPrice(unit,date,rate?.season||null);
+      const price=unavailable?0:override||base;
+      const missing=ratesLoaded&&!unavailable&&!price;
+      const loading=!ratesLoaded&&!price;
       const disabled=key<today||unavailable||missing||loading;
       const className=[key<today?'past':'',unavailable?'soldout':'',missing?'unpriced':'',loading?'loading':'',key===selected?'selected':'',!disabled?'clickable':''].filter(Boolean).join(' ');
-      const status=loading?'Đang tải':unavailable?'Hết':missing?'Chưa mở':compact(price);
-      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải lịch giá':missing?'Ngày này chưa mở giá bán':unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{rate?.note&&<em>{rate.note}</em>}</button>;
+      const status=loading?'Đang tải':unavailable?'Hết':missing?'Liên hệ':compact(price);
+      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải lịch giá':missing?'Hạng phòng chưa có giá bán cho ngày này':unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{rate?.note&&<em>{rate.note}</em>}</button>;
     })}</div>
-    <div className="prc-note"><span>Giá hiển thị là giá bán cho khách theo ngày đã chọn.</span><a href="#booking">Hoặc chọn ngày trong khung đặt phòng →</a></div>
+    <div className="prc-note"><span>Giá hiển thị là giá bán cho khách của hạng phòng đang chọn.</span><a href="#booking">Hoặc chọn ngày trong khung đặt phòng →</a></div>
   </section>;
 }
