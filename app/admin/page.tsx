@@ -75,6 +75,19 @@ export default function AdminPage(){
    return()=>{alive=false;window.removeEventListener('happygo-admin-auth',refresh);window.removeEventListener('tn-staff-updated',refresh)};
  },[]);
 
+ useEffect(()=>{
+   if(!current?.id)return;
+   const syncFromUrl=()=>{
+     const params=new URLSearchParams(window.location.search);
+     const networkRequested=params.get('module')==='network';
+     const canOpenNetwork=current.role==='owner'||Boolean(current.permissions?.includes('partners')||current.permissions?.includes('affiliates'));
+     if(networkRequested&&canOpenNetwork)setActive('Mạng lưới hợp tác');
+   };
+   syncFromUrl();
+   window.addEventListener('popstate',syncFromUrl);
+   return()=>window.removeEventListener('popstate',syncFromUrl);
+ },[current]);
+
  async function submitLogin(e:FormEvent){e.preventDefault();setAuthBusy(true);setMsg('');const result=await loginAdmin(email,password);setAuthBusy(false);setMsg(result.message);if(result.ok&&result.staff)setCurrent(result.staff)}
  async function submitBootstrap(e:FormEvent){e.preventDefault();if(password!==confirm)return setMsg('Mật khẩu xác nhận chưa khớp.');setAuthBusy(true);setMsg('');const result=await bootstrapAdmin({adminKey,name:ownerName,email,password});setAuthBusy(false);setMsg(result.message);if(result.ok&&result.staff){setCurrent(result.staff);setNeedsBootstrap(false)}}
 
@@ -87,7 +100,20 @@ export default function AdminPage(){
  const networkAccess=Boolean(current.permissions?.includes('partners')||current.permissions?.includes('affiliates'));
  const allowed=(name:string)=>owner||name==='Tổng quan'||name==='Chat nội bộ'||name==='Chấm công'||(name==='Mạng lưới hợp tác'&&networkAccess)||(!ownerOnly.includes(name)&&Boolean(permission[name]&&current.permissions?.includes(permission[name])));
  const visible=modules.filter(([,name])=>allowed(name));
- const go=(name:string)=>{if(!allowed(name))return;setActive(name);setMobileMore(false);window.scrollTo({top:0,behavior:'smooth'})};
+ const go=(name:string)=>{
+  if(!allowed(name))return;
+  setActive(name);setMobileMore(false);
+  const url=new URL(window.location.href);
+  if(name==='Mạng lưới hợp tác'){
+   url.searchParams.set('module','network');
+   if(!url.searchParams.get('tab'))url.searchParams.set('tab','overview');
+  }else{
+   url.searchParams.delete('module');
+   url.searchParams.delete('tab');
+  }
+  window.history.replaceState(null,'',url);
+  window.scrollTo({top:0,behavior:'smooth'});
+ };
  const primary=mobilePrimary.map(name=>visible.find(([,n])=>n===name)).filter(Boolean) as (typeof modules)[number][];
  const more=visible.filter(([,name])=>!mobilePrimary.includes(name));
  const moduleCount=visible.length;
