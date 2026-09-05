@@ -27,7 +27,7 @@ export function AdminPartnerManager(){
       setData({partners:Array.isArray(payload.partners)?payload.partners:[],products:Array.isArray(payload.products)?payload.products:[]});setAuthorized(true);
     }catch(error){setMsg(error instanceof Error?error.message:'Không kết nối được dữ liệu đối tác production.')}finally{setLoading(false)}
   },[]);
-  useEffect(()=>{void load();const refresh=()=>void load();window.addEventListener('focus',refresh);return()=>window.removeEventListener('focus',refresh)},[load]);
+  useEffect(()=>{void load();const refresh=()=>void load();window.addEventListener('happygo-network-updated',refresh);window.addEventListener('focus',refresh);return()=>{window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh)}},[load]);
 
   const list=useMemo(()=>data.partners.filter(p=>filter==='all'||p.status===filter),[data.partners,filter]);
   const current=data.partners.find(p=>p.id===selected)||list[0];
@@ -40,7 +40,7 @@ export function AdminPartnerManager(){
       const response=await fetch('/api/admin/partners',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({entity,id,status})});
       const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||'Không cập nhật được trạng thái.');
       if(entity==='product'){const changed=data.products.find(x=>x.id===id);if(changed)syncPartnerProductToCatalog({...changed,status,updatedAt:new Date().toISOString()},status==='approved')}
-      await load();setMsg(entity==='partner'?'Đã cập nhật trạng thái đối tác trên production.':status==='approved'?'Đã duyệt sản phẩm. Catalog website sẽ tự đồng bộ.':'Đã cập nhật trạng thái sản phẩm.');
+      await load();window.dispatchEvent(new Event('happygo-network-updated'));setMsg(entity==='partner'?'Đã cập nhật trạng thái đối tác trên production.':status==='approved'?'Đã duyệt sản phẩm. Catalog website sẽ tự đồng bộ.':'Đã cập nhật trạng thái sản phẩm.');
     }catch(error){setMsg(error instanceof Error?error.message:'Không thể cập nhật production.')}
   }
 
