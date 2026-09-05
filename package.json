@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:regression": "node scripts/production-regression.mjs",
-    "test:affiliate": "node scripts/affiliate-regression.mjs",
+    "test:affiliate": "node scripts/affiliate-regression.mjs && node scripts/affiliate-portal-regression.mjs",
     "test:seo": "node scripts/seo-regression.mjs",
     "prepare": "husky",
     "lint:staged": "lint-staged",

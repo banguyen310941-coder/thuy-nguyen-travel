@@ -71,7 +71,7 @@ export async function GET(req:NextRequest){
    return{
     id:String(p.id),slug:String(p.slug),type:String(p.type||''),name:String(p.name),place:String(p.place||''),cover:String(p.cover||''),publicPrice:publishPrice(p,productUnits,catalogRates),media,
     albumUrl:driveFolderUrl(p.source_image_folder),
-    affiliateLink:`${base}/product?slug=${encodeURIComponent(String(p.slug))}&ref=${encodeURIComponent(actor.referralCode)}&villa_id=${encodeURIComponent(String(p.id))}`
+    affiliateLink:`${base}/san-pham/${encodeURIComponent(String(p.slug))}?ref=${encodeURIComponent(actor.referralCode)}&villa_id=${encodeURIComponent(String(p.id))}`
    };
   });
   const villaItems=productItems.filter((item:any)=>item.type==='Villa & Resort');

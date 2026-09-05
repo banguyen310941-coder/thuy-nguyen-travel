@@ -7,7 +7,7 @@ export async function GET(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  try{
   const actor=await affiliateActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const villaId=String(req.nextUrl.searchParams.get('villa_id')||'');if(!uuid.test(villaId))return NextResponse.json({error:'Villa không hợp lệ.'},{status:400});const villa=await findTrackableVilla(db(),villaId);if(!villa)return NextResponse.json({error:'Villa không tồn tại hoặc chưa được xuất bản.'},{status:404});
-  const link=`${publicBaseUrl(req)}/product?slug=${encodeURIComponent(String(villa.slug))}&ref=${encodeURIComponent(actor.referralCode)}&villa_id=${encodeURIComponent(villaId)}`;
+  const link=`${publicBaseUrl(req)}/san-pham/${encodeURIComponent(String(villa.slug))}?ref=${encodeURIComponent(actor.referralCode)}&villa_id=${encodeURIComponent(villaId)}`;
   return NextResponse.json({ok:true,villa:{id:String(villa.id),name:String(villa.name),slug:String(villa.slug)},link},{headers:{'Cache-Control':'no-store'}});
  }catch(error){console.error('affiliate_generate_link_failed',error);return NextResponse.json({error:'Không tạo được link CTV.'},{status:500})}
 }
