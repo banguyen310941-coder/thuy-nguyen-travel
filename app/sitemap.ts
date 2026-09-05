@@ -16,7 +16,8 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
  const production=await listPublishedProductSeo();
  const products=production.map(item=>({url:`${base}/san-pham/${encodeURIComponent(item.slug)}`,...(item.updatedAt?{lastModified:new Date(item.updatedAt)}:{}),changeFrequency:'daily' as const,priority:.9}));
  const categories=guideCategories.map(slug=>({url:`${base}/cam-nang/danh-muc/${slug}`,changeFrequency:'weekly' as const,priority:.7}));
- const destinations=seoDestinations.map(item=>({url:`${base}/diem-den/${item.slug}`,changeFrequency:'weekly' as const,priority:.85}));
+ const destinationSlugs=[...seoDestinations.map(item=>item.slug),'long-hai','vung-tau'];
+ const destinations=destinationSlugs.map(slug=>({url:`${base}/diem-den/${slug}`,changeFrequency:'weekly' as const,priority:.85}));
  const guides=guidePosts.map(x=>({url:`${base}/cam-nang/${encodeURIComponent(x.slug)}`,changeFrequency:'monthly' as const,priority:.78}));
  return [...staticPages,...destinations,...products,...stays.map(x=>detail('luu-tru',x.slug)),...tours.map(x=>detail('tour-du-lich',x.slug)),...cruises.map(x=>detail('du-thuyen',x.slug)),...categories,...guides];
 }
