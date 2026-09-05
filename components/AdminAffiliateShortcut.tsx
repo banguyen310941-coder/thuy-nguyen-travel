@@ -40,9 +40,10 @@ export function AdminAffiliateShortcut(){
   };
   void load();
   const refresh=()=>void load();
+  const timer=window.setInterval(refresh,30000);
   window.addEventListener('happygo-network-updated',refresh);
   window.addEventListener('focus',refresh);
-  return()=>{alive=false;window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh)};
+  return()=>{alive=false;window.clearInterval(timer);window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh)};
  },[]);
  if(!visible)return null;
  const onNetwork=pathname.startsWith('/admin/affiliates');
