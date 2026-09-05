@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {FormEvent,useEffect,useState} from 'react';
 import {HappyGoLogo} from '@/components/HappyGoLogo';
 import {PartnerProductionPortal} from '@/components/PartnerProductionPortal';
+import {PortalWorkspaceBar} from '@/components/PortalWorkspaceBar';
 
 type Mode='login'|'register';
 
@@ -47,9 +48,10 @@ export function PartnerEntryPage(){
     await submit('/api/partner/auth/register',{companyName:register.companyName,contactName:register.contactName,phone:register.phone,email:register.email,password:register.password});
   }
 
-  if(authenticated)return <PartnerProductionPortal/>;
+  if(authenticated)return <><PortalWorkspaceBar scope="partner" status="Production · Đã đăng nhập" onRefresh={()=>window.location.reload()}/><PartnerProductionPortal/></>;
 
   return <main className="partner-entry-shell">
+    <PortalWorkspaceBar scope="partner" status={checking?'Đang kiểm tra phiên':'Production'}/>
     <header className="partner-entry-topbar">
       <Link href="/" className="partner-entry-brand" aria-label="Về website HappyGo Travel"><HappyGoLogo compact/><span>CỔNG ĐỐI TÁC</span></Link>
       <div className="partner-entry-top-actions"><a href="mailto:info@happygo.vn">info@happygo.vn</a><a href="tel:0969973949">0969 973 949</a><Link href="/">Về website</Link></div>
