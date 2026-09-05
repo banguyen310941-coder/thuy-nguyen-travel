@@ -14,6 +14,7 @@ const affiliateServer=read('lib/server/affiliate.ts');
 const workspace=read('components/AdminNetworkWorkspace.tsx');
 const manager=read('components/AdminAffiliateManager.tsx');
 const applications=read('components/AdminAffiliateApplications.tsx');
+const followupsUi=read('components/AdminAffiliateFollowups.tsx');
 const schema=read('db/schema.sql');
 
 check(has(affiliateApi,"adminActor(req,'affiliates')"),'CTV API phải kiểm tra quyền hồ sơ affiliates.');
@@ -33,6 +34,9 @@ check(has(affiliateApi,'${auditAction}'),'Audit log cập nhật CTV phải dùn
 check(has(affiliateApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Thanh toán CTV phải giữ advisory lock chống double-submit.');
 check(has(affiliateApi,"after_data->>'requestId'=${requestId}"),'Thanh toán CTV phải giữ idempotency bằng requestId.');
 check(has(affiliateApi,"status='pending'"),'Luồng payout phải kiểm tra yêu cầu đang chờ trước khi chi.');
+check(has(affiliateApi,'const payoutScope=canSeeAll'),'Resolve payout phải tách nhánh scope toàn hệ thống và scope Sale.');
+check(has(affiliateApi,'where cp.id=${payoutId} and a.sales_owner_id=${actor.id} limit 1'),'Sale chỉ được resolve payout của CTV đang được giao.');
+check(!has(affiliateApi,'(${canSeeAll} or a.sales_owner_id=${actor.id})'),'Resolve payout không được nội suy boolean canSeeAll trực tiếp vào SQL.');
 
 check(has(assignmentApi,"if(!elevated(actor))return NextResponse.json({error:'Chỉ Admin/Owner được chuyển Sale phụ trách CTV.'}"),'Phân công CTV phải chỉ cho Admin/Owner.');
 check(has(assignmentApi,"where a.sales_owner_id=${actor.id}"),'Sale chỉ được đọc phân công CTV của chính mình.');
@@ -41,6 +45,13 @@ check(has(assignmentApi,"'affiliate.assign_sales'"),'Đổi Sale phụ trách ph
 check(has(followupApi,"where a.sales_owner_id=${actor.id}"),'Lịch chăm sóc phải giới hạn theo CTV được giao cho Sale.');
 check(has(followupApi,"String(affiliate.sales_owner_id||'')!==actor.id"),'Server phải chặn Sale ghi chăm sóc ngoài phạm vi.');
 check(has(followupApi,"'affiliate.followup.create'"),'Ghi chú chăm sóc phải ghi audit log.');
+check(has(followupApi,"const limit=intParam(req.nextUrl.searchParams.get('limit')"),'API lịch chăm sóc phải hỗ trợ limit có giới hạn an toàn.');
+check(has(followupApi,"const offset=intParam(req.nextUrl.searchParams.get('offset')"),'API lịch chăm sóc phải hỗ trợ offset phân trang.');
+check(has(followupApi,'const hasMore=rawFollowups.length>limit'),'API lịch chăm sóc phải xác định còn dữ liệu để tải thêm.');
+check(has(followupApi,'pagination:{limit,offset,hasMore,nextOffset:hasMore?offset+limit:null}'),'API lịch chăm sóc phải trả metadata phân trang.');
+check(has(followupApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Ghi chăm sóc phải khóa requestId chống double-submit server-side.');
+check(has(followupApi,"after_data->>'requestId'=${requestId}"),'Ghi chăm sóc phải idempotent theo requestId.');
+check(has(followupApi,"'requestId',${requestId}"),'Audit log chăm sóc phải lưu requestId.');
 
 check(has(registerApi,"'affiliate','affiliate','inactive'"),'CTV tự đăng ký phải tạo staff ở trạng thái inactive.');
 check(has(registerApi,"5,'pending' from new_staff"),'CTV tự đăng ký phải tạo hồ sơ affiliate ở trạng thái pending.');
@@ -67,6 +78,14 @@ check(has(applications,'Boolean(d.approvalAccess)'),'Hàng chờ duyệt phải 
 check(has(applications,"salesOwnerName?:string"),'Hàng chờ duyệt phải nhận thông tin Sale phụ trách từ API.');
 check(has(applications,"Sale phụ trách: <b>{a.salesOwnerName||'Chưa phân công'}</b>"),'Admin phải thấy Sale phụ trách ngay trên hồ sơ CTV chờ duyệt.');
 
+check(has(followupsUi,'saveLock.current'),'UI chăm sóc phải khóa đồng bộ chống double-click.');
+check(has(followupsUi,'const requestId=crypto.randomUUID()'),'UI chăm sóc phải gửi requestId duy nhất.');
+check(has(followupsUi,'loadHistory=useCallback'),'UI chăm sóc phải tải lịch sử riêng theo CTV.');
+check(has(followupsUi,'historyHasMore'),'UI chăm sóc phải hỗ trợ tải thêm lịch sử.');
+check(has(followupsUi,'historyRequest.current'),'UI chăm sóc phải bỏ response lịch sử đã cũ khi đổi CTV nhanh.');
+check(has(followupsUi,'role="button" tabIndex={0}'),'Card CTV phải dùng được bằng bàn phím.');
+check(has(followupsUi,"e.key==='Enter'||e.key===' '"),'Card CTV phải hỗ trợ Enter/Space khi chọn.');
+
 check(has(schema,'affiliate_followups'),'Schema repo phải chứa bảng affiliate_followups.');
 check(has(schema,'sales_owner_id'),'Schema repo phải chứa ownership Sale cho CTV.');
 
@@ -74,4 +93,4 @@ if(failures.length){
  console.error('\nCTV / Affiliate regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV / Affiliate regression OK: ownership, Admin approval audit, staff/login state, Sale owner visibility, finance permissions, follow-up scope and payout idempotency are guarded.');
+console.log('CTV / Affiliate regression OK: ownership, Admin approval audit, staff/login state, payout scope, Sale owner visibility, finance permissions, paginated/idempotent follow-up CRM and payout idempotency are guarded.');
