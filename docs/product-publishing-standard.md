@@ -1,151 +1,165 @@
-# Chuẩn đóng gói sản phẩm HappyGo Travel
+# Quy trình chuẩn đăng sản phẩm HappyGo Travel
 
-Tài liệu này biến Anyla Sầm Sơn thành mẫu chuẩn để áp dụng lại cho Khách sạn, Villa/Resort và Du thuyền.
+Tài liệu này là **chuẩn bắt buộc** cho mọi sản phẩm mới sau này. Mục tiêu là sản phẩm nào đăng lên cũng đi cùng một luồng: khách xem đúng thông tin và giá bán công khai; CTV sau khi đăng nhập mới được lấy bộ ảnh bán hàng và link giới thiệu.
 
-## 1. Nguyên tắc nguồn dữ liệu
+## 1. Nguyên tắc cố định
 
-Có 2 lớp giá tách biệt, không được trộn:
+Có 3 lớp dữ liệu phải tách riêng:
 
-### A. Giá đề xuất / tham khảo
-Lưu tại từng hạng phòng/căn/cabin trong `product_units.data`.
+1. **Trang public cho khách**: thông tin sản phẩm, ảnh xem sản phẩm, hạng phòng/căn/cabin, lịch giá và booking.
+2. **Giá bán**: giá cấu hình của đúng hạng + giá production theo ngày nếu có.
+3. **Bộ công cụ CTV**: caption, affiliate link, album ảnh tải về. Chỉ xuất hiện sau đăng nhập CTV.
 
-Các trường chuẩn:
-- `lowWeekdayPrice`: mùa thấp điểm trong tuần
-- `lowWeekendPrice`: mùa thấp điểm cuối tuần
-- `weekdayPrice`: mùa thường trong tuần
-- `weekendPrice`: mùa thường cuối tuần
-- `highWeekdayPrice`: mùa cao điểm trong tuần
-- `highWeekendPrice`: mùa cao điểm cuối tuần
-- `holidayPrice`: lễ/Tết
+Không được đưa album tải bán hàng của CTV ra trang sản phẩm public.
 
-Giá này chỉ dùng để khách tham khảo khi chưa chọn ngày. Không được dùng để tự điền vào Lịch giá theo ngày.
+## 2. Chuẩn giá bán cho Khách sạn / Villa / Resort / Du thuyền
 
-### B. Giá xác nhận theo ngày
-Nguồn duy nhất là `rate_rules` production và được public thành `tn_cms_daily_rates_v1`.
+Mỗi hạng phòng/căn/cabin lưu bảng giá trong `product_units.data` với các trường chuẩn:
 
-Mỗi ngày/khoảng ngày phải có:
-- `unit_id`
-- `start_date`
-- `end_date`
-- `retail_price_vnd`
-- `inventory`
-- trạng thái / minimum stay nếu có
+- `lowWeekdayPrice`
+- `lowWeekendPrice`
+- `weekdayPrice`
+- `weekendPrice`
+- `highWeekdayPrice`
+- `highWeekendPrice`
+- `holidayPrice`
 
-Quy tắc bắt buộc:
-- Có rate thật -> hiển thị đúng giá rate.
-- Hết/tạm giữ -> hiển thị trạng thái tương ứng.
-- Không có rate -> `Chưa mở giá` / `Liên hệ`.
-- Tuyệt đối không lấy giá đề xuất để lấp ngày chưa có rate.
+`rate_rules` production dùng để ghi đè giá theo ngày/khoảng ngày, tồn bán, tạm giữ hoặc hết phòng.
 
-## 2. Luồng khách hàng
+### Thứ tự ưu tiên khi hiển thị lịch giá public
 
-1. Khách mở trang sản phẩm.
-2. Phần đầu trang chỉ hiển thị `Giá đề xuất / tham khảo`.
-3. `Lịch giá theo ngày` hiển thị giá xác nhận thật.
-4. Khách bấm một ngày có giá hoặc chọn ngày trong form booking.
-5. URL được cập nhật bằng `checkin` / `checkout`.
-6. `PublishedUnits` đọc ngày đã chọn và chỉ lấy rate thật của hạng đó.
-7. Card hạng phòng đổi từ `GIÁ ĐỀ XUẤT / THAM KHẢO` sang `GIÁ XÁC NHẬN THEO NGÀY`.
-8. Nếu ngày chưa có rate, card hiển thị `Chưa mở giá`, không dùng bảng đề xuất thay thế.
+1. Nếu ngày có `rate_rules` và đang mở bán: dùng đúng `retail_price_vnd` của rate.
+2. Nếu ngày có `rate_rules` trạng thái hold/soldout hoặc inventory = 0: hiển thị trạng thái tương ứng, không lấy giá nền lấp vào.
+3. Nếu ngày chưa có `rate_rules`: dùng giá cấu hình của đúng hạng phòng/căn/cabin theo mùa/ngày thường/cuối tuần/lễ.
+4. Nếu cả rate và giá cấu hình đều chưa có: hiển thị `Liên hệ`.
 
-## 3. Chuẩn hình ảnh
+Như vậy lịch tháng phải có giá ngay khi hạng đã được nhập bảng giá; Admin chỉ cần tạo `rate_rules` khi muốn ghi đè giá hoặc quản lý tồn theo ngày.
 
-### Album sản phẩm
-- Ảnh cover rõ sản phẩm.
-- Album tổng gồm ngoại cảnh, sảnh, nhà hàng, hồ bơi, tiện ích và phòng.
-- Bấm ảnh mở lightbox trong chính trang, không chuyển trang mới.
+## 3. Chuẩn trang sản phẩm public
 
-### Ảnh hạng phòng/căn/cabin
-- Mỗi unit có album riêng trong `product_units.data.images`.
-- Ảnh đầu lớn, ảnh phụ hiển thị dạng strip như Booking.com.
-- Bấm bất kỳ ảnh nào mở lightbox của riêng hạng đó.
-- Không dùng ảnh phòng khác để lấp ảnh thiếu.
+### Album đầu trang
 
-## 4. Chuẩn thông tin sản phẩm
+- Hiển thị cover và gallery sản phẩm theo giao diện public hiện tại.
+- Có thể mở lightbox để khách xem ảnh.
+- Không hiển thị các nhãn như `ẢNH NGUỒN SẢN PHẨM`, `Album CTV`, `Tải ảnh gốc`, `Tải cả album`.
+- Không biến trang public thành kho ảnh bán hàng.
 
-Bắt buộc trước khi publish:
+### Ảnh từng hạng phòng/căn/cabin
+
+- Mỗi unit có ảnh riêng trong `product_units.data.images`.
+- Public chỉ dùng giao diện xem ảnh gọn: ảnh chính + một số ảnh preview + nút xem thêm/lightbox.
+- Không hiển thị toàn bộ ảnh thành lưới dài trên card unit.
+- Không có nút tải ảnh bán hàng trên trang public.
+- Không dùng ảnh sai hạng để lấp chỗ trống.
+
+### Lịch giá
+
+- Luôn chọn được đúng hạng đang xem.
+- Mỗi ô ngày hiển thị giá nếu đã có giá cấu hình hoặc rate production.
+- Giá production theo ngày luôn ưu tiên hơn giá nền.
+- Ngày hết/tạm giữ hiển thị trạng thái, không hiển thị giá nền.
+- Khách bấm ngày có giá để cập nhật `checkin` / `checkout` và xem đúng giá từng hạng.
+
+## 4. Chuẩn khu CTV
+
+CTV phải đăng nhập trước khi truy cập bộ công cụ bán hàng.
+
+Luồng chuẩn:
+
+1. CTV đăng nhập trang CTV.
+2. Tìm/chọn đúng sản phẩm muốn bán.
+3. Hệ thống tạo đúng affiliate link của sản phẩm đó.
+4. CTV copy caption + link.
+5. CTV xem và tải album ảnh đúng sản phẩm tại đây.
+6. Nếu có thư mục Drive nguồn, cho phép mở/tải cả album từ khu CTV.
+
+Album CTV được gom từ:
+
+- cover sản phẩm;
+- gallery sản phẩm;
+- ảnh các hạng phòng/căn/cabin của chính sản phẩm đó.
+
+Phải loại ảnh trùng. Không để API public trả về chức năng download album CTV.
+
+## 5. Dữ liệu bắt buộc trước khi publish
+
+### Sản phẩm
+
 - `name`
 - `slug`
 - `type`
 - `place`
-- `address` nếu có
 - `summary`
 - `cover`
 - `gallery`
-- `category` / hạng dịch vụ
-- check-in / check-out cho lưu trú
-- tiện ích
-- chính sách
-- ít nhất 1 unit bán
+- chính sách / tiện ích phù hợp loại sản phẩm
+- ít nhất 1 unit đối với Khách sạn, Villa/Resort, Du thuyền
 
-Mỗi unit bắt buộc:
+### Mỗi unit
+
 - mã
 - tên
-- sức chứa
-- diện tích nếu có
-- loại giường nếu có
-- ảnh riêng
 - trạng thái bán
-- bảng giá đề xuất nếu đã có
+- sức chứa
+- ảnh đúng hạng
+- ít nhất một mức giá bán cấu hình nếu muốn lịch public có giá ngay
 
-## 5. Chuẩn SEO
+Nếu chưa có bảng giá unit, sản phẩm vẫn có thể lưu draft nhưng không nên publish như một sản phẩm đã sẵn sàng bán.
 
-URL canonical:
-- `/product/<slug>`
-- Ví dụ: `/product/anyla-sam-son`
+## 6. Checklist vận hành khi đăng sản phẩm mới
 
-URL cũ `/product?slug=<slug>` chỉ dùng tương thích và phải redirect 308 sang canonical.
+1. Tạo sản phẩm và chọn đúng loại.
+2. Nhập nội dung public.
+3. Tải cover + gallery public.
+4. Tạo từng phòng/căn/cabin.
+5. Tải ảnh đúng cho từng unit.
+6. Nhập bảng giá unit: ngày thường/cuối tuần/lễ và mùa nếu có.
+7. Chỉ tạo `rate_rules` cho ngày cần giá riêng, tồn riêng, tạm giữ hoặc soldout.
+8. Mở preview public và kiểm tra lịch tháng đã hiện giá theo từng ngày.
+9. Chọn thử một ngày để kiểm tra giá card unit và booking.
+10. Kiểm tra ảnh unit đang ở giao diện xem gọn, không phải album nguồn dài.
+11. Đăng nhập CTV, tìm đúng sản phẩm, kiểm tra affiliate link.
+12. Kiểm tra CTV tải được ảnh đúng sản phẩm và trang public không có nút tải ảnh CTV.
+13. Kiểm tra mobile trước khi publish.
+14. Publish.
 
-Mỗi sản phẩm production có:
-- title riêng
-- meta description riêng
-- canonical
-- robots `index, follow`
-- Open Graph title/description/image
-- Twitter card
-- schema `Hotel` hoặc `LodgingBusiness` cho lưu trú
-- schema `Product` cho sản phẩm khác
-- `BreadcrumbList`
-- sitemap lấy trực tiếp danh sách product production
-- `robots.txt` cho phép `/product/`
-
-Không đưa điểm đánh giá giả vào schema. Chỉ thêm aggregate rating khi có đánh giá khách hàng thật và đủ dữ liệu.
-
-## 6. Checklist đăng một sản phẩm mới
-
-1. Tạo product và chọn đúng loại.
-2. Tải cover + album tổng.
-3. Tạo từng unit.
-4. Tải ảnh riêng từng unit.
-5. Nhập bảng giá đề xuất theo mùa nếu có.
-6. Import/tạo lịch giá xác nhận theo ngày vào production.
-7. Kiểm tra lịch: ngày không có rate phải hiện `Chưa mở`.
-8. Chọn thử 1 ngày trong form booking và xác nhận card unit đổi sang giá đúng ngày.
-9. Nhập SEO title + SEO description.
-10. Publish.
-11. Kiểm tra URL canonical `/product/<slug>`.
-12. Kiểm tra source page có JSON-LD và sitemap có URL sản phẩm.
-13. Test mobile: album, unit gallery, calendar, booking form.
-
-## 7. Quy tắc áp dụng cho loại khác
+## 7. Chuẩn theo loại sản phẩm
 
 ### Khách sạn
-Unit = hạng phòng. Giá xác nhận theo phòng/đêm.
+
+Unit = hạng phòng. Giá hiển thị theo phòng/đêm.
 
 ### Villa & Resort
-Unit = căn/villa. Giá xác nhận theo căn/đêm. Có thể bổ sung phụ thu quá người.
+
+Unit = căn/villa. Giá hiển thị theo căn/đêm. Phụ thu quá người quản lý riêng.
 
 ### Du thuyền
-Unit = cabin. Lịch giá theo ngày khởi hành. Giá đề xuất chỉ tham khảo; ngày khởi hành có rate thật mới hiển thị giá xác nhận.
+
+Unit = cabin. Giá hiển thị theo cabin/ngày khởi hành hoặc cabin/đêm theo cấu hình sản phẩm.
 
 ### Tour
-Không dùng bảng giá phòng. Sử dụng lịch khởi hành và giá theo khách/gói riêng của luồng Tour.
 
-## 8. Nguyên tắc không được phá vỡ
+Tour không dùng lịch phòng/cabin. Giá tour và lịch khởi hành đi theo luồng Tour riêng, nhưng quy tắc CTV vẫn giống nhau: ảnh tải bán hàng chỉ nằm trong khu CTV sau đăng nhập.
 
+## 8. Quy tắc kỹ thuật không được phá vỡ
+
+- `ProductGallery` public không được chứa album tải bán hàng.
+- `UnitPhotoGallery` public chỉ là viewer gọn, không render toàn bộ album nguồn dài.
+- `ProductRateCalendar` phải có fallback từ giá cấu hình unit khi không có rate ngày.
+- `rate_rules` phải ưu tiên hơn fallback giá unit.
+- `AffiliateSalesToolkit` phải là nơi chứa album CTV tải về.
+- Affiliate API không được trả giá NET/NCC.
+- Không công khai `sourceImageFolder` qua API public catalog.
 - Không tự đoán giá.
-- Không tự điền lịch ngày bằng giá tham khảo.
-- Không hiển thị rating mặc định.
-- Không công khai giá net/NCC.
-- Không dùng ảnh sai hạng phòng.
-- Không publish sản phẩm thiếu nguồn giá mà lại hiển thị như giá đã xác nhận.
+- Không dùng ảnh sai sản phẩm hoặc sai hạng.
+
+## 9. Definition of Done cho mọi sản phẩm mới
+
+Một sản phẩm chỉ được coi là hoàn tất khi đồng thời đạt 4 điều kiện:
+
+- **Public đúng**: giao diện ảnh gọn, thông tin đầy đủ.
+- **Giá đúng**: lịch tháng hiện giá từ unit hoặc rate production theo đúng ưu tiên.
+- **CTV đúng**: đăng nhập, chọn đúng sản phẩm, có link giới thiệu và tải được album đúng sản phẩm.
+- **Mobile đúng**: không vỡ layout, lịch giá bấm được và ảnh không kéo trang quá dài.
+
+Các thay đổi code sau này làm vi phạm các nguyên tắc này phải bị regression check chặn trước khi build production.
