@@ -38,8 +38,7 @@ import {AdminProductMigration} from '@/components/AdminProductMigration';
 import {AdminEmailCampaigns} from '@/components/AdminEmailCampaigns';
 import {AdminStaffManager} from '@/components/AdminStaffManager';
 import {AdminTeamChat} from '@/components/AdminTeamChat';
-import {AdminPartnerManager} from '@/components/AdminPartnerManager';
-import {PartnerSupportCenter} from '@/components/PartnerSupportCenter';
+import {AdminNetworkWorkspace} from '@/components/AdminNetworkWorkspace';
 import {AdminCrmWorkboard} from '@/components/AdminCrmWorkboard';
 import {AdminCrmPipeline} from '@/components/AdminCrmPipeline';
 import {AdminChatNotifications} from '@/components/AdminChatNotifications';
@@ -47,9 +46,9 @@ import {readCurrentStaff,type AdminStaff} from '@/components/AdminSalesAccess';
 import {bootstrapAdmin,checkAdminSession,clearAdminSession,loginAdmin} from '@/components/AdminAuth';
 
 const modules=[
- ['▦','Tổng quan'],['☑','Điều hành Sale'],['🧳','Điều hành dịch vụ'],['🧾','Phiếu thu khách'],['💳','Duyệt & thanh toán'],['📒','Sổ công nợ'],['₫','Kế toán thu chi'],['⏱','Chấm công'],['📈','Doanh thu & Sale'],['💬','Chat nội bộ'],['◎','Khách hàng / CRM'],['ĐT','Quản lý đối tác'],['☎','Hỗ trợ đối tác'],['▣','Đơn đặt dịch vụ'],['🎟','Voucher khách hàng'],['♟','Nhân viên & phân quyền'],['✉','Email & Marketing'],['₫','Marketing & ngân sách'],['▤','Sản phẩm'],['▦','Lịch giá & tồn phòng'],['✈','Tour du lịch'],['⌂','Villa & Resort'],['▥','Khách sạn'],['≋','Du thuyền'],['✎','Bài viết / Cẩm nang'],['▧','Media (Ảnh/Video)'],['⌂','Giao diện (Trang chủ)'],['⌕','Cấu hình SEO'],['⇩','Google Drive'],['↧','Sao lưu dữ liệu'],['♲','Thùng rác / Xóa dữ liệu'],['⚙','Cài đặt'],
+ ['▦','Tổng quan'],['☑','Điều hành Sale'],['🧳','Điều hành dịch vụ'],['🧾','Phiếu thu khách'],['💳','Duyệt & thanh toán'],['📒','Sổ công nợ'],['₫','Kế toán thu chi'],['⏱','Chấm công'],['📈','Doanh thu & Sale'],['💬','Chat nội bộ'],['◎','Khách hàng / CRM'],['🤝','Mạng lưới hợp tác'],['▣','Đơn đặt dịch vụ'],['🎟','Voucher khách hàng'],['♟','Nhân viên & phân quyền'],['✉','Email & Marketing'],['₫','Marketing & ngân sách'],['▤','Sản phẩm'],['▦','Lịch giá & tồn phòng'],['✈','Tour du lịch'],['⌂','Villa & Resort'],['▥','Khách sạn'],['≋','Du thuyền'],['✎','Bài viết / Cẩm nang'],['▧','Media (Ảnh/Video)'],['⌂','Giao diện (Trang chủ)'],['⌕','Cấu hình SEO'],['⇩','Google Drive'],['↧','Sao lưu dữ liệu'],['♲','Thùng rác / Xóa dữ liệu'],['⚙','Cài đặt'],
 ] as const;
-const permission:Record<string,string>={'Điều hành Sale':'customers','Điều hành dịch vụ':'bookings','Phiếu thu khách':'receipts','Duyệt & thanh toán':'payments','Sổ công nợ':'ledger','Kế toán thu chi':'ledger','Chấm công':'attendance','Doanh thu & Sale':'revenue','Khách hàng / CRM':'customers','Quản lý đối tác':'partners','Hỗ trợ đối tác':'partners','Đơn đặt dịch vụ':'bookings','Voucher khách hàng':'bookings','Nhân viên & phân quyền':'staff','Email & Marketing':'email','Marketing & ngân sách':'email','Sản phẩm':'products','Lịch giá & tồn phòng':'rates','Tour du lịch':'tours','Villa & Resort':'stays','Khách sạn':'stays','Du thuyền':'cruises','Bài viết / Cẩm nang':'content','Media (Ảnh/Video)':'media','Giao diện (Trang chủ)':'settings','Cấu hình SEO':'settings','Google Drive':'settings','Cài đặt':'settings'};
+const permission:Record<string,string>={'Điều hành Sale':'customers','Điều hành dịch vụ':'bookings','Phiếu thu khách':'receipts','Duyệt & thanh toán':'payments','Sổ công nợ':'ledger','Kế toán thu chi':'ledger','Chấm công':'attendance','Doanh thu & Sale':'revenue','Khách hàng / CRM':'customers','Mạng lưới hợp tác':'partners','Đơn đặt dịch vụ':'bookings','Voucher khách hàng':'bookings','Nhân viên & phân quyền':'staff','Email & Marketing':'email','Marketing & ngân sách':'email','Sản phẩm':'products','Lịch giá & tồn phòng':'rates','Tour du lịch':'tours','Villa & Resort':'stays','Khách sạn':'stays','Du thuyền':'cruises','Bài viết / Cẩm nang':'content','Media (Ảnh/Video)':'media','Giao diện (Trang chủ)':'settings','Cấu hình SEO':'settings','Google Drive':'settings','Cài đặt':'settings'};
 const ownerOnly=['Sao lưu dữ liệu','Thùng rác / Xóa dữ liệu'];
 const mobilePrimary=['Tổng quan','Chấm công','Điều hành Sale','Chat nội bộ'];
 
@@ -85,7 +84,8 @@ export default function AdminPage(){
  }
 
  const owner=current.role==='owner';
- const allowed=(name:string)=>owner||name==='Tổng quan'||name==='Chat nội bộ'||name==='Chấm công'||(!ownerOnly.includes(name)&&Boolean(permission[name]&&current.permissions?.includes(permission[name])));
+ const networkAccess=Boolean(current.permissions?.includes('partners')||current.permissions?.includes('affiliates'));
+ const allowed=(name:string)=>owner||name==='Tổng quan'||name==='Chat nội bộ'||name==='Chấm công'||(name==='Mạng lưới hợp tác'&&networkAccess)||(!ownerOnly.includes(name)&&Boolean(permission[name]&&current.permissions?.includes(permission[name])));
  const visible=modules.filter(([,name])=>allowed(name));
  const go=(name:string)=>{if(!allowed(name))return;setActive(name);setMobileMore(false);window.scrollTo({top:0,behavior:'smooth'})};
  const primary=mobilePrimary.map(name=>visible.find(([,n])=>n===name)).filter(Boolean) as (typeof modules)[number][];
@@ -104,8 +104,7 @@ export default function AdminPage(){
   if(active==='Doanh thu & Sale')return <AdminRevenueDashboard/>;
   if(active==='Chat nội bộ')return <AdminTeamChat/>;
   if(active==='Khách hàng / CRM')return <><AdminCustomers/><AdminCustomerRetention/><AdminCustomerFeedback/></>;
-  if(active==='Quản lý đối tác')return <AdminPartnerManager/>;
-  if(active==='Hỗ trợ đối tác')return <PartnerSupportCenter/>;
+  if(active==='Mạng lưới hợp tác')return <AdminNetworkWorkspace/>;
   if(active==='Đơn đặt dịch vụ')return <><AdminSupplierOrders/><AdminBookingOperations openBookings={()=>{}}/><AdminBookings/></>;
   if(active==='Voucher khách hàng')return <AdminCustomerVouchers/>;
   if(active==='Nhân viên & phân quyền')return <AdminStaffManager/>;
