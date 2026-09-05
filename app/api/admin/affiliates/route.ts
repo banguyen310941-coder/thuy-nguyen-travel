@@ -66,17 +66,48 @@ export async function POST(req:NextRequest){
   }
 
   if(action==='payout'){
-   const id=String(body.id||''),amount=Math.max(0,Math.round(Number(body.amount)||0)),receiptUrl=safeUrl(String(body.receiptUrl||'').trim());
+   const id=String(body.id||''),amount=Math.max(0,Math.round(Number(body.amount)||0)),receiptUrl=safeUrl(String(body.receiptUrl||'').trim()),requestId=String(body.requestId||'').trim()||crypto.randomUUID();
    if(!uuid.test(id)||amount<=0)return NextResponse.json({error:'Số tiền thanh toán chưa hợp lệ.'},{status:400});
+   if(!uuid.test(requestId))return NextResponse.json({error:'Mã yêu cầu thanh toán không hợp lệ.'},{status:400});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
-   const waiting=(await sql`select id from commission_payouts where affiliate_id=${id} and status='pending' order by created_at asc limit 1`)[0];
-   if(waiting)return NextResponse.json({error:'CTV đang có yêu cầu rút tiền chờ xử lý. Hãy duyệt hoặc từ chối yêu cầu đó trước.'},{status:409});
-   const rows=await sql`with debited as (update affiliates set balance=balance-${amount},updated_at=now() where id=${id} and balance>=${amount} returning id) insert into commission_payouts(affiliate_id,amount,status,payout_date,receipt_url) select id,${amount},'paid',now(),${receiptUrl||null} from debited returning id`;
-   if(!rows[0])return NextResponse.json({error:'Số dư CTV không đủ để thanh toán.'},{status:400});
-   const remaining=(await sql`select balance from affiliates where id=${id}`)[0];
-   if(Number(remaining?.balance||0)===0)await sql`update affiliate_referrals set status='paid',updated_at=now() where affiliate_id=${id} and status='approved'`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.payout','affiliate',${id},${JSON.stringify({amount,receiptUrl})}::jsonb)`;
-   return NextResponse.json({ok:true,payoutId:String(rows[0].id)});
+   const result=(await sql`with lock_request as (
+      select pg_advisory_xact_lock(hashtext(${requestId}))
+    ), existing as (
+      select al.after_data->>'payoutId' as payout_id
+      from audit_logs al,lock_request
+      where al.action='affiliate.payout' and al.after_data->>'requestId'=${requestId}
+      order by al.created_at asc limit 1
+    ), waiting as (
+      select cp.id from commission_payouts cp,lock_request
+      where cp.affiliate_id=${id} and cp.status='pending'
+      order by cp.created_at asc limit 1
+    ), debited as (
+      update affiliates a set balance=a.balance-${amount},updated_at=now()
+      from lock_request
+      where a.id=${id} and a.balance>=${amount}
+        and not exists(select 1 from existing)
+        and not exists(select 1 from waiting)
+      returning a.id,a.balance
+    ), inserted as (
+      insert into commission_payouts(affiliate_id,amount,status,payout_date,receipt_url)
+      select d.id,${amount},'paid',now(),${receiptUrl||null} from debited d
+      returning id,affiliate_id,amount
+    ), logged as (
+      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
+      select ${actor.id},'affiliate.payout','affiliate',i.affiliate_id::text,jsonb_build_object('amount',i.amount,'receiptUrl',${receiptUrl},'requestId',${requestId},'payoutId',i.id::text)
+      from inserted i returning id
+    )
+    select coalesce((select payout_id from existing),(select id::text from inserted)) as payout_id,
+      exists(select 1 from existing) as idempotent,
+      exists(select 1 from waiting) as has_pending,
+      exists(select 1 from inserted) as created,
+      (select balance from affiliates where id=${id}) as balance`)[0];
+   if(result?.idempotent)return NextResponse.json({ok:true,payoutId:String(result.payout_id),idempotent:true});
+   if(result?.has_pending)return NextResponse.json({error:'CTV đang có yêu cầu rút tiền chờ xử lý. Hãy duyệt hoặc từ chối yêu cầu đó trước.'},{status:409});
+   if(!result?.created)return NextResponse.json({error:'Số dư CTV không đủ để thanh toán.'},{status:400});
+   const remainingBalance=Number(result.balance||0);
+   if(remainingBalance===0)await sql`update affiliate_referrals set status='paid',updated_at=now() where affiliate_id=${id} and status='approved'`;
+   return NextResponse.json({ok:true,payoutId:String(result.payout_id),requestId});
   }
 
   if(action==='resolve_payout'){
