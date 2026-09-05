@@ -30,8 +30,20 @@ contains('app/api/affiliate/dashboard/route.ts',"action==='update_profile'",'CTV
 contains('app/api/affiliate/dashboard/route.ts',"action==='request_payout'",'CTV phải gửi yêu cầu rút tiền qua server');
 excludes('app/api/affiliate/dashboard/route.ts','net_price_vnd','Affiliate API không được truy vấn giá NET');
 contains('components/AffiliateSalesToolkit.tsx','Copy caption + link','CTV phải có bộ công cụ bán hàng');
+contains('components/AffiliateSalesToolkit.tsx','Album CTV tải về','Album tải bán hàng phải nằm trong khu CTV');
+contains('components/AffiliateSalesToolkit.tsx','Tải ảnh gốc','CTV phải có nút tải ảnh đúng sản phẩm');
 contains('components/AffiliateSalesToolkit.tsx','30 ngày','CTV phải thấy rõ thời hạn attribution');
 contains('app/api/admin/system-health/route.ts',"id:'affiliates'",'System Health phải theo dõi module CTV');
+
+excludes('components/ProductGallery.tsx','ẢNH NGUỒN SẢN PHẨM','Trang sản phẩm public không được biến thành album nguồn CTV');
+excludes('components/ProductGallery.tsx','Tải ảnh gốc','Trang sản phẩm public không được có nút tải ảnh CTV');
+excludes('components/ProductGallery.tsx','Tải cả album','Trang sản phẩm public không được có nút tải cả album CTV');
+excludes('components/UnitPhotoGallery.tsx','Ảnh đúng hạng phòng','Ảnh unit public phải giữ giao diện viewer gọn');
+contains('components/UnitPhotoGallery.tsx','const preview=photos.slice(0,5)','Ảnh unit public chỉ hiển thị preview gọn trước lightbox');
+contains('components/ProductRateCalendar.tsx','seasonalUnitPrice','Lịch public phải fallback sang giá cấu hình của đúng unit');
+contains('components/ProductRateCalendar.tsx','override||base','Giá production theo ngày phải ưu tiên hơn giá nền unit');
+contains('components/ProductRateCalendar.tsx',"missing?'Liên hệ'",'Ngày chưa có cả rate và giá nền phải hiển thị Liên hệ');
+contains('app/api/affiliate/dashboard/route.ts','media','Affiliate API phải cung cấp media đúng sản phẩm cho CTV');
 
 contains('app/api/payments/webhook/route.ts','PAYMENT_WEBHOOK_SECRET','Payment webhook phải yêu cầu secret');
 contains('app/api/payments/webhook/route.ts','provider_reference','Payment webhook phải có khóa giao dịch nhà cung cấp');
