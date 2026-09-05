@@ -18,7 +18,7 @@ export function PortalWorkspaceBar({scope,status='Production',onRefresh}:{scope:
     </div>
     <nav style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}} aria-label="Điều hướng vận hành HappyGo">
       {scope!=='admin'&&<Link style={{color:'#fff'}} href="/">Website</Link>}
-      {scope==='admin'&&<><Link style={{color:'#fff'}} href="/admin">Trung tâm Admin</Link><Link style={{color:'#fff'}} href="/admin/affiliates">CTV / Affiliate</Link></>}
+      {scope==='admin'&&<><Link style={{color:'#fff'}} href="/admin">Trung tâm Admin</Link><Link style={{color:'#fff'}} href="/admin?module=network&tab=affiliates">Mạng lưới hợp tác</Link></>}
       {scope==='affiliate'&&<><Link style={{color:'#fff'}} href="/affiliate/dashboard">Dashboard CTV</Link><a style={{color:'#fff'}} href="tel:0969973949">Hỗ trợ 0969 973 949</a></>}
       {scope==='partner'&&<><Link style={{color:'#fff'}} href="/partner">Cổng đối tác</Link><a style={{color:'#fff'}} href="tel:0969973949">Hỗ trợ 0969 973 949</a></>}
       {onRefresh&&<button type="button" onClick={onRefresh} style={{border:'1px solid rgba(255,255,255,.35)',background:'transparent',color:'#fff',borderRadius:6,padding:'5px 9px',cursor:'pointer'}}>↻ Làm mới dữ liệu</button>}
