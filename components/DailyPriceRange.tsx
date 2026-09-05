@@ -2,15 +2,15 @@
 
 import {useEffect,useMemo,useState} from 'react';
 import {rateForDate,ratePriceForDate} from '@/components/AdminRateCalendar';
-import {allSeasonalPriceCandidates} from '@/lib/pricing-calendar';
+import {allSeasonalPriceCandidates,configuredUnitPrice} from '@/lib/pricing-calendar';
 
-type Unit={id:string;weekdayPrice?:string;weekendPrice?:string;holidayPrice?:string;lowWeekdayPrice?:string;lowWeekendPrice?:string;highWeekdayPrice?:string;highWeekendPrice?:string;status?:string};
+type Unit={id:string;weekdayPrice?:string;weekendPrice?:string;holidayPrice?:string;lowWeekdayPrice?:string;lowWeekendPrice?:string;highWeekdayPrice?:string;highWeekendPrice?:string;highSeasonRanges?:string;lowSeasonRanges?:string;status?:string};
 type Product={slug:string;price?:string;units?:Unit[]};
 const KEY='tn_cms_products_v3_units';
 const fmt=(n:number)=>new Intl.NumberFormat('vi-VN').format(n)+'đ';
 const cleanStartingText=(value?:string)=>String(value||'').trim().replace(/^(?:từ\s+)+/iu,'').trim()||'Liên hệ';
 const dateKey=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-function exactPriceForDate(u:Unit,d:Date){const rate=rateForDate(u.id,dateKey(d));if(!rate||rate.status!=='available'||Number(rate.quantity||0)<=0)return 0;return ratePriceForDate(rate,d)}
+function exactPriceForDate(u:Unit,d:Date){const rate=rateForDate(u.id,dateKey(d));if(rate){if(rate.status!=='available'||Number(rate.quantity||0)<=0)return 0;const override=ratePriceForDate(rate,d);if(override)return override}return configuredUnitPrice(u,d)}
 
 export function DailyPriceRange({slug,fallback='',checkin='',checkout='',compact=false}:{slug:string;fallback?:string;checkin?:string|null;checkout?:string|null;compact?:boolean}){
  const[product,setProduct]=useState<Product|null>(null);const[rev,setRev]=useState(0);
