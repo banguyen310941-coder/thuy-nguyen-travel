@@ -14,20 +14,22 @@ export async function GET(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  const actor=await adminActor(req,'affiliates');
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
+ const financeAccess=Boolean(await adminActor(req,'affiliate_finance'));
  try{
   const sql=db();
   const [affiliates,referrals,payouts]=await Promise.all([
    sql`select a.id,a.user_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id order by a.created_at desc`,
    sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id order by ar.created_at desc limit 300`,
-   sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id order by cp.created_at desc limit 200`
+   financeAccess?sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id order by cp.created_at desc limit 200`:Promise.resolve([])
   ]);
-  const items=affiliates.map((a:any)=>({id:String(a.id),userId:String(a.user_id),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:Number(a.total_commission||0),balance:Number(a.balance||0),commissionRate:Number(a.commission_rate||0),status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}));
+  const items=affiliates.map((a:any)=>({id:String(a.id),userId:String(a.user_id),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:financeAccess?Number(a.total_commission||0):0,balance:financeAccess?Number(a.balance||0):0,commissionRate:financeAccess?Number(a.commission_rate||0):0,status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}));
   return NextResponse.json({
    ok:true,
+   financeAccess,
    affiliates:items,
-   referrals:referrals.map((r:any)=>({id:String(r.id),affiliateId:String(r.affiliate_id),affiliateName:String(r.affiliate_name),bookingId:String(r.booking_id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Villa'),customerPhone:String(r.customer_phone||''),commissionAmount:Number(r.commission_amount||0),status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
-   payouts:payouts.map((p:any)=>({id:String(p.id),affiliateId:String(p.affiliate_id),affiliateName:String(p.affiliate_name),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at),bankAccount:String(p.bank_account||''),bankName:String(p.bank_name||''),accountHolder:String(p.account_holder||'')})),
-   stats:{total:items.length,active:items.filter(x=>x.status==='active').length,balance:items.reduce((n,x)=>n+x.balance,0),commission:items.reduce((n,x)=>n+x.totalCommission,0)}
+   referrals:referrals.map((r:any)=>({id:String(r.id),affiliateId:String(r.affiliate_id),affiliateName:String(r.affiliate_name),bookingId:String(r.booking_id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Villa'),customerPhone:String(r.customer_phone||''),commissionAmount:financeAccess?Number(r.commission_amount||0):0,status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
+   payouts:financeAccess?payouts.map((p:any)=>({id:String(p.id),affiliateId:String(p.affiliate_id),affiliateName:String(p.affiliate_name),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at),bankAccount:String(p.bank_account||''),bankName:String(p.bank_name||''),accountHolder:String(p.account_holder||'')})):[],
+   stats:{total:items.length,active:items.filter(x=>x.status==='active').length,balance:financeAccess?items.reduce((n,x)=>n+x.balance,0):0,commission:financeAccess?items.reduce((n,x)=>n+x.totalCommission,0):0}
   });
  }catch(error){
   console.error('admin_affiliates_get_failed',error);
@@ -39,12 +41,15 @@ export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  const actor=await adminActor(req,'affiliates');
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
+ const canFinance=Boolean(await adminActor(req,'affiliate_finance'));
  const body=await req.json().catch(()=>({}));
  const action=String(body.action||'');
+ if(['payout','resolve_payout','reconcile'].includes(action)&&!canFinance)return NextResponse.json({error:'Bạn không có quyền Tài chính CTV.'},{status:403});
  const sql=db();
  try{
   if(action==='create'){
    const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),status=statuses.has(String(body.status))?String(body.status):'active',rate=Math.max(0,Math.min(100,Number(body.commissionRate)||5));
+   if(!canFinance&&rate!==5)return NextResponse.json({error:'Bạn không có quyền đặt tỷ lệ hoa hồng CTV.'},{status:403});
    if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<8)return NextResponse.json({error:'Tên, email hoặc mật khẩu CTV chưa hợp lệ.'},{status:400});
    if(referralCode.length<4)return NextResponse.json({error:'Mã giới thiệu cần ít nhất 4 ký tự.'},{status:400});
    const staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
@@ -59,9 +64,11 @@ export async function POST(req:NextRequest){
    if(!uuid.test(id))return NextResponse.json({error:'CTV không hợp lệ.'},{status:400});
    const current=(await sql`select a.*,s.name,s.email from affiliates a join staff s on s.id=a.user_id where a.id=${id} limit 1`)[0];
    if(!current)return NextResponse.json({error:'Không tìm thấy CTV.'},{status:404});
-   const status=statuses.has(String(body.status))?String(body.status):String(current.status),rate=Math.max(0,Math.min(100,Number(body.commissionRate??current.commission_rate)||0)),phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
+   const currentRate=Number(current.commission_rate||0),requestedRate=Math.max(0,Math.min(100,Number(body.commissionRate??current.commission_rate)||0));
+   if(!canFinance&&requestedRate!==currentRate)return NextResponse.json({error:'Bạn không có quyền thay đổi tỷ lệ hoa hồng CTV.'},{status:403});
+   const status=statuses.has(String(body.status))?String(body.status):String(current.status),rate=requestedRate,phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
    await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_account=${bankAccount||null},bank_name=${bankName||null},account_holder=${accountHolder||null},commission_rate=${rate},status=${status},updated_at=now() where id=${id} returning user_id) update staff set phone=${phone||null},status=${staffStatus},updated_at=now() where id=(select user_id from changed)`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'affiliate.update','affiliate',${id},${JSON.stringify({status:current.status,commissionRate:Number(current.commission_rate||0)})}::jsonb,${JSON.stringify({status,commissionRate:rate})}::jsonb)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'affiliate.update','affiliate',${id},${JSON.stringify({status:current.status,commissionRate:currentRate})}::jsonb,${JSON.stringify({status,commissionRate:rate})}::jsonb)`;
    return NextResponse.json({ok:true});
   }
 
