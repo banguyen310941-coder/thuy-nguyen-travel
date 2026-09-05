@@ -1,7 +1,6 @@
 'use client';
 
 import {useEffect,useState} from 'react';
-import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import {AdminNetworkOperations} from '@/components/AdminNetworkOperations';
 import {AdminPartnerManager} from '@/components/AdminPartnerManager';
 import {PartnerSupportCenter} from '@/components/PartnerSupportCenter';
@@ -19,20 +18,25 @@ const tabs:{id:Tab;label:string;hint:string}[]=[
 const validTab=(value:string|null):value is Tab=>Boolean(value&&tabs.some(item=>item.id===value));
 
 export function AdminNetworkWorkspace(){
-  const pathname=usePathname();
-  const router=useRouter();
-  const search=useSearchParams();
-  const requested=search.get('tab');
-  const[tab,setTab]=useState<Tab>(validTab(requested)?requested:'overview');
+  const[tab,setTab]=useState<Tab>('overview');
 
-  useEffect(()=>{if(validTab(requested)&&requested!==tab)setTab(requested)},[requested,tab]);
+  useEffect(()=>{
+    const sync=()=>{
+      const params=new URLSearchParams(window.location.search);
+      const requested=params.get('tab');
+      setTab(validTab(requested)?requested:'overview');
+    };
+    sync();
+    window.addEventListener('popstate',sync);
+    return()=>window.removeEventListener('popstate',sync);
+  },[]);
 
   const choose=(next:Tab)=>{
     setTab(next);
-    const params=new URLSearchParams(search.toString());
-    params.set('module','network');
-    params.set('tab',next);
-    router.replace(`${pathname}?${params.toString()}`,{scroll:false});
+    const url=new URL(window.location.href);
+    url.searchParams.set('module','network');
+    url.searchParams.set('tab',next);
+    window.history.replaceState(null,'',url);
   };
 
   return <section className="admin-network-workspace">
