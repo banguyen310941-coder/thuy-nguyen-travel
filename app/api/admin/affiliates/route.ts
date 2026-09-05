@@ -9,23 +9,31 @@ const statuses=new Set(['pending','active','blocked']);
 const codeOf=(raw:string)=>raw.toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,32);
 const randomCode=()=>`CTV${Math.random().toString(36).slice(2,8).toUpperCase()}`;
 const safeUrl=(value:string)=>!value||/^https:\/\//i.test(value)?value:'';
+const elevated=(actor:{role:string;permissions:string[]})=>actor.role==='owner'||actor.role==='admin'||actor.permissions.includes('*');
 
 export async function GET(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  const actor=await adminActor(req,'affiliates');
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  const financeAccess=Boolean(await adminActor(req,'affiliate_finance'));
+ const canSeeAll=elevated(actor);
  try{
   const sql=db();
-  const [affiliates,referrals,payouts]=await Promise.all([
-   sql`select a.id,a.user_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id order by a.created_at desc`,
-   sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id order by ar.created_at desc limit 300`,
-   financeAccess?sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id order by cp.created_at desc limit 200`:Promise.resolve([])
-  ]);
-  const items=affiliates.map((a:any)=>({id:String(a.id),userId:String(a.user_id),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:financeAccess?Number(a.total_commission||0):0,balance:financeAccess?Number(a.balance||0):0,commissionRate:financeAccess?Number(a.commission_rate||0):0,status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}));
+  const affiliates=canSeeAll
+   ?await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id order by a.created_at desc`
+   :await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id where a.sales_owner_id=${actor.id} order by a.created_at desc`;
+  const referrals=canSeeAll
+   ?await sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id order by ar.created_at desc limit 300`
+   :await sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id where a.sales_owner_id=${actor.id} order by ar.created_at desc limit 300`;
+  const payouts=financeAccess?(canSeeAll
+   ?await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id order by cp.created_at desc limit 200`
+   :await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id where a.sales_owner_id=${actor.id} order by cp.created_at desc limit 200`):[];
+  const items=affiliates.map((a:any)=>({id:String(a.id),userId:String(a.user_id),salesOwnerId:a.sales_owner_id?String(a.sales_owner_id):'',salesOwnerName:String(a.sales_owner_name||'Chưa phân công'),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:financeAccess?Number(a.total_commission||0):0,balance:financeAccess?Number(a.balance||0):0,commissionRate:financeAccess?Number(a.commission_rate||0):0,status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}));
   return NextResponse.json({
    ok:true,
    financeAccess,
+   ownershipScope:canSeeAll?'all':'assigned',
+   currentStaffId:actor.id,
    affiliates:items,
    referrals:referrals.map((r:any)=>({id:String(r.id),affiliateId:String(r.affiliate_id),affiliateName:String(r.affiliate_name),bookingId:String(r.booking_id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Villa'),customerPhone:String(r.customer_phone||''),commissionAmount:financeAccess?Number(r.commission_amount||0):0,status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
    payouts:financeAccess?payouts.map((p:any)=>({id:String(p.id),affiliateId:String(p.affiliate_id),affiliateName:String(p.affiliate_name),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at),bankAccount:String(p.bank_account||''),bankName:String(p.bank_name||''),accountHolder:String(p.account_holder||'')})):[],
@@ -42,10 +50,12 @@ export async function POST(req:NextRequest){
  const actor=await adminActor(req,'affiliates');
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  const canFinance=Boolean(await adminActor(req,'affiliate_finance'));
+ const canSeeAll=elevated(actor);
  const body=await req.json().catch(()=>({}));
  const action=String(body.action||'');
  if(['payout','resolve_payout','reconcile'].includes(action)&&!canFinance)return NextResponse.json({error:'Bạn không có quyền Tài chính CTV.'},{status:403});
  const sql=db();
+ const ownsAffiliate=async(id:string)=>canSeeAll||Boolean((await sql`select 1 from affiliates where id=${id} and sales_owner_id=${actor.id} limit 1`)[0]);
  try{
   if(action==='create'){
    const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),status=statuses.has(String(body.status))?String(body.status):'active',rate=Math.max(0,Math.min(100,Number(body.commissionRate)||5));
@@ -53,15 +63,17 @@ export async function POST(req:NextRequest){
    if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<8)return NextResponse.json({error:'Tên, email hoặc mật khẩu CTV chưa hợp lệ.'},{status:400});
    if(referralCode.length<4)return NextResponse.json({error:'Mã giới thiệu cần ít nhất 4 ký tự.'},{status:400});
    const staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
-   const rows=await sql`with new_staff as (insert into staff(name,email,phone,password_hash,role,department,status,permissions) values(${name},${email},${phone||null},${hashPassword(password)},'affiliate','affiliate',${staffStatus},'["affiliate"]'::jsonb) returning id) insert into affiliates(user_id,referral_code,phone,zalo,bank_account,bank_name,account_holder,commission_rate,status) select id,${referralCode},${phone||null},${zalo||null},${bankAccount||null},${bankName||null},${accountHolder||null},${rate},${status} from new_staff returning id,user_id,referral_code`;
+   const ownerId=canSeeAll?null:actor.id;
+   const rows=await sql`with new_staff as (insert into staff(name,email,phone,password_hash,role,department,status,permissions) values(${name},${email},${phone||null},${hashPassword(password)},'affiliate','affiliate',${staffStatus},'["affiliate"]'::jsonb) returning id) insert into affiliates(user_id,sales_owner_id,referral_code,phone,zalo,bank_account,bank_name,account_holder,commission_rate,status) select id,${ownerId},${referralCode},${phone||null},${zalo||null},${bankAccount||null},${bankName||null},${accountHolder||null},${rate},${status} from new_staff returning id,user_id,referral_code,sales_owner_id`;
    const saved=rows[0];
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.create','affiliate',${String(saved.id)},${JSON.stringify({name,email,referralCode,commissionRate:rate,status})}::jsonb)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.create','affiliate',${String(saved.id)},${JSON.stringify({name,email,referralCode,commissionRate:rate,status,salesOwnerId:saved.sales_owner_id?String(saved.sales_owner_id):''})}::jsonb)`;
    return NextResponse.json({ok:true,id:String(saved.id),referralCode:String(saved.referral_code)});
   }
 
   if(action==='update'){
    const id=String(body.id||'');
    if(!uuid.test(id))return NextResponse.json({error:'CTV không hợp lệ.'},{status:400});
+   if(!await ownsAffiliate(id))return NextResponse.json({error:'CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    const current=(await sql`select a.*,s.name,s.email from affiliates a join staff s on s.id=a.user_id where a.id=${id} limit 1`)[0];
    if(!current)return NextResponse.json({error:'Không tìm thấy CTV.'},{status:404});
    const currentRate=Number(current.commission_rate||0),requestedRate=Math.max(0,Math.min(100,Number(body.commissionRate??current.commission_rate)||0));
@@ -75,6 +87,7 @@ export async function POST(req:NextRequest){
   if(action==='payout'){
    const id=String(body.id||''),amount=Math.max(0,Math.round(Number(body.amount)||0)),receiptUrl=safeUrl(String(body.receiptUrl||'').trim()),requestId=String(body.requestId||'').trim()||crypto.randomUUID();
    if(!uuid.test(id)||amount<=0)return NextResponse.json({error:'Số tiền thanh toán chưa hợp lệ.'},{status:400});
+   if(!await ownsAffiliate(id))return NextResponse.json({error:'CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(!uuid.test(requestId))return NextResponse.json({error:'Mã yêu cầu thanh toán không hợp lệ.'},{status:400});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
    const result=(await sql`with lock_request as (
@@ -120,6 +133,8 @@ export async function POST(req:NextRequest){
   if(action==='resolve_payout'){
    const payoutId=String(body.payoutId||''),decision=String(body.decision||''),receiptUrl=safeUrl(String(body.receiptUrl||'').trim());
    if(!uuid.test(payoutId)||!['paid','cancelled'].includes(decision))return NextResponse.json({error:'Yêu cầu thanh toán không hợp lệ.'},{status:400});
+   const payoutScope=(await sql`select cp.affiliate_id from commission_payouts cp join affiliates a on a.id=cp.affiliate_id where cp.id=${payoutId} and (${canSeeAll} or a.sales_owner_id=${actor.id}) limit 1`)[0];
+   if(!payoutScope)return NextResponse.json({error:'Yêu cầu thanh toán này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
    if(decision==='cancelled'){
     const cancelled=await sql`update commission_payouts set status='cancelled',updated_at=now() where id=${payoutId} and status='pending' returning affiliate_id,amount`;
@@ -138,6 +153,7 @@ export async function POST(req:NextRequest){
   if(action==='reconcile'){
    const bookingId=String(body.bookingId||'');
    if(!uuid.test(bookingId))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});
+   if(!canSeeAll){const scoped=(await sql`select 1 from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id where ar.booking_id=${bookingId} and a.sales_owner_id=${actor.id} limit 1`)[0];if(!scoped)return NextResponse.json({error:'Booking CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403})}
    const amount=await settleAffiliateBooking(sql,bookingId);
    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.reconcile','booking',${bookingId},${JSON.stringify({commissionAmount:amount})}::jsonb)`;
    return NextResponse.json({ok:true,commissionAmount:amount});
