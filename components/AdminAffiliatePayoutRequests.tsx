@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect,useState} from 'react';
+import {useCallback,useEffect,useState} from 'react';
 
 type Payout={id:string;affiliateName:string;amount:number;status:string;createdAt:string;bankAccount:string;bankName:string;accountHolder:string};
 type Payload={payouts:Payout[]};
@@ -11,15 +11,15 @@ const date=(v:string)=>v?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',time
 export function AdminAffiliatePayoutRequests(){
  const[items,setItems]=useState<Payout[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
 
- async function load(){
+ const load=useCallback(async()=>{
   try{
    const r=await fetch('/api/admin/affiliates',{cache:'no-store'});
    const d=(await r.json().catch(()=>({}))) as Partial<Payload>&{error?:string};
    if(!r.ok){setMessage(d.error||'Không đọc được yêu cầu rút tiền.');return}
    setItems((d.payouts||[]).filter(p=>p.status==='pending'));
   }catch{setMessage('Không kết nối được hàng chờ rút tiền CTV.')}
- }
- useEffect(()=>{void load()},[]);
+ },[]);
+ useEffect(()=>{void load();const refresh=()=>void load();window.addEventListener('happygo-network-updated',refresh);return()=>window.removeEventListener('happygo-network-updated',refresh)},[load]);
 
  async function resolve(p:Payout,decision:'paid'|'cancelled'){
   if(decision==='cancelled'&&!window.confirm(`Từ chối yêu cầu rút ${money(p.amount)} của ${p.affiliateName}?`))return;
@@ -31,7 +31,7 @@ export function AdminAffiliatePayoutRequests(){
    if(!r.ok){setMessage(d.error||'Không thể xử lý yêu cầu rút tiền.');return}
    setMessage(decision==='paid'?`Đã duyệt thanh toán ${money(p.amount)} cho ${p.affiliateName}.`:`Đã từ chối yêu cầu của ${p.affiliateName}.`);
    await load();
-   window.setTimeout(()=>window.location.reload(),500);
+   window.dispatchEvent(new Event('happygo-network-updated'));
   }catch{setMessage('Không kết nối được API duyệt thanh toán.')}finally{setBusy(false)}
  }
 
