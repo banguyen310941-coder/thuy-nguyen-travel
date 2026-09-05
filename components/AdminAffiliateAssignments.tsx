@@ -1,0 +1,20 @@
+'use client';
+
+import {useCallback,useEffect,useMemo,useState} from 'react';
+
+type Assignment={affiliateId:string;salesOwnerId:string;salesOwnerName:string};
+type Sale={id:string;name:string;email:string;department:string};
+type Affiliate={id:string;name:string;email:string;phone:string;referralCode:string;status:string};
+
+type Payload={canAssign:boolean;currentStaffId:string;sales:Sale[];assignments:Assignment[]};
+
+export function AdminAffiliateAssignments(){
+ const[data,setData]=useState<Payload|null>(null),[affiliates,setAffiliates]=useState<Affiliate[]>([]),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[q,setQ]=useState('');
+ const load=useCallback(async()=>{setBusy(true);try{const[a,b]=await Promise.all([fetch('/api/admin/affiliate-assignments',{cache:'no-store'}),fetch('/api/admin/affiliates',{cache:'no-store'})]);const ad=await a.json().catch(()=>({})),bd=await b.json().catch(()=>({}));if(!a.ok)throw new Error(ad.error||'Không đọc được phân công CTV.');if(!b.ok)throw new Error(bd.error||'Không đọc được danh sách CTV.');setData(ad);setAffiliates(Array.isArray(bd.affiliates)?bd.affiliates:[]);setMsg('')}catch(error){setMsg(error instanceof Error?error.message:'Không kết nối được phân công CTV.')}finally{setBusy(false)}},[]);
+ useEffect(()=>{void load();const refresh=()=>void load();window.addEventListener('happygo-network-updated',refresh);return()=>window.removeEventListener('happygo-network-updated',refresh)},[load]);
+ const assignmentMap=useMemo(()=>new Map((data?.assignments||[]).map(x=>[x.affiliateId,x])),[data]);
+ const visible=useMemo(()=>{const n=q.trim().toLowerCase();return affiliates.filter(a=>assignmentMap.has(a.id)&&(!n||`${a.name} ${a.email} ${a.phone} ${a.referralCode}`.toLowerCase().includes(n)))},[affiliates,assignmentMap,q]);
+ async function assign(affiliateId:string,salesOwnerId:string){if(!data?.canAssign)return;setBusy(true);setMsg('');try{const r=await fetch('/api/admin/affiliate-assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({affiliateId,salesOwnerId})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Không thể cập nhật Sale phụ trách.');setMsg('Đã cập nhật Sale phụ trách CTV trên production.');await load();window.dispatchEvent(new Event('happygo-network-updated'))}catch(error){setMsg(error instanceof Error?error.message:'Không cập nhật được Sale phụ trách.')}finally{setBusy(false)}}
+ if(!data&&busy)return <section className="admin-panel"><div className="admin-empty-state">Đang tải phân công Sale → CTV...</div></section>;
+ return <section className="admin-panel affiliate-admin"><div className="admin-panel-head"><div><small>PHÂN CÔNG SALE · PRODUCTION</small><h2>Sale phụ trách CTV</h2><p>{data?.canAssign?'Admin/Owner có thể giao hoặc chuyển CTV cho Sale. Mọi thay đổi được ghi audit log.':'Bạn chỉ nhìn thấy CTV đang được phân công cho tài khoản Sale của mình.'}</p></div><button type="button" className="admin-secondary" onClick={()=>void load()} disabled={busy}>↻ Làm mới</button></div>{msg&&<p className="admin-api-note">{msg}</p>}<div className="affiliate-admin-toolbar"><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên, email, SĐT, mã CTV"/><span>{visible.length} CTV trong phạm vi</span></div><div className="affiliate-admin-table"><table><thead><tr><th>CTV</th><th>Liên hệ</th><th>Trạng thái</th><th>Sale phụ trách</th></tr></thead><tbody>{visible.map(a=>{const assignment=assignmentMap.get(a.id);return <tr key={a.id}><td><b>{a.name}</b><br/><small>{a.referralCode}</small></td><td>{a.phone||a.email||'—'}</td><td>{a.status==='active'?'Đang hoạt động':a.status==='pending'?'Chờ duyệt':'Đã khóa'}</td><td>{data?.canAssign?<select value={assignment?.salesOwnerId||''} onChange={e=>void assign(a.id,e.target.value)} disabled={busy}><option value="">Chưa phân công</option>{(data.sales||[]).map(s=><option key={s.id} value={s.id}>{s.name} · {s.department||'Nhân viên'}</option>)}</select>:<b>{assignment?.salesOwnerName||'Chưa phân công'}</b>}</td></tr>})}{!visible.length&&<tr><td colSpan={4}>Chưa có CTV trong phạm vi phụ trách.</td></tr>}</tbody></table></div></section>;
+}
