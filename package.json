@@ -9,9 +9,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:regression": "node scripts/production-regression.mjs",
+    "test:seo": "node scripts/seo-regression.mjs",
     "prepare": "husky",
     "lint:staged": "lint-staged",
-    "verify": "npm run lint && npm run typecheck && npm run test:regression && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run test:regression && npm run test:seo && npm run build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
