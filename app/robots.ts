@@ -8,8 +8,8 @@ export default function robots():MetadataRoute.Robots{
   return {
     rules:[{
       userAgent:'*',
-      allow:['/','/product/'],
-      disallow:['/admin/','/partner/','/affiliate/','/account/','/checkout/','/api/','/search','/tour-product','/guide/read'],
+      allow:['/','/san-pham/','/luu-tru/','/tour-du-lich/','/du-thuyen/','/diem-den','/cam-nang/'],
+      disallow:['/admin/','/partner/','/affiliate/','/tai-khoan/','/thanh-toan/','/api/','/tim-kiem','/tour-product','/cam-nang/doc','/account/','/checkout/','/search','/guide/read'],
     }],
     sitemap:`${base}/sitemap.xml`,
     host:base,
