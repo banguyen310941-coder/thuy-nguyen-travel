@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 
 type Villa={id:string;slug:string;name:string;place:string;cover:string;publicPrice:number;affiliateLink:string};
@@ -14,25 +14,37 @@ const money=(v:number)=>new Intl.NumberFormat('vi-VN').format(Math.round(v))+'đ
 const date=(v:string)=>v?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',timeStyle:'short'}).format(new Date(v)):'—';
 const statusLabel=(v:string)=>({pending:'Chờ xử lý',approved:'Đã duyệt',paid:'Đã thanh toán',cancelled:'Đã hủy',new:'Mới',contacting:'Đang tư vấn',confirmed:'Đã xác nhận',completed:'Hoàn tất'} as Record<string,string>)[v]||v;
 const profileOf=(a:Affiliate):ProfileForm=>({phone:a.phone||'',zalo:a.zalo||'',bankAccount:a.bankAccount||'',bankName:a.bankName||'',accountHolder:a.accountHolder||''});
+const last4=(v:string)=>v?`•••• ${v.slice(-4)}`:'chưa có số tài khoản';
 
 export function AffiliateDashboard(){
  const router=useRouter();
+ const loadRequest=useRef(0),payoutLock=useRef(false);
  const[data,setData]=useState<Dashboard|null>(null),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[busy,setBusy]=useState(true),[copied,setCopied]=useState(''),[editingProfile,setEditingProfile]=useState(false),[profile,setProfile]=useState<ProfileForm>({phone:'',zalo:'',bankAccount:'',bankName:'',accountHolder:''}),[payoutAmount,setPayoutAmount]=useState('');
 
- async function load(){
+ const load=useCallback(async()=>{
+  const request=++loadRequest.current;
   setBusy(true);
   try{
    const r=await fetch('/api/affiliate/dashboard',{cache:'no-store'});
+   if(request!==loadRequest.current)return;
    if(r.status===401){router.replace('/affiliate');return}
    const d=await r.json().catch(()=>({}));
+   if(request!==loadRequest.current)return;
    if(!r.ok){setMsg(d.error||'Không tải được dashboard.');return}
    setData(d);
    setProfile(profileOf(d.affiliate));
-  }catch{setMsg('Không kết nối được dashboard CTV.')}finally{setBusy(false)}
- }
- useEffect(()=>{void load()},[]);
+  }catch{if(request===loadRequest.current)setMsg('Không kết nối được dashboard CTV.')}finally{if(request===loadRequest.current)setBusy(false)}
+ },[router]);
+ useEffect(()=>{
+  void load();
+  const refresh=()=>void load();
+  const visibility=()=>{if(document.visibilityState==='visible')void load()};
+  window.addEventListener('focus',refresh);
+  document.addEventListener('visibilitychange',visibility);
+  return()=>{loadRequest.current++;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
+ },[load]);
 
- async function logout(){await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
+ async function logout(){loadRequest.current++;await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
  async function copy(v:Villa){try{await navigator.clipboard.writeText(v.affiliateLink);setCopied(v.id);setTimeout(()=>setCopied(''),1800)}catch{setMsg('Không thể copy link trên trình duyệt này.')}}
  async function action(payload:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
@@ -46,11 +58,22 @@ export function AffiliateDashboard(){
    return true;
   }catch{setMsg('Không kết nối được API CTV.');return false}finally{setBusy(false)}
  }
- async function saveProfile(){if(await action({action:'update_profile',...profile},'Đã cập nhật thông tin nhận hoa hồng.'))setEditingProfile(false)}
+ async function saveProfile(){
+  const bankFields=[profile.bankName.trim(),profile.bankAccount.trim(),profile.accountHolder.trim()];
+  if(bankFields.some(Boolean)&&!bankFields.every(Boolean)){setMsg('Vui lòng nhập đủ ngân hàng, số tài khoản và chủ tài khoản; hoặc để trống cả 3 trường.');return}
+  if(await action({action:'update_profile',...profile},'Đã cập nhật thông tin nhận hoa hồng.'))setEditingProfile(false)
+ }
  async function requestPayout(){
+  if(payoutLock.current)return;
   const amount=Math.round(Number(payoutAmount)||0);
   if(amount<=0){setMsg('Vui lòng nhập số tiền muốn rút.');return}
-  if(await action({action:'request_payout',amount},'Đã gửi yêu cầu rút hoa hồng. HappyGo sẽ đối soát và thanh toán.'))setPayoutAmount('');
+  if(!data||amount>data.affiliate.balance){setMsg('Số tiền muốn rút vượt quá số dư hiện có.');return}
+  if(!window.confirm(`Gửi yêu cầu rút ${money(amount)} vào ${data.affiliate.bankName||'tài khoản ngân hàng'} ${last4(data.affiliate.bankAccount)}?`))return;
+  payoutLock.current=true;
+  const requestId=crypto.randomUUID();
+  try{
+   if(await action({action:'request_payout',amount,requestId},'Đã gửi yêu cầu rút hoa hồng. HappyGo sẽ đối soát và thanh toán.'))setPayoutAmount('');
+  }finally{payoutLock.current=false}
  }
 
  const villas=useMemo(()=>{const n=q.trim().toLowerCase();return(data?.villas||[]).filter(v=>!n||`${v.name} ${v.place}`.toLowerCase().includes(n))},[data,q]);
@@ -60,6 +83,7 @@ export function AffiliateDashboard(){
  const a=data.affiliate;
  const pendingPayout=data.payouts.find(p=>p.status==='pending');
  const hasBank=Boolean(a.bankName&&a.bankAccount&&a.accountHolder);
+ const requestedAmount=Math.round(Number(payoutAmount)||0);
 
  return <main className="affiliate-shell">
   <header className="affiliate-topbar">
@@ -67,7 +91,7 @@ export function AffiliateDashboard(){
    <button onClick={()=>void logout()}>Đăng xuất</button>
   </header>
   <div className="affiliate-content">
-   {msg&&<p className="affiliate-message">{msg}</p>}
+   {msg&&<p className="affiliate-message" aria-live="polite">{msg}</p>}
    <section className="affiliate-welcome">
     <div><small>DASHBOARD CỘNG TÁC VIÊN</small><h1>Hoa hồng rõ ràng, link chia sẻ sẵn sàng</h1><p>Hoa hồng được ghi nhận khi booking hoàn tất. Tỷ lệ hiện tại: <b>{a.commissionRate}%</b>.</p></div>
     <div className="affiliate-security-note">🔒 Dashboard không truy vấn hoặc hiển thị tên/SĐT chủ nhà, địa chỉ cụ thể hay giá net.</div>
@@ -99,8 +123,9 @@ export function AffiliateDashboard(){
      <div className="affiliate-payout-request">
       {pendingPayout?<div className="affiliate-pending-note"><b>Đang chờ xử lý: {money(pendingPayout.amount)}</b><span>Gửi lúc {date(pendingPayout.createdAt)}. Bạn có thể tạo yêu cầu mới sau khi yêu cầu này được xử lý.</span></div>:<>
        <label>Số tiền muốn rút<input type="number" min="1" step="1000" max={Math.max(a.balance,0)} value={payoutAmount} onChange={e=>setPayoutAmount(e.target.value)} placeholder={a.balance>0?String(Math.round(a.balance)):'0'}/></label>
-       <div className="affiliate-payout-actions"><button type="button" onClick={()=>setPayoutAmount(String(Math.round(a.balance)))} disabled={a.balance<=0}>Rút toàn bộ</button><button type="button" className="primary" onClick={()=>void requestPayout()} disabled={busy||a.balance<=0||!hasBank}>Gửi yêu cầu rút</button></div>
+       <div className="affiliate-payout-actions"><button type="button" onClick={()=>setPayoutAmount(String(Math.round(a.balance)))} disabled={a.balance<=0}>Rút toàn bộ</button><button type="button" className="primary" onClick={()=>void requestPayout()} disabled={busy||a.balance<=0||!hasBank||requestedAmount>a.balance}>Gửi yêu cầu rút</button></div>
        {!hasBank&&<span className="affiliate-form-hint">Cập nhật đủ thông tin ngân hàng trước khi gửi yêu cầu rút.</span>}
+       {requestedAmount>a.balance&&<span className="affiliate-form-hint">Số tiền nhập đang vượt quá số dư ví.</span>}
       </>}
      </div>
      <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th><th>Biên nhận</th></tr></thead><tbody>{data.payouts.map(p=><tr key={p.id}><td>{date(p.payoutDate||p.createdAt)}</td><td><b>{money(p.amount)}</b></td><td><span className={`affiliate-status ${p.status}`}>{statusLabel(p.status)}</span></td><td>{p.receiptUrl?<a href={p.receiptUrl} target="_blank" rel="noreferrer">Xem biên nhận</a>:'—'}</td></tr>)}{!data.payouts.length&&<tr><td colSpan={4}>Chưa có yêu cầu hoặc đợt thanh toán.</td></tr>}</tbody></table></div>

@@ -2,7 +2,9 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {affiliateActor,maskPhone,publicBaseUrl} from '@/lib/server/affiliate';
 
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const clean=(value:unknown,max:number)=>String(value??'').trim().slice(0,max);
+const maskedAccount=(value:unknown)=>{const raw=String(value??'').trim();return raw?`***${raw.slice(-4)}`:''};
 const priceMoney=(value:unknown)=>{if(typeof value==='number')return Number.isFinite(value)?Math.max(0,Math.round(value)):0;const digits=String(value??'').replace(/[^0-9]/g,'');return digits?Math.max(0,Number(digits)):0};
 function mediaValues(value:unknown):string[]{
  if(Array.isArray(value))return value.flatMap(mediaValues);
@@ -99,26 +101,61 @@ export async function POST(req:NextRequest){
 
   if(action==='update_profile'){
    const phone=clean(body.phone,30),zalo=clean(body.zalo,80),bankName=clean(body.bankName,120),bankAccount=clean(body.bankAccount,64).replace(/\s+/g,''),accountHolder=clean(body.accountHolder,120).toUpperCase();
+   const bankFields=[bankName,bankAccount,accountHolder],hasBankPart=bankFields.some(Boolean),hasCompleteBank=bankFields.every(Boolean);
+   if(hasBankPart&&!hasCompleteBank)return NextResponse.json({error:'Vui lòng nhập đủ ngân hàng, số tài khoản và chủ tài khoản; hoặc để trống cả 3 trường.'},{status:400});
    if(bankAccount&&(!/^[0-9A-Za-z.-]+$/.test(bankAccount)||bankAccount.length<4))return NextResponse.json({error:'Số tài khoản chưa hợp lệ.'},{status:400});
    if(accountHolder&&accountHolder.length<2)return NextResponse.json({error:'Tên chủ tài khoản chưa hợp lệ.'},{status:400});
+   const previous=(await sql`select phone,zalo,bank_name,bank_account,account_holder from affiliates where id=${actor.id} limit 1`)[0]||{};
    await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_name=${bankName||null},bank_account=${bankAccount||null},account_holder=${accountHolder||null},updated_at=now() where id=${actor.id} returning user_id) update staff set phone=${phone||null},updated_at=now() where id=(select user_id from changed)`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.userId},'affiliate.profile.update','affiliate',${actor.id},${JSON.stringify({phone,zalo,bankName,bankAccount:bankAccount?`***${bankAccount.slice(-4)}`:'',accountHolder})}::jsonb)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.userId},'affiliate.profile.update','affiliate',${actor.id},${JSON.stringify({phone:String(previous.phone||''),zalo:String(previous.zalo||''),bankName:String(previous.bank_name||''),bankAccount:maskedAccount(previous.bank_account),accountHolder:String(previous.account_holder||'')})}::jsonb,${JSON.stringify({phone,zalo,bankName,bankAccount:maskedAccount(bankAccount),accountHolder})}::jsonb)`;
    return NextResponse.json({ok:true});
   }
 
   if(action==='request_payout'){
-   const amount=Math.max(0,Math.round(Number(body.amount)||0));
+   const amount=Math.max(0,Math.round(Number(body.amount)||0)),requestId=clean(body.requestId,64);
    if(amount<=0)return NextResponse.json({error:'Số tiền yêu cầu chưa hợp lệ.'},{status:400});
-   const profile=(await sql`select balance,bank_account,bank_name,account_holder from affiliates where id=${actor.id} and status='active' limit 1`)[0];
-   if(!profile)return NextResponse.json({error:'Tài khoản CTV chưa sẵn sàng.'},{status:400});
-   if(!profile.bank_account||!profile.bank_name||!profile.account_holder)return NextResponse.json({error:'Vui lòng cập nhật đủ ngân hàng, số tài khoản và chủ tài khoản trước khi rút tiền.'},{status:400});
-   if(amount>Number(profile.balance||0))return NextResponse.json({error:'Số tiền yêu cầu vượt quá số dư hiện có.'},{status:400});
-   const existing=(await sql`select id from commission_payouts where affiliate_id=${actor.id} and status='pending' order by created_at desc limit 1`)[0];
-   if(existing)return NextResponse.json({error:'Bạn đang có một yêu cầu rút tiền chờ HappyGo xử lý.'},{status:409});
-   const rows=await sql`insert into commission_payouts(affiliate_id,amount,status) select ${actor.id},${amount},'pending' where exists(select 1 from affiliates where id=${actor.id} and status='active' and balance>=${amount}) and not exists(select 1 from commission_payouts where affiliate_id=${actor.id} and status='pending') returning id`;
-   if(!rows[0])return NextResponse.json({error:'Không thể tạo yêu cầu. Vui lòng tải lại số dư và thử lại.'},{status:409});
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.userId},'affiliate.payout.request','affiliate',${actor.id},${JSON.stringify({payoutId:String(rows[0].id),amount})}::jsonb)`;
-   return NextResponse.json({ok:true,payoutId:String(rows[0].id)});
+   if(!uuid.test(requestId))return NextResponse.json({error:'Mã yêu cầu rút tiền không hợp lệ.'},{status:400});
+   const lockKey=`affiliate-payout:${actor.id}`;
+   const transactionResults=await sql.transaction([
+    sql`select pg_advisory_xact_lock(hashtext(${lockKey})) as affiliate_lock,pg_advisory_xact_lock(hashtext(${requestId})) as request_lock`,
+    sql`with existing_request as (
+       select al.after_data->>'payoutId' as payout_id
+       from audit_logs al
+       where al.action='affiliate.payout.request' and al.entity_type='affiliate' and al.entity_id=${actor.id} and al.after_data->>'requestId'=${requestId}
+       order by al.created_at asc limit 1
+      ), profile as (
+       select id,balance,bank_account,bank_name,account_holder from affiliates where id=${actor.id} and status='active' limit 1
+      ), waiting as (
+       select id from commission_payouts where affiliate_id=${actor.id} and status='pending' order by created_at desc limit 1
+      ), inserted as (
+       insert into commission_payouts(affiliate_id,amount,status)
+       select p.id,${amount},'pending' from profile p
+       where p.balance>=${amount}
+         and coalesce(p.bank_account,'')<>'' and coalesce(p.bank_name,'')<>'' and coalesce(p.account_holder,'')<>''
+         and not exists(select 1 from existing_request)
+         and not exists(select 1 from waiting)
+       returning id,affiliate_id,amount
+      ), logged as (
+       insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
+       select ${actor.userId},'affiliate.payout.request','affiliate',i.affiliate_id::text,jsonb_build_object('payoutId',i.id::text,'amount',i.amount,'requestId',${requestId})
+       from inserted i returning id
+      )
+      select coalesce((select payout_id from existing_request),(select id::text from inserted)) as payout_id,
+       exists(select 1 from existing_request) as idempotent,
+       exists(select 1 from profile) as has_profile,
+       exists(select 1 from waiting) as has_pending,
+       coalesce((select balance from profile),0) as balance,
+       coalesce((select coalesce(bank_account,'')<>'' and coalesce(bank_name,'')<>'' and coalesce(account_holder,'')<>'' from profile),false) as bank_complete,
+       exists(select 1 from inserted) as created`
+   ]);
+   const result=(transactionResults[1] as any[])?.[0];
+   if(result?.idempotent)return NextResponse.json({ok:true,payoutId:String(result.payout_id),requestId,idempotent:true});
+   if(!result?.has_profile)return NextResponse.json({error:'Tài khoản CTV chưa sẵn sàng.'},{status:400});
+   if(!result?.bank_complete)return NextResponse.json({error:'Vui lòng cập nhật đủ ngân hàng, số tài khoản và chủ tài khoản trước khi rút tiền.'},{status:400});
+   if(result?.has_pending)return NextResponse.json({error:'Bạn đang có một yêu cầu rút tiền chờ HappyGo xử lý.'},{status:409});
+   if(amount>Number(result?.balance||0))return NextResponse.json({error:'Số tiền yêu cầu vượt quá số dư hiện có.'},{status:400});
+   if(!result?.created)return NextResponse.json({error:'Không thể tạo yêu cầu. Vui lòng tải lại số dư và thử lại.'},{status:409});
+   return NextResponse.json({ok:true,payoutId:String(result.payout_id),requestId});
   }
 
   return NextResponse.json({error:'Hành động không hỗ trợ.'},{status:400});
