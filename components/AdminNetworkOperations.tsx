@@ -69,7 +69,7 @@ export function AdminNetworkOperations(){
     <div className="admin-network-flow">
       <span><b>1</b> Đăng ký</span><em>→</em><span><b>2</b> Admin duyệt</span><em>→</em><span><b>3</b> Bán / đăng sản phẩm</span><em>→</em><span><b>4</b> Đối soát</span><em>→</em><span><b>5</b> Thanh toán</span>
     </div>
-    <div className="admin-network-links"><Link href="/partner" target="_blank">Mở Cổng Đối tác ↗</Link><Link href="/affiliate" target="_blank">Mở Cổng CTV ↗</Link><Link href="/admin/affiliates">Quản trị CTV chi tiết →</Link></div>
+    <div className="admin-network-links"><Link href="/partner" target="_blank">Mở Cổng Đối tác ↗</Link><Link href="/affiliate" target="_blank">Mở Cổng CTV ↗</Link><Link href="/admin?module=network&tab=affiliates">Quản trị CTV chi tiết →</Link></div>
     <AdminAffiliateApplications/>
     <AdminAffiliatePayoutRequests/>
   </section>;
