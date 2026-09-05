@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect,useState} from 'react';
+import {useCallback,useEffect,useState} from 'react';
 
 type Affiliate={id:string;name:string;email:string;phone:string;zalo:string;referralCode:string;status:string;createdAt:string};
 type Payload={affiliates:Affiliate[]};
@@ -8,15 +8,15 @@ const date=(v:string)=>v?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',time
 
 export function AdminAffiliateApplications(){
  const[items,setItems]=useState<Affiliate[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
- async function load(){
+ const load=useCallback(async()=>{
   try{
    const r=await fetch('/api/admin/affiliates',{cache:'no-store'});
    const d=(await r.json().catch(()=>({}))) as Partial<Payload>&{error?:string};
    if(!r.ok){setMessage(d.error||'Không đọc được hồ sơ CTV.');return}
    setItems((d.affiliates||[]).filter(a=>a.status==='pending'));
   }catch{setMessage('Không kết nối được hàng chờ duyệt CTV.')}
- }
- useEffect(()=>{void load()},[]);
+ },[]);
+ useEffect(()=>{void load();const refresh=()=>void load();window.addEventListener('happygo-network-updated',refresh);return()=>window.removeEventListener('happygo-network-updated',refresh)},[load]);
  async function resolve(a:Affiliate,status:'active'|'blocked'){
   if(status==='blocked'&&!window.confirm(`Từ chối hồ sơ CTV của ${a.name}?`))return;
   setBusy(true);setMessage('');
@@ -26,7 +26,7 @@ export function AdminAffiliateApplications(){
    if(!r.ok){setMessage(d.error||'Không thể cập nhật hồ sơ CTV.');return}
    setMessage(status==='active'?`Đã kích hoạt CTV ${a.name}.`:`Đã từ chối hồ sơ ${a.name}.`);
    await load();
-   window.setTimeout(()=>window.location.reload(),450);
+   window.dispatchEvent(new Event('happygo-network-updated'));
   }catch{setMessage('Không kết nối được API duyệt CTV.')}finally{setBusy(false)}
  }
  if(!items.length&&!message)return null;
