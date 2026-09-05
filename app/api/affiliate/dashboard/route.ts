@@ -3,7 +3,43 @@ import {db,hasDatabase} from '@/lib/db';
 import {affiliateActor,maskPhone,publicBaseUrl} from '@/lib/server/affiliate';
 
 const clean=(value:unknown,max:number)=>String(value??'').trim().slice(0,max);
-const mediaLines=(value:unknown)=>String(value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+const priceMoney=(value:unknown)=>{if(typeof value==='number')return Number.isFinite(value)?Math.max(0,Math.round(value)):0;const digits=String(value??'').replace(/[^0-9]/g,'');return digits?Math.max(0,Number(digits)):0};
+function mediaValues(value:unknown):string[]{
+ if(Array.isArray(value))return value.flatMap(mediaValues);
+ const raw=String(value??'').trim();
+ if(!raw)return[];
+ if(raw.startsWith('['))try{const parsed=JSON.parse(raw);if(Array.isArray(parsed))return parsed.flatMap(mediaValues)}catch{}
+ return raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+}
+function driveFolderUrl(value:unknown){
+ const raw=String(value??'').trim();
+ if(!raw)return'';
+ const id=raw.match(/\/folders\/([^/?#]+)/)?.[1]||raw.match(/[?&]id=([^&#]+)/)?.[1]||'';
+ if(id)return`https://drive.google.com/drive/folders/${encodeURIComponent(decodeURIComponent(id))}`;
+ if(/^https?:\/\//i.test(raw))return raw;
+ return`https://drive.google.com/drive/folders/${encodeURIComponent(raw)}`;
+}
+function unitPriceCandidates(unit:any){
+ const data=unit?.data&&typeof unit.data==='object'?unit.data:{};
+ return [data.lowWeekdayPrice,data.lowWeekendPrice,data.weekdayPrice||unit.retail_price_vnd,data.weekendPrice,data.highWeekdayPrice,data.highWeekendPrice,data.holidayPrice].map(priceMoney).filter(Boolean);
+}
+function rateIsAvailable(rate:any){
+ if(Number(rate?.inventory||0)<=0)return false;
+ try{const extra=JSON.parse(String(rate?.label||''));return String(extra?.status||'available')==='available'}catch{return true}
+}
+function publishPrice(product:any,units:any[],rates:any[]){
+ const fallback=priceMoney(product.promo_price_vnd)||priceMoney(product.retail_price_vnd);
+ const usesUnitPricing=['Villa & Resort','Khách sạn','Du thuyền'].includes(String(product.type||''));
+ if(!usesUnitPricing)return fallback;
+ const activeUnits=units.filter((unit:any)=>String(unit.product_id)===String(product.id)&&!['hidden','soldout'].includes(String(unit.status||'available')));
+ const candidates=activeUnits.flatMap(unitPriceCandidates);
+ for(const rate of rates){
+  if(String(rate.product_id)!==String(product.id)||!rateIsAvailable(rate))continue;
+  const unit=activeUnits.find((item:any)=>String(item.id)===String(rate.unit_id));
+  if(unit){const value=priceMoney(rate.retail_price_vnd);if(value)candidates.push(value)}
+ }
+ return candidates.length?Math.min(...candidates):fallback;
+}
 
 export async function GET(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
@@ -11,27 +47,28 @@ export async function GET(req:NextRequest){
   const actor=await affiliateActor(req);
   if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
   const sql=db();
-  const [profileRows,clickRows,orderRows,referrals,payouts,catalogProducts,catalogUnits]=await Promise.all([
+  const [profileRows,clickRows,orderRows,referrals,payouts,catalogProducts,catalogUnits,catalogRates]=await Promise.all([
    sql`select a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status from affiliates a where a.id=${actor.id} limit 1`,
    sql`select count(*)::bigint as total from affiliate_clicks where affiliate_id=${actor.id}`,
    sql`select count(*)::bigint as total from affiliate_referrals where affiliate_id=${actor.id} and status in ('approved','paid')`,
    sql`select ar.id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.code as booking_code,b.status as booking_status,p.name as villa_name from affiliate_referrals ar join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id where ar.affiliate_id=${actor.id} order by ar.created_at desc limit 200`,
    sql`select id,amount,status,payout_date,receipt_url,created_at from commission_payouts where affiliate_id=${actor.id} order by created_at desc limit 100`,
-   sql`select p.id,p.slug,p.type,p.name,p.retail_price_vnd,p.promo_price_vnd,p.data->>'cover' as cover,p.data->>'gallery' as gallery,p.data->>'place' as place,p.data->>'sourceImageFolder' as source_image_folder from products p where ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by p.updated_at desc,p.name limit 300`,
-   sql`select u.product_id,u.data->>'images' as images from product_units u join products p on p.id=u.product_id where u.status<>'hidden' and ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by u.name,u.id`
+   sql`select p.id,p.slug,p.type,p.name,p.retail_price_vnd,p.promo_price_vnd,p.data->>'cover' as cover,p.data->'gallery' as gallery,p.data->>'place' as place,p.data->>'sourceImageFolder' as source_image_folder from products p where ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by p.updated_at desc,p.name limit 300`,
+   sql`select u.id,u.product_id,u.retail_price_vnd,u.data,u.status from product_units u join products p on p.id=u.product_id where u.status<>'hidden' and ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by u.name,u.id`,
+   sql`select r.product_id,r.unit_id,r.retail_price_vnd,r.inventory,r.label,r.start_date,r.end_date from rate_rules r join products p on p.id=r.product_id where r.end_date>=current_date and ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by r.start_date,r.id`
   ]);
   const profile=profileRows[0]||{};
   const base=publicBaseUrl(req);
   const productItems=catalogProducts.map((p:any)=>{
    const media:string[]=[];
-   for(const src of [p.cover,...mediaLines(p.gallery),...catalogUnits.filter((u:any)=>String(u.product_id)===String(p.id)).flatMap((u:any)=>mediaLines(u.images))]){
+   const productUnits=catalogUnits.filter((u:any)=>String(u.product_id)===String(p.id));
+   for(const src of [p.cover,...mediaValues(p.gallery),...productUnits.flatMap((u:any)=>mediaValues(u.data?.images))]){
     const value=String(src||'').trim();
     if(value&&!media.includes(value))media.push(value);
    }
-   const folderId=String(p.source_image_folder||'').trim();
    return{
-    id:String(p.id),slug:String(p.slug),type:String(p.type||''),name:String(p.name),place:String(p.place||''),cover:String(p.cover||''),publicPrice:Number(p.promo_price_vnd||p.retail_price_vnd||0),media,
-    albumUrl:folderId?`https://drive.google.com/drive/folders/${encodeURIComponent(folderId)}`:'',
+    id:String(p.id),slug:String(p.slug),type:String(p.type||''),name:String(p.name),place:String(p.place||''),cover:String(p.cover||''),publicPrice:publishPrice(p,productUnits,catalogRates),media,
+    albumUrl:driveFolderUrl(p.source_image_folder),
     affiliateLink:`${base}/product?slug=${encodeURIComponent(String(p.slug))}&ref=${encodeURIComponent(actor.referralCode)}&villa_id=${encodeURIComponent(String(p.id))}`
    };
   });
