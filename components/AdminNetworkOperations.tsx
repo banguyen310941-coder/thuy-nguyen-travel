@@ -14,11 +14,11 @@ type Snapshot={
   payoutPending:number;
 };
 
-type Props={canPartners:boolean;canAffiliates:boolean};
+type Props={canPartners:boolean;canAffiliates:boolean;canAffiliateFinance:boolean};
 
 const empty:Snapshot={partners:0,partnerPending:0,partnerProductsReview:0,affiliates:0,affiliatePending:0,payoutPending:0};
 
-export function AdminNetworkOperations({canPartners,canAffiliates}:Props){
+export function AdminNetworkOperations({canPartners,canAffiliates,canAffiliateFinance}:Props){
   const[data,setData]=useState<Snapshot>(empty);
   const[loading,setLoading]=useState(true);
   const[message,setMessage]=useState('');
@@ -49,11 +49,11 @@ export function AdminNetworkOperations({canPartners,canAffiliates}:Props){
         partnerProductsReview:products.filter((x:any)=>x?.status==='review').length,
         affiliates:affiliates.length,
         affiliatePending:affiliates.filter((x:any)=>x?.status==='pending').length,
-        payoutPending:payouts.filter((x:any)=>x?.status==='pending').length,
+        payoutPending:canAffiliateFinance?payouts.filter((x:any)=>x?.status==='pending').length:0,
       });
       setLastSync(new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date()));
     }catch(error){setMessage(error instanceof Error?error.message:'Không kết nối được dữ liệu production.')}finally{setLoading(false)}
-  },[canPartners,canAffiliates]);
+  },[canPartners,canAffiliates,canAffiliateFinance]);
 
   useEffect(()=>{
     void load();
@@ -69,12 +69,14 @@ export function AdminNetworkOperations({canPartners,canAffiliates}:Props){
     {message&&<div className="admin-connect-error">{message}</div>}
     <div className="admin-partner-kpis">
       {canPartners&&<><article><span>Đối tác</span><b>{data.partners}</b><small>{data.partnerPending} hồ sơ chờ duyệt</small></article><article><span>Sản phẩm đối tác</span><b>{data.partnerProductsReview}</b><small>đang chờ duyệt</small></article></>}
-      {canAffiliates&&<><article><span>Cộng tác viên</span><b>{data.affiliates}</b><small>{data.affiliatePending} hồ sơ chờ duyệt</small></article><article><span>Rút hoa hồng</span><b>{data.payoutPending}</b><small>yêu cầu chờ đối soát</small></article></>}
+      {canAffiliates&&<article><span>Cộng tác viên</span><b>{data.affiliates}</b><small>{data.affiliatePending} hồ sơ chờ duyệt</small></article>}
+      {canAffiliateFinance&&<article><span>Rút hoa hồng</span><b>{data.payoutPending}</b><small>yêu cầu chờ đối soát</small></article>}
     </div>
     <div className="admin-network-flow">
-      <span><b>1</b> Đăng ký</span><em>→</em><span><b>2</b> Admin duyệt</span><em>→</em><span><b>3</b> Bán / đăng sản phẩm</span><em>→</em><span><b>4</b> Đối soát</span><em>→</em><span><b>5</b> Thanh toán</span>
+      <span><b>1</b> Đăng ký</span><em>→</em><span><b>2</b> Admin duyệt</span><em>→</em><span><b>3</b> Bán / đăng sản phẩm</span>{canAffiliateFinance&&<><em>→</em><span><b>4</b> Đối soát</span><em>→</em><span><b>5</b> Thanh toán</span></>}
     </div>
     <div className="admin-network-links">{canPartners&&<Link href="/partner" target="_blank">Mở Cổng Đối tác ↗</Link>}{canAffiliates&&<><Link href="/affiliate" target="_blank">Mở Cổng CTV ↗</Link><Link href="/admin?module=network&tab=affiliates">Quản trị CTV chi tiết →</Link></>}</div>
-    {canAffiliates&&<><AdminAffiliateApplications/><AdminAffiliatePayoutRequests/></>}
+    {canAffiliates&&<AdminAffiliateApplications/>}
+    {canAffiliateFinance&&<AdminAffiliatePayoutRequests/>}
   </section>;
 }
