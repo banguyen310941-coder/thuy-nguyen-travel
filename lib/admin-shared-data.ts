@@ -175,7 +175,8 @@ export function hasSharedAdminKey() {
   return true;
 }
 
-export function saveSharedAdminKey(_value: string) {
+export function saveSharedAdminKey(value: string) {
+  void value;
   try { localStorage.removeItem(ADMIN_API_KEY_STORAGE); } catch {}
 }
 

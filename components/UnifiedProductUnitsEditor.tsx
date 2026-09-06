@@ -113,7 +113,7 @@ export function UnifiedProductUnitsEditor({units,onChange,label='Đơn vị bán
 
   return <div className={`unified-units-editor kind-${kind}`}>
     <div className="unified-unit-head"><div><h3>{label}</h3><p>Mỗi {noun} có mã, ảnh, bảng giá theo mùa, sức chứa và trạng thái bán riêng.</p></div><button type="button" onClick={()=>add()}>+ Thêm {noun}</button></div>
-    {options.length>0&&<div className="unified-unit-presets"><span>Thêm nhanh:</span>{options.map(p=><button type="button" key={p.label} onClick={()=>{const {label:_,...data}=p;add(data)}}>+ {p.label}</button>)}</div>}
+    {options.length>0&&<div className="unified-unit-presets"><span>Thêm nhanh:</span>{options.map(p=><button type="button" key={p.label} onClick={()=>{const {label,...data}=p;void label;add(data)}}>+ {p.label}</button>)}</div>}
     {!list.length&&<div className="unified-unit-empty"><b>Chưa có {noun}</b><span>Thêm đơn vị bán để quản lý giá, tồn và booking theo cùng một chuẩn.</span></div>}
     <div className="unified-unit-list">{list.map((u,i)=>{const thumb=firstImage(u.images);return <article key={u.id} className={open===u.id?'open':''}>
       <button type="button" className="unified-unit-summary" onClick={()=>setOpen(open===u.id?null:u.id)}>{thumb?<img className="unified-unit-thumb" src={thumb} alt=""/>:<span>{i+1}</span>}<div><b>{u.name||`Chưa đặt tên ${noun}`}</b><small>{u.code||'Chưa có mã'} · {u.capacity||'Chưa nhập sức chứa'}</small></div><strong>{summaryPrice(u)}</strong><em>{u.status==='available'?'Đang bán':u.status==='hold'?'Tạm giữ':u.status==='soldout'?'Hết':'Ẩn'}</em></button>

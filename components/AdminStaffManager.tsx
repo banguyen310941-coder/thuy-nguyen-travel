@@ -17,7 +17,7 @@ const blank=():Staff=>({id:'',name:'',email:'',phone:'',password:'',role:'sales'
 
 export function AdminStaffManager(){
  const[items,setItems]=useState<Staff[]>([]),[editing,setEditing]=useState<Staff|null>(null),[q,setQ]=useState(''),[dept,setDept]=useState(''),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
- const cache=(list:Staff[])=>{try{localStorage.setItem(STAFF_KEY,JSON.stringify(list.map(({password:_password,...x})=>x)));window.dispatchEvent(new Event('tn-staff-updated'))}catch{}};
+ const cache=(list:Staff[])=>{try{const safe=list.map(item=>{const copy={...item};delete copy.password;return copy});localStorage.setItem(STAFF_KEY,JSON.stringify(safe));window.dispatchEvent(new Event('tn-staff-updated'))}catch{}};
  const load=useCallback(async()=>{setBusy(true);try{const r=await fetch('/api/admin/staff',{cache:'no-store'});const data=await r.json().catch(()=>({}));if(!r.ok){setMsg(data.error||'Không đọc được danh sách nhân viên.');return}const list=(Array.isArray(data.staff)?data.staff:[]) as Staff[];setItems(list);cache(list)}catch{setMsg('Không kết nối được danh sách nhân viên production.')}finally{setBusy(false)}},[]);
  useEffect(()=>{void load()},[load]);
  const visible=useMemo(()=>{const needle=q.trim().toLowerCase();return items.filter(x=>(!dept||x.department===dept)&&(!needle||`${x.name} ${x.email} ${x.phone} ${roleLabels[x.role]||x.role} ${departmentLabels[x.department]||x.department}`.toLowerCase().includes(needle)))},[items,q,dept]);
