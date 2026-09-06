@@ -79,7 +79,7 @@ check(has(affiliateDashboardApi,"not exists(select 1 from waiting)"),'Server ph�
 check(has(affiliateDashboardApi,"if(result?.idempotent)return NextResponse.json({ok:true"),'Retry cùng requestId phải trả lại thành công thay vì tạo payout mới.');
 
 check(has(workspace,"access.canAffiliates||access.canAffiliateFinance"),'Finance-only phải vào được tab CTV/Affiliate.');
-check(has(workspace,"access.canAffiliates&&<><AdminAffiliateAssignments/><AdminAffiliateFollowups/></>"),'Finance-only không được thấy phân công Sale và lịch chăm sóc.');
+check(has(workspace,"access.canAffiliates&&<><AdminAffiliateAssignments/><AdminAffiliatePerformance/><AdminAffiliateFollowups/></>"),'Finance-only không được thấy phân công Sale, hiệu suất CTV và lịch chăm sóc.');
 check(has(workspace,'<AdminAffiliateManager canManage={access.canAffiliates} canFinance={access.canAffiliateFinance}/>'),'Workspace phải truyền riêng quyền hồ sơ và tài chính.');
 
 check(has(manager,'approvalAllowed=Boolean(data?.approvalAccess)'),'UI CTV phải nhận riêng quyền duyệt trạng thái.');
