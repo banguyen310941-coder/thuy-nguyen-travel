@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useState} from 'react';
 
 type Activity={id:string;type:string;content:string;nextFollowUpAt?:string|null;staffId?:string;staffName?:string;createdAt:string};
 type Assignment={staffId:string;staffName:string;source:string;assignedAt:string};
@@ -15,8 +15,8 @@ export function AdminCustomers(){
  const[items,setItems]=useState<Customer[]>([]),[sales,setSales]=useState<Sale[]>([]),[rotation,setRotation]=useState<Rotation>({enabled:false,lastStaffId:'',assignedCount:0}),[manage,setManage]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[showLead,setShowLead]=useState(false),[selected,setSelected]=useState<Customer|null>(null);
  const[name,setName]=useState(''),[phone,setPhone]=useState(''),[email,setEmail]=useState(''),[source,setSource]=useState('Facebook'),[note,setNote]=useState(''),[saleId,setSaleId]=useState('');
  const[activity,setActivity]=useState(''),[activityType,setActivityType]=useState('note'),[followUp,setFollowUp]=useState('');
- async function load(){setLoading(true);try{const j=await api();setItems(j.customers||[]);setSales(j.sales||[]);setRotation(j.rotation||{enabled:false,lastStaffId:'',assignedCount:0});setManage(Boolean(j.capabilities?.manage));if(selected){const next=(j.customers||[]).find((x:Customer)=>x.id===selected.id);if(next)setSelected(next)}}catch(e){setMsg(e instanceof Error?e.message:'Không đọc được CRM.')}finally{setLoading(false)}}
- useEffect(()=>{void load()},[]);
+ const load=useCallback(async()=>{setLoading(true);try{const j=await api();const customers=(j.customers||[]) as Customer[];setItems(customers);setSales(j.sales||[]);setRotation(j.rotation||{enabled:false,lastStaffId:'',assignedCount:0});setManage(Boolean(j.capabilities?.manage));setSelected(current=>{if(!current)return current;return customers.find((x:Customer)=>x.id===current.id)||current})}catch(e){setMsg(e instanceof Error?e.message:'Không đọc được CRM.')}finally{setLoading(false)}},[]);
+ useEffect(()=>{void load()},[load]);
  const visible=useMemo(()=>items.filter(c=>!q||`${c.name} ${c.phone} ${c.email} ${c.source} ${c.assignment?.staffName||''}`.toLowerCase().includes(q.toLowerCase())),[items,q]);
  const receivingCount=sales.filter(s=>s.receivingCustomers!==false).length;
  async function act(body:unknown,success:string){setBusy(true);setMsg('');try{const j=await api(body);setMsg(success.replace('{count}',String(j.count??'')));await load();return true}catch(e){setMsg(e instanceof Error?e.message:'Không thể cập nhật.');return false}finally{setBusy(false)}}

@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useState} from 'react';
 
 type Unit={id:string;code:string;name:string;weekdayPrice?:string;status?:string};
 type Product={id:string;name:string;type:string;slug:string;place?:string;status:string;units:Unit[]};
@@ -14,10 +14,13 @@ function mirror(rates:Rate[]){try{localStorage.setItem('tn_cms_daily_rates_v1',J
 
 export function AdminRateManagerV2(){
  const[products,setProducts]=useState<Product[]>([]),[rates,setRates]=useState<Rate[]>([]),[productId,setProductId]=useState(''),[unitId,setUnitId]=useState(''),[form,setForm]=useState<Rate>(blank()),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
- async function load(){setLoading(true);try{const data=await api(),nextProducts=data.products||[],nextRates=data.rates||[];setProducts(nextProducts);setRates(nextRates);mirror(nextRates);if(!productId&&nextProducts[0])setProductId(nextProducts[0].id)}catch(error){setMsg(error instanceof Error?error.message:'Không đọc được lịch giá production.')}finally{setLoading(false)}}
- useEffect(()=>{void load()},[]);
- const product=useMemo(()=>products.find(item=>item.id===productId)||products[0]||null,[products,productId]);const units=product?.units||[];const unit=useMemo(()=>units.find(item=>item.id===unitId)||units[0]||null,[units,unitId]);
- useEffect(()=>{const first=product?.units?.[0]?.id||'';setUnitId(first);setForm(blank(first))},[product?.id]);
+ const load=useCallback(async()=>{setLoading(true);try{const data=await api(),nextProducts=data.products||[],nextRates=data.rates||[];setProducts(nextProducts);setRates(nextRates);mirror(nextRates);setProductId(current=>current||nextProducts[0]?.id||'')}catch(error){setMsg(error instanceof Error?error.message:'Không đọc được lịch giá production.')}finally{setLoading(false)}},[]);
+ useEffect(()=>{void load()},[load]);
+ const product=useMemo(()=>products.find(item=>item.id===productId)||products[0]||null,[products,productId]);
+ const units=useMemo(()=>product?.units||[],[product]);
+ const unit=useMemo(()=>units.find(item=>item.id===unitId)||units[0]||null,[units,unitId]);
+ const firstUnitId=product?.units?.[0]?.id||'';
+ useEffect(()=>{setUnitId(firstUnitId);setForm(blank(firstUnitId))},[product?.id,firstUnitId]);
  const items=useMemo(()=>rates.filter(item=>item.unitId===(unit?.id||'')).sort((a,b)=>a.start.localeCompare(b.start)),[rates,unit?.id]);
  function edit(item:Rate){setForm({...item});setMsg('')}
  async function save(){if(!unit)return setMsg('Chọn căn/phòng/cabin trước.');if(!form.start||!form.end||form.end<form.start)return setMsg('Khoảng ngày chưa hợp lệ.');if(form.status==='available'&&!String(form.price).trim())return setMsg('Cần nhập giá bán.');setBusy(true);setMsg('');try{await api({action:'save',...form,unitId:unit.id});setMsg('Đã lưu lịch giá trên Neon production.');setForm(blank(unit.id));await load()}catch(error){setMsg(error instanceof Error?error.message:'Không lưu được lịch giá.')}finally{setBusy(false)}}
