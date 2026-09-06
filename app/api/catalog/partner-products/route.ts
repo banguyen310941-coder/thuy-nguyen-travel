@@ -1,9 +1,12 @@
 import {NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
-import {publicProductData,sanitizePublicValue} from '@/lib/server/public-site-state';
+import {sanitizePublicValue} from '@/lib/server/public-site-state';
+import {publicProductData} from '@/lib/server/public-site-state';
 
 function publicProduct(row:any){
-  const data=publicProductData(row.data);
+  const raw=row.data&&typeof row.data==='object'?row.data:{};
+  const sanitized=sanitizePublicValue(raw);
+  const data=publicProductData(sanitized);
   const sanitizedSummary=sanitizePublicValue(row.description||data.summary||'');
   return {
     ...data,
