@@ -10,6 +10,8 @@ const nextConfig=read('next.config.mjs');
 const sitemap=read('app/sitemap.ts');
 const robots=read('app/robots.ts');
 const siteUrl=read('lib/site-url.ts');
+const homePage=read('app/page.tsx');
+const safeImage=read('components/SafeImage.tsx');
 
 const publicRoutes=['/luu-tru','/tour-du-lich','/du-thuyen','/diem-den','/cam-nang','/san-pham','/gioi-thieu','/lien-he'];
 for(const route of publicRoutes)must(sitemap,route,'sitemap');
@@ -27,6 +29,9 @@ must(siteUrl,'process.env.NEXT_PUBLIC_SITE_URL','Canonical vẫn hỗ trợ cấ
 must(siteUrl,'new URL(raw)','Canonical environment phải được validate như URL tuyệt đối');
 must(siteUrl,'process.env.VERCEL_PROJECT_PRODUCTION_URL','Canonical phải fallback về production domain ổn định của Vercel');
 if(siteUrl.includes('process.env.VERCEL_URL'))fail('Canonical không được tự chuyển sang preview deployment host');
+must(homePage,'rel="preload" as="image"','Trang chủ phải preload đúng ảnh hero quan trọng nhất');
+must(homePage,'fetchPriority="high"','Hero preload phải có ưu tiên tải cao');
+must(safeImage,'decoding="async"','Ảnh dùng chung phải decode bất đồng bộ');
 
 const metadataPages={
  'app/stay/page.tsx':'/luu-tru',
