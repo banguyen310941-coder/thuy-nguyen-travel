@@ -1,3 +1,5 @@
+import {DESTINATION_VISUALS as DESTINATION_DATA,destinationVisualUrl} from '@/data/destination-visuals';
+
 export const PRODUCT_VISUALS:Record<string,string>={
 'oceanami-villas-beach-club':'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1400&q=85',
 'novaworld-phan-thiet':'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=85',
@@ -14,14 +16,9 @@ export const PRODUCT_VISUALS:Record<string,string>={
 'phu-quoc-4n3d':'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85'
 };
 
-export const DESTINATION_VISUALS:Record<string,string>={
-'Phan Thiết':'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
-'Hạ Long':'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=85',
-'Phú Quốc':'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
-'Sapa':'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=85',
-'Nha Trang':'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85',
-'Sầm Sơn':'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=85'
-};
+export const DESTINATION_VISUALS:Record<string,string>=Object.fromEntries(
+  Object.entries(DESTINATION_DATA).map(([name,item])=>[name,item.image])
+);
 
 export function productVisual(slug:string,original?:string){return PRODUCT_VISUALS[slug]||original||''}
-export function destinationVisual(name:string,original?:string){return DESTINATION_VISUALS[name]||original||''}
+export function destinationVisual(name:string,original?:string){return destinationVisualUrl(name,original||'')}
