@@ -18,13 +18,14 @@ export function AffiliateSalesToolkitDrawer(){
  const close=useCallback(()=>{request.current++;setOpen(false)},[]);
  useEffect(()=>{if(open)void load()},[open,load]);
  useEffect(()=>{
+  const requestRef=request;
   const refresh=()=>{if(open)void load()};
   const visibility=()=>{if(open&&document.visibilityState==='visible')void load()};
   const keyboard=(event:KeyboardEvent)=>{if(open&&event.key==='Escape')close()};
   window.addEventListener('focus',refresh);
   document.addEventListener('visibilitychange',visibility);
   window.addEventListener('keydown',keyboard);
-  return()=>{request.current++;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('keydown',keyboard)};
+  return()=>{requestRef.current++;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('keydown',keyboard)};
  },[open,load,close]);
  return <>
   <button type="button" className="affiliate-toolkit-fab" onClick={()=>setOpen(true)}>✦ Bộ công cụ bán hàng</button>

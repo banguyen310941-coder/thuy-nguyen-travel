@@ -19,9 +19,10 @@ export function AdminAffiliatePayoutQueue(){
   try{const r=await fetch('/api/admin/affiliate-payout-decisions',{cache:'no-store'});const d=await r.json().catch(()=>({}));if(id!==request.current)return;if(!r.ok)throw new Error(d.error||'Không đọc được hàng chờ payout CTV.');setData(d);setMsg('')}catch(error){if(id===request.current)setMsg(error instanceof Error?error.message:'Không đọc được hàng chờ payout CTV.')}finally{if(id===request.current)setBusy(false)}
  },[]);
  useEffect(()=>{
+  const requestRef=request;
   void load();const refresh=()=>void load();const visibility=()=>{if(document.visibilityState==='visible')void load()};
   window.addEventListener('happygo-network-updated',refresh);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',visibility);
-  return()=>{request.current++;window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
+  return()=>{requestRef.current++;window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
  },[load]);
  const priorityHours=data?.priorityHours||24;
  const visible=useMemo(()=>{

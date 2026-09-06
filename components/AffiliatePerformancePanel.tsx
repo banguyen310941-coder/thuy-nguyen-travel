@@ -28,11 +28,12 @@ export function AffiliatePerformancePanel(){
   }catch(err){if(id===request.current)setError(err instanceof Error?err.message:'Không tải được hiệu quả bán hàng.')}finally{if(id===request.current)setBusy(false)}
  },[router]);
  useEffect(()=>{
+  const requestRef=request;
   void load();
   const focus=()=>void load();
   const visibility=()=>{if(document.visibilityState==='visible')void load()};
   window.addEventListener('focus',focus);document.addEventListener('visibilitychange',visibility);
-  return()=>{request.current++;window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility)};
+  return()=>{requestRef.current++;window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility)};
  },[load]);
 
  const recent=data?.last30Days;

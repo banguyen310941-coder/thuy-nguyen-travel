@@ -20,11 +20,12 @@ export function AdminAffiliatePerformance(){
   try{const r=await fetch('/api/admin/affiliate-performance',{cache:'no-store'});const d=await r.json().catch(()=>({}));if(id!==request.current)return;if(!r.ok)throw new Error(d.error||'Không đọc được hiệu suất CTV.');setData(d)}catch(error){if(id===request.current)setMsg(error instanceof Error?error.message:'Không đọc được hiệu suất CTV.')}finally{if(id===request.current)setBusy(false)}
  },[]);
  useEffect(()=>{
+  const requestRef=request;
   void load();
   const refresh=()=>void load();
   const visibility=()=>{if(document.visibilityState==='visible')void load()};
   window.addEventListener('happygo-network-updated',refresh);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',visibility);
-  return()=>{request.current++;window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
+  return()=>{requestRef.current++;window.removeEventListener('happygo-network-updated',refresh);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
  },[load]);
  const visible=useMemo(()=>{
   const needle=q.trim().toLowerCase();
