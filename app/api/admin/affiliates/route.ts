@@ -114,8 +114,11 @@ export async function POST(req:NextRequest){
    if(!await ownsAffiliate(id))return NextResponse.json({error:'CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(!uuid.test(requestId))return NextResponse.json({error:'Mã yêu cầu thanh toán không hợp lệ.'},{status:400});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
-   const result=(await sql`with lock_request as (
-      select pg_advisory_xact_lock(hashtext(${requestId}))
+   const payoutLockKey=`affiliate-payout:${id}`;
+   const result=(await sql`with lock_affiliate as (
+      select pg_advisory_xact_lock(hashtext(${payoutLockKey}))
+    ), lock_request as (
+      select pg_advisory_xact_lock(hashtext(${requestId})) from lock_affiliate
     ), existing as (
       select al.after_data->>'payoutId' as payout_id
       from audit_logs al,lock_request
@@ -131,27 +134,32 @@ export async function POST(req:NextRequest){
       where a.id=${id} and a.balance>=${amount}
         and not exists(select 1 from existing)
         and not exists(select 1 from waiting)
-      returning a.id,a.balance
+      returning a.id,a.balance+${amount} as balance_before,a.balance as balance_after
     ), inserted as (
       insert into commission_payouts(affiliate_id,amount,status,payout_date,receipt_url)
       select d.id,${amount},'paid',now(),${receiptUrl||null} from debited d
       returning id,affiliate_id,amount
+    ), marked_referrals as (
+      update affiliate_referrals ar set status='paid',updated_at=now()
+      from debited d
+      where ar.affiliate_id=d.id and ar.status='approved' and d.balance_after=0
+      returning ar.id
     ), logged as (
-      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
-      select ${actor.id},'affiliate.payout','affiliate',i.affiliate_id::text,jsonb_build_object('amount',i.amount,'receiptUrl',${receiptUrl},'requestId',${requestId},'payoutId',i.id::text)
-      from inserted i returning id
+      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data)
+      select ${actor.id},'affiliate.payout','affiliate',i.affiliate_id::text,
+        jsonb_build_object('status','ready','balanceBefore',d.balance_before),
+        jsonb_build_object('amount',i.amount,'receiptUrl',${receiptUrl},'requestId',${requestId},'payoutId',i.id::text,'status','paid','balanceAfter',d.balance_after)
+      from inserted i join debited d on d.id=i.affiliate_id returning id
     )
     select coalesce((select payout_id from existing),(select id::text from inserted)) as payout_id,
       exists(select 1 from existing) as idempotent,
       exists(select 1 from waiting) as has_pending,
       exists(select 1 from inserted) as created,
-      (select balance from affiliates where id=${id}) as balance`)[0];
+      (select balance_after from debited limit 1) as balance`)[0];
    if(result?.idempotent)return NextResponse.json({ok:true,payoutId:String(result.payout_id),idempotent:true});
    if(result?.has_pending)return NextResponse.json({error:'CTV đang có yêu cầu rút tiền chờ xử lý. Hãy duyệt hoặc từ chối yêu cầu đó trước.'},{status:409});
    if(!result?.created)return NextResponse.json({error:'Số dư CTV không đủ để thanh toán.'},{status:400});
-   const remainingBalance=Number(result.balance||0);
-   if(remainingBalance===0)await sql`update affiliate_referrals set status='paid',updated_at=now() where affiliate_id=${id} and status='approved'`;
-   return NextResponse.json({ok:true,payoutId:String(result.payout_id),requestId});
+   return NextResponse.json({ok:true,payoutId:String(result.payout_id),requestId,balance:Number(result.balance||0)});
   }
 
   if(action==='resolve_payout'){
@@ -162,18 +170,62 @@ export async function POST(req:NextRequest){
     :(await sql`select cp.affiliate_id from commission_payouts cp join affiliates a on a.id=cp.affiliate_id where cp.id=${payoutId} and a.sales_owner_id=${actor.id} limit 1`)[0];
    if(!payoutScope)return NextResponse.json({error:'Yêu cầu thanh toán này không thuộc phạm vi phụ trách của bạn.'},{status:403});
    if(body.receiptUrl&&!receiptUrl)return NextResponse.json({error:'Biên nhận phải là URL HTTPS.'},{status:400});
+   const affiliateId=String(payoutScope.affiliate_id),payoutLockKey=`affiliate-payout:${affiliateId}`;
    if(decision==='cancelled'){
-    const cancelled=await sql`update commission_payouts set status='cancelled',updated_at=now() where id=${payoutId} and status='pending' returning affiliate_id,amount`;
+    const cancelled=await sql`with lock_affiliate as (
+      select pg_advisory_xact_lock(hashtext(${payoutLockKey}))
+     ), target as (
+      select cp.id,cp.affiliate_id,cp.amount
+      from commission_payouts cp,lock_affiliate
+      where cp.id=${payoutId} and cp.status='pending'
+      for update of cp
+     ), changed as (
+      update commission_payouts cp set status='cancelled',updated_at=now()
+      from target t where cp.id=t.id
+      returning cp.id,cp.affiliate_id,cp.amount
+     ), logged as (
+      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data)
+      select ${actor.id},'affiliate.payout.cancel','affiliate',c.affiliate_id::text,
+        jsonb_build_object('payoutId',c.id::text,'amount',c.amount,'status','pending'),
+        jsonb_build_object('payoutId',c.id::text,'amount',c.amount,'status','cancelled','balanceChanged',false)
+      from changed c returning id
+     )
+     select id,affiliate_id,amount from changed`;
     if(!cancelled[0])return NextResponse.json({error:'Yêu cầu này không còn ở trạng thái chờ.'},{status:409});
-    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.payout.cancel','affiliate',${String(cancelled[0].affiliate_id)},${JSON.stringify({payoutId,amount:Number(cancelled[0].amount||0)})}::jsonb)`;
-    return NextResponse.json({ok:true});
+    return NextResponse.json({ok:true,payoutId,amount:Number(cancelled[0].amount||0)});
    }
-   const paid=await sql`with target as (select cp.id,cp.affiliate_id,cp.amount from commission_payouts cp where cp.id=${payoutId} and cp.status='pending' for update), debited as (update affiliates a set balance=a.balance-t.amount,updated_at=now() from target t where a.id=t.affiliate_id and a.balance>=t.amount returning a.id,a.balance), finished as (update commission_payouts cp set status='paid',payout_date=now(),receipt_url=${receiptUrl||null},updated_at=now() from target t,debited d where cp.id=t.id and d.id=t.affiliate_id returning cp.id,cp.affiliate_id,cp.amount,d.balance) select * from finished`;
+   const paid=await sql`with lock_affiliate as (
+     select pg_advisory_xact_lock(hashtext(${payoutLockKey}))
+    ), target as (
+     select cp.id,cp.affiliate_id,cp.amount
+     from commission_payouts cp,lock_affiliate
+     where cp.id=${payoutId} and cp.status='pending'
+     for update of cp
+    ), debited as (
+     update affiliates a set balance=a.balance-t.amount,updated_at=now()
+     from target t
+     where a.id=t.affiliate_id and a.balance>=t.amount
+     returning a.id,a.balance+t.amount as balance_before,a.balance as balance_after
+    ), finished as (
+     update commission_payouts cp set status='paid',payout_date=now(),receipt_url=${receiptUrl||null},updated_at=now()
+     from target t,debited d
+     where cp.id=t.id and d.id=t.affiliate_id
+     returning cp.id,cp.affiliate_id,cp.amount,d.balance_before,d.balance_after
+    ), marked_referrals as (
+     update affiliate_referrals ar set status='paid',updated_at=now()
+     from finished f
+     where ar.affiliate_id=f.affiliate_id and ar.status='approved' and f.balance_after=0
+     returning ar.id
+    ), logged as (
+     insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data)
+     select ${actor.id},'affiliate.payout.approve','affiliate',f.affiliate_id::text,
+       jsonb_build_object('payoutId',f.id::text,'amount',f.amount,'status','pending','balanceBefore',f.balance_before),
+       jsonb_build_object('payoutId',f.id::text,'amount',f.amount,'status','paid','receiptUrl',${receiptUrl},'balanceAfter',f.balance_after)
+     from finished f returning id
+    )
+    select id,affiliate_id,amount,balance_after as balance from finished`;
    if(!paid[0])return NextResponse.json({error:'Yêu cầu không còn ở trạng thái chờ hoặc số dư CTV không đủ.'},{status:409});
-   const affiliateId=String(paid[0].affiliate_id),amount=Number(paid[0].amount||0),remainingBalance=Number(paid[0].balance||0);
-   if(remainingBalance===0)await sql`update affiliate_referrals set status='paid',updated_at=now() where affiliate_id=${affiliateId} and status='approved'`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.payout.approve','affiliate',${affiliateId},${JSON.stringify({payoutId,amount,receiptUrl})}::jsonb)`;
-   return NextResponse.json({ok:true,payoutId,amount});
+   return NextResponse.json({ok:true,payoutId,amount:Number(paid[0].amount||0),balance:Number(paid[0].balance||0)});
   }
 
   if(action==='reconcile'){
