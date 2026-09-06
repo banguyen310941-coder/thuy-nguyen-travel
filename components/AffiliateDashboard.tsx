@@ -16,6 +16,10 @@ const statusLabel=(v:string)=>({pending:'Chờ xử lý',approved:'Đã duyệt'
 const profileOf=(a:Affiliate):ProfileForm=>({phone:a.phone||'',zalo:a.zalo||'',bankAccount:a.bankAccount||'',bankName:a.bankName||'',accountHolder:a.accountHolder||''});
 const last4=(v:string)=>v?`•••• ${v.slice(-4)}`:'chưa có số tài khoản';
 const productIcon=(type:string)=>/hotel|khách sạn/i.test(type)?'🏨':/cruise|du thuyền/i.test(type)?'🛳️':/tour/i.test(type)?'🧳':'🏡';
+async function copyText(value:string){
+ try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(value);return true}}catch{}
+ try{const area=document.createElement('textarea');area.value=value;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();const ok=document.execCommand('copy');document.body.removeChild(area);return ok}catch{return false}
+}
 
 export function AffiliateDashboard(){
  const router=useRouter();
@@ -46,7 +50,8 @@ export function AffiliateDashboard(){
  },[load]);
 
  async function logout(){loadRequest.current++;await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
- async function copy(v:Product){try{await navigator.clipboard.writeText(v.affiliateLink);setCopied(v.id);setTimeout(()=>setCopied(''),1800)}catch{setMsg('Không thể copy link trên trình duyệt này.')}}
+ async function copy(v:Product){const ok=await copyText(v.affiliateLink);if(ok){setCopied(v.id);setTimeout(()=>setCopied(''),1800)}else setMsg('Không thể copy link trên trình duyệt này. Bạn có thể bôi đen link để sao chép.')}
+ function openProduct(v:Product){window.open(v.affiliateLink,'_blank','noopener,noreferrer')}
  async function action(payload:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
   try{
@@ -106,16 +111,16 @@ export function AffiliateDashboard(){
    </section>
 
    <section className="affiliate-panel">
-    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn sản phẩm để copy link</h2><p>Link tự gắn mã CTV và sản phẩm. Tour, villa, khách sạn và du thuyền công khai đều có thể ghi nhận referral.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên / khu vực / loại sản phẩm"/></div>
+    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn sản phẩm để copy link</h2><p>Link tự gắn mã CTV và sản phẩm. Tour, villa, khách sạn và du thuyền công khai đều có thể ghi nhận referral.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên / khu vực / loại sản phẩm" aria-label="Tìm sản phẩm để chia sẻ"/></div>
     <div className="affiliate-villa-grid">
-     {products.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>{productIcon(v.type)}</span>}</div><div className="affiliate-villa-body"><small>{[v.type,v.place].filter(Boolean).join(' · ')||'Sản phẩm du lịch'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink}/><button onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div></div></article>)}
+     {products.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>{productIcon(v.type)}</span>}</div><div className="affiliate-villa-body"><small>{[v.type,v.place].filter(Boolean).join(' · ')||'Sản phẩm du lịch'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink} aria-label={`Link giới thiệu ${v.name}`}/><button type="button" onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div><div className="affiliate-payout-actions"><button type="button" onClick={()=>openProduct(v)}>Mở link khách xem ↗</button></div></div></article>)}
      {!products.length&&<div className="affiliate-empty">Chưa có sản phẩm phù hợp.</div>}
     </div>
    </section>
 
    <section className="affiliate-panel">
     <div className="affiliate-panel-head"><div><small>LỊCH SỬ ĐƠN HÀNG</small><h2>Booking & trạng thái duyệt tiền</h2></div></div>
-    <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Booking</th><th>Sản phẩm</th><th>Khách</th><th>Trạng thái booking</th><th>Hoa hồng</th><th>Duyệt tiền</th><th>Ngày</th></tr></thead><tbody>{data.referrals.map(r=><tr key={r.id}><td><b>{r.bookingCode}</b></td><td>{r.villaName}</td><td>{r.customerPhone||'—'}</td><td><span className={`affiliate-status ${r.bookingStatus}`}>{statusLabel(r.bookingStatus)}</span></td><td><b>{money(r.commissionAmount)}</b></td><td><span className={`affiliate-status ${r.status}`}>{statusLabel(r.status)}</span></td><td>{date(r.createdAt)}</td></tr>)}{!data.referrals.length&&<tr><td colSpan={7}>Chưa có booking affiliate.</td></tr>}</tbody></table></div>
+    <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Booking</th><th>Sản phẩm</th><th>Khách</th><th>Trạng thái booking</th><th>Hoa hồng</th><th>Duyệt tiền</th><th>Ngày</th></tr></thead><tbody>{data.referrals.map(r=><tr key={r.id}><td><b>{r.bookingCode}</b></td><td>{r.villaName}</td><td>{r.customerPhone||'—'}</td><td><span className={`affiliate-status ${r.bookingStatus}`}>{statusLabel(r.bookingStatus)}</span></td><td><b>{money(r.commissionAmount)}</b>{r.creditedAt&&<small>Ghi nhận {date(r.creditedAt)}</small>}</td><td><span className={`affiliate-status ${r.status}`}>{statusLabel(r.status)}</span></td><td>{date(r.createdAt)}</td></tr>)}{!data.referrals.length&&<tr><td colSpan={7}>Chưa có booking affiliate.</td></tr>}</tbody></table></div>
    </section>
 
    <section className="affiliate-two">

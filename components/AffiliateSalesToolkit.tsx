@@ -9,6 +9,10 @@ const money=(v:number)=>new Intl.NumberFormat('vi-VN').format(Math.round(v))+'đ
 const mediaId=(src:string)=>src.match(/\/d\/([^/=]+)(?:=|\/|$)/)?.[1]||new URLSearchParams(src.split('?')[1]||'').get('id')||'';
 const downloadUrl=(src:string)=>{const id=mediaId(src);return id?`https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`:src};
 const iconFor=(type?:string)=>/hotel|khách sạn/i.test(type||'')?'🏨':/cruise|du thuyền/i.test(type||'')?'🛳️':/tour/i.test(type||'')?'🧳':'🏡';
+async function copyText(value:string){
+ try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(value);return true}}catch{}
+ try{const area=document.createElement('textarea');area.value=value;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();const ok=document.execCommand('copy');document.body.removeChild(area);return ok}catch{return false}
+}
 
 export function AffiliateSalesToolkit({products,commissionRate,referralCode}:Props){
  const[selectedId,setSelectedId]=useState(''),[copied,setCopied]=useState('');
@@ -18,7 +22,18 @@ export function AffiliateSalesToolkit({products,commissionRate,referralCode}:Pro
  const caption=useMemo(()=>product?`${iconFor(product.type)} ${product.name}${product.place?` · ${product.place}`:''}\n${product.publicPrice?`Giá công khai từ ${money(product.publicPrice)}. `:''}HappyGo hỗ trợ tư vấn và đặt chỗ nhanh.\n\nXem chi tiết & đặt dịch vụ: ${product.affiliateLink}\n\nMã CTV: ${referralCode}`:'',[product,referralCode]);
  async function copy(kind:'caption'|'link'){
   if(!product)return;
-  try{await navigator.clipboard.writeText(kind==='caption'?caption:product.affiliateLink);setCopied(kind);window.setTimeout(()=>setCopied(''),1600)}catch{setCopied('error');window.setTimeout(()=>setCopied(''),1800)}
+  const value=kind==='caption'?caption:product.affiliateLink;
+  const ok=await copyText(value);
+  setCopied(ok?kind:'error');window.setTimeout(()=>setCopied(''),1800);
+ }
+ function openProduct(){if(product)window.open(product.affiliateLink,'_blank','noopener,noreferrer')}
+ async function share(){
+  if(!product)return;
+  try{
+   if(navigator.share){await navigator.share({title:product.name,text:caption});setCopied('shared')}
+   else{const ok=await copyText(caption);setCopied(ok?'sharecopy':'error')}
+  }catch(error){if(error instanceof DOMException&&error.name==='AbortError')return;setCopied('error')}
+  window.setTimeout(()=>setCopied(''),1800);
  }
  return <section className="affiliate-panel affiliate-toolkit">
   <div className="affiliate-panel-head"><div><small>BỘ CÔNG CỤ BÁN HÀNG</small><h2>Caption, link và album ảnh sản phẩm</h2><p>Chọn sản phẩm, copy nội dung rồi tải đúng ảnh nguồn để gửi khách qua Zalo, Facebook hoặc kênh bán hàng của bạn.</p></div></div>
@@ -26,9 +41,9 @@ export function AffiliateSalesToolkit({products,commissionRate,referralCode}:Pro
    <div className="affiliate-toolkit-builder">
     <label>Chọn sản phẩm<select value={product?.id||''} onChange={e=>setSelectedId(e.target.value)} disabled={!products.length}>{products.map(v=><option key={v.id} value={v.id}>{v.name}{v.place?` · ${v.place}`:''}</option>)}</select></label>
     {product?<>
-     <textarea readOnly value={caption}/>
-     <div className="affiliate-toolkit-actions"><button type="button" onClick={()=>void copy('link')}>{copied==='link'?'✓ Đã copy link':'Copy link'}</button><button type="button" className="primary" onClick={()=>void copy('caption')}>{copied==='caption'?'✓ Đã copy caption':'Copy caption + link'}</button></div>
-     {copied==='error'&&<span className="affiliate-form-hint">Trình duyệt không cho phép copy tự động. Bạn có thể bôi đen nội dung để sao chép.</span>}
+     <textarea readOnly value={caption} aria-label={`Caption bán hàng ${product.name}`}/>
+     <div className="affiliate-toolkit-actions"><button type="button" onClick={openProduct}>Mở link khách xem ↗</button><button type="button" onClick={()=>void copy('link')}>{copied==='link'?'✓ Đã copy link':'Copy link'}</button><button type="button" onClick={()=>void share()}>{copied==='shared'?'✓ Đã chia sẻ':copied==='sharecopy'?'✓ Đã copy để chia sẻ':'Chia sẻ nhanh'}</button><button type="button" className="primary" onClick={()=>void copy('caption')}>{copied==='caption'?'✓ Đã copy caption':'Copy caption + link'}</button></div>
+     {copied==='error'&&<span className="affiliate-form-hint" aria-live="polite">Trình duyệt không cho phép thao tác tự động. Bạn có thể bôi đen nội dung để sao chép.</span>}
      <div className="affiliate-media-head"><div><b>Album CTV tải về</b><small>{media.length?`${media.length} ảnh gốc đã gom từ ảnh đại diện, thư viện sản phẩm và từng hạng phòng/cabin.`:'Sản phẩm này chưa có ảnh nguồn.'}</small></div>{product.albumUrl&&<a href={product.albumUrl} target="_blank" rel="noreferrer">Tải cả album trên Drive ↗</a>}</div>
      {media.length?<div className="affiliate-media-grid">{media.map((src,index)=><article key={`${src}_${index}`}><a href={src} target="_blank" rel="noreferrer" className="affiliate-media-preview"><img src={src} alt={`${product.name} - ảnh ${index+1}`} loading="lazy"/></a><div><span>Ảnh {index+1}</span><a href={downloadUrl(src)} target="_blank" rel="noreferrer">Tải ảnh gốc</a></div></article>)}</div>:<div className="affiliate-empty">Chưa có album ảnh cho sản phẩm này.</div>}
     </>:<div className="affiliate-empty">Chưa có sản phẩm công khai để tạo nội dung chia sẻ.</div>}

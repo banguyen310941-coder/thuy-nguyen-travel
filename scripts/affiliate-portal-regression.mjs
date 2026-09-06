@@ -13,12 +13,19 @@ const affiliateServer=read('lib/server/affiliate.ts');
 const capture=read('components/AffiliateAttributionCapture.tsx');
 const dashboardUi=read('components/AffiliateDashboard.tsx');
 const historyUi=read('components/AffiliateHistoryBrowser.tsx');
-const toolkit=read('components/AffiliateSalesToolkitDrawer.tsx');
+const toolkitDrawer=read('components/AffiliateSalesToolkitDrawer.tsx');
+const toolkitUi=read('components/AffiliateSalesToolkit.tsx');
 const dashboardPage=read('app/affiliate/dashboard/page.tsx');
 
 check(has(dashboardApi,'/san-pham/${encodeURIComponent(String(p.slug))}?ref='),'Dashboard CTV phải sinh link affiliate trực tiếp trên URL public /san-pham/:slug.');
+check(has(dashboardApi,'&product_id=${encodeURIComponent(String(p.id))}'),'Dashboard CTV phải phát product_id làm tham số attribution chuẩn.');
 check(!has(dashboardApi,'/product?slug='),'Dashboard CTV không được phát link legacy /product?slug=.');
-check(has(generateApi,'/san-pham/${encodeURIComponent(String(villa.slug))}?ref='),'API tạo link CTV phải trả URL public chuẩn tiếng Việt.');
+check(!has(dashboardApi,'&villa_id=${encodeURIComponent(String(p.id))}'),'Dashboard CTV không được tiếp tục phát villa_id cho link mới.');
+check(has(generateApi,"req.nextUrl.searchParams.get('product_id')||req.nextUrl.searchParams.get('villa_id')"),'API tạo link phải ưu tiên product_id và vẫn đọc villa_id cũ.');
+check(has(generateApi,'findTrackableProduct(db(),productId)'),'API tạo link phải dùng kiểm tra sản phẩm chung, không giới hạn villa.');
+check(has(generateApi,'/san-pham/${encodeURIComponent(String(product.slug))}?ref='),'API tạo link CTV phải trả URL public chuẩn tiếng Việt.');
+check(has(generateApi,'&product_id=${encodeURIComponent(productId)}'),'API tạo link phải phát product_id cho link mới.');
+check(has(generateApi,'product:item,villa:item'),'API tạo link phải trả product mới và giữ villa alias để tương thích client cũ.');
 check(!has(generateApi,'/product?slug='),'API tạo link CTV không được trả URL legacy.');
 
 check(has(trackApi,"productId=String(body.productId||body.villaId||'').trim()"),'Tracking CTV phải nhận productId mới và vẫn tương thích villaId cũ.');
@@ -48,6 +55,10 @@ check(has(dashboardUi,'data?.products?.length?data.products:data?.villas||[]'),'
 check(has(dashboardUi,'Chọn sản phẩm để copy link'),'Dashboard CTV phải dùng ngôn ngữ sản phẩm chung.');
 check(has(dashboardUi,"`${v.name} ${v.place} ${v.type}`"),'Tìm kiếm link CTV phải tìm được theo tên, khu vực và loại sản phẩm.');
 check(has(dashboardUi,'<th>Sản phẩm</th>'),'Lịch sử booking CTV phải dùng nhãn Sản phẩm thay cho Villa.');
+check(has(dashboardUi,"document.execCommand('copy')"),'Dashboard CTV phải có fallback copy cho browser không hỗ trợ Clipboard API.');
+check(has(dashboardUi,"window.open(v.affiliateLink,'_blank','noopener,noreferrer')"),'Dashboard CTV phải cho mở link affiliate thật để kiểm tra trước khi gửi khách.');
+check(has(dashboardUi,'Mở link khách xem ↗'),'UI phải có thao tác kiểm tra link khách nhìn thấy.');
+check(has(dashboardUi,'Ghi nhận {date(r.creditedAt)}'),'Dashboard tóm tắt phải hiển thị thời điểm ghi có hoa hồng khi có dữ liệu.');
 
 check(has(historyApi,"affiliateActor(req)"),'API lịch sử phải bắt buộc session CTV active.');
 check(has(historyApi,"['referrals','payouts'].includes(kind)"),'API lịch sử phải giới hạn loại dữ liệu được phép truy vấn.');
@@ -61,18 +72,30 @@ check(has(historyUi,"fetch(`/api/affiliate/history?kind=${kindValue}&limit=50&of
 check(has(historyUi,'request.current'),'UI lịch sử phải bỏ response cũ khi người dùng đổi tab/tải lại nhanh.');
 check(has(historyUi,'incoming.filter(row=>!prev.some(old=>old.id===row.id))'),'UI tải thêm phải loại bản ghi trùng.');
 check(has(historyUi,"window.addEventListener('focus',refresh)"),'UI lịch sử phải refresh khi quay lại cửa sổ.');
+check(has(historyUi,"document.addEventListener('visibilitychange',visibility)"),'UI lịch sử phải refresh khi tab quay lại trạng thái visible.');
 check(has(historyUi,'Tải thêm 50 bản ghi'),'UI lịch sử phải có thao tác tải thêm rõ ràng.');
 check(has(historyUi,'Ghi nhận {date(r.creditedAt)}'),'Lịch sử hoa hồng phải hiển thị thời điểm ghi có khi có dữ liệu.');
+check(has(historyUi,'visibleItems=useMemo'),'UI lịch sử phải lọc trên tập dữ liệu đã tải mà không gọi API thừa.');
+check(has(historyUi,"[q,setQ]=useState('')")&&has(historyUi,"[statusFilter,setStatusFilter]=useState('all')"),'UI lịch sử phải có tìm kiếm và lọc trạng thái.');
+check(has(historyUi,'Hiển thị {visibleItems.length}/{items.length} đã tải'),'UI lịch sử phải báo rõ số bản ghi đang hiển thị sau bộ lọc.');
 check(has(historyUi,'aria-live="polite"'),'Lỗi lịch sử phải được công bố cho công nghệ hỗ trợ.');
 
-check(has(toolkit,'const request=useRef(0)'),'Bộ công cụ bán hàng phải có stale-response guard.');
-check(has(toolkit,'if(open)void load()'),'Mỗi lần mở bộ công cụ phải refresh dữ liệu production.');
-check(has(toolkit,"window.addEventListener('focus',refresh)"),'Bộ công cụ đang mở phải refresh khi quay lại cửa sổ.');
-check(has(toolkit,'aria-label="Làm mới bộ công cụ"'),'Bộ công cụ phải có nút refresh có nhãn accessibility.');
+check(has(toolkitDrawer,'const request=useRef(0)'),'Bộ công cụ bán hàng phải có stale-response guard.');
+check(has(toolkitDrawer,'if(open)void load()'),'Mỗi lần mở bộ công cụ phải refresh dữ liệu production.');
+check(has(toolkitDrawer,"window.addEventListener('focus',refresh)"),'Bộ công cụ đang mở phải refresh khi quay lại cửa sổ.');
+check(has(toolkitDrawer,"document.addEventListener('visibilitychange',visibility)"),'Bộ công cụ đang mở phải refresh khi tab quay lại visible.');
+check(has(toolkitDrawer,"event.key==='Escape'"),'Drawer bộ công cụ phải đóng được bằng phím Escape.');
+check(has(toolkitDrawer,'role="dialog" aria-modal="true"'),'Drawer bộ công cụ phải khai báo semantics dialog cho accessibility.');
+check(has(toolkitDrawer,'aria-label="Làm mới bộ công cụ"'),'Bộ công cụ phải có nút refresh có nhãn accessibility.');
+check(has(toolkitUi,"document.execCommand('copy')"),'Bộ công cụ phải có fallback copy trên browser/mobile hạn chế Clipboard API.');
+check(has(toolkitUi,'navigator.share'),'Bộ công cụ phải hỗ trợ Web Share trên thiết bị tương thích.');
+check(has(toolkitUi,"window.open(product.affiliateLink,'_blank','noopener,noreferrer')"),'Bộ công cụ phải cho CTV mở link khách xem trước khi chia sẻ.');
+check(has(toolkitUi,'Chia sẻ nhanh'),'Bộ công cụ phải có hành động chia sẻ nhanh rõ ràng.');
+check(has(toolkitUi,'aria-live="polite"'),'Lỗi thao tác bộ công cụ phải thông báo cho công nghệ hỗ trợ.');
 check(has(dashboardPage,'<AffiliateHistoryBrowser/>'),'Dashboard CTV phải gắn trình duyệt lịch sử giao dịch đầy đủ.');
 
 if(failures.length){
  console.error('\nCTV Portal regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV Portal regression OK: all-product affiliate links, product-safe attribution/referrals, active-staff settlement, paginated history and fresh sales toolkit are guarded.');
+console.log('CTV Portal regression OK: canonical product_id links, backward-compatible attribution, searchable paginated history, mobile share/copy fallbacks and accessible sales toolkit are guarded.');
