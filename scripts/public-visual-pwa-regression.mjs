@@ -23,8 +23,10 @@ must('components/ProductVisuals.ts',"from '@/data/destination-visuals'",'Homepag
 for(const place of ['Phan Thiết','Hạ Long','Phú Quốc','Sa Pa','Nha Trang','Sầm Sơn'])must('data/destination-visuals.ts',`'${place}'`,'Bảng ảnh điểm đến phải đủ địa danh public');
 
 must('components/HomeCmsSections.tsx','usePublicGuideArticles','Trang chủ phải dùng cùng nguồn bài Cẩm nang');
-must('components/HomeCmsSections.tsx','const publicArticles=usePublicGuideArticles()','Trang chủ phải lấy cover từ hook Cẩm nang chung');
+must('components/HomeCmsSections.tsx','const publicArticles=usePublicGuideArticles(initialArticles)','Trang chủ phải hydrate bài Cẩm nang từ cùng nguồn server');
+must('components/HomeCmsSections.tsx','image:guideImage(p.image)','Fallback Cẩm nang trang chủ phải dùng cùng pipeline ảnh với trang Cẩm nang');
 mustNot('components/HomeCmsSections.tsx','setCmsArticles','Trang chủ không được giữ cache bài Cẩm nang riêng');
+mustNot('components/usePublicGuideArticles.ts','localStorage.getItem','Cẩm nang public không được ưu tiên cache browser');
 
 if(failures.length){console.error('\nPublic visual/PWA regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public visual/PWA regression checks passed.');
