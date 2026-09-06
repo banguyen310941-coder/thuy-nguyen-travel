@@ -1,4 +1,4 @@
-const CACHE='happygo-shell-v5';
+const CACHE='happygo-shell-v6';
 const SHELL=['/','/admin','/admin/','/manifest.webmanifest','/admin/manifest.webmanifest','/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -30,8 +30,13 @@ self.addEventListener('fetch',event=>{
     }).catch(async()=>{
       const exact=await caches.match(req);
       if(exact)return exact;
-      if(url.pathname.startsWith('/admin'))return (await caches.match('/admin'))||(await caches.match('/admin/'))||(await caches.match('/'));
-      return caches.match('/');
+      if(url.pathname.startsWith('/admin')){
+        // Never let an installed Admin app silently fall through to the public
+        // homepage. The cached admin shell is the only valid offline fallback.
+        const admin=(await caches.match('/admin/'))||(await caches.match('/admin'));
+        return admin||new Response('HappyGo Admin đang ngoại tuyến. Vui lòng kết nối mạng và mở lại ứng dụng.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
+      }
+      return (await caches.match('/'))||new Response('HappyGo Travel đang ngoại tuyến.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
     }));
     return;
   }
