@@ -33,5 +33,11 @@ mustNot('components/CustomerReviews.tsx','bookingCode?:string};\ntype Mine','Ki�
 // The top-level bookingCode remains intentionally available only for the authenticated customer whose own completed booking was verified.
 must('app/api/reviews/route.ts',"bookingCode:booking?.code||''",'Khách đã đăng nhập vẫn được xác nhận mã booking của chính họ');
 
+// Public booking writes must be same-origin and bounded before data reaches CRM/notifications.
+must('app/api/bookings/route.ts',"const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)",'Booking POST phải chặn cross-site request');
+must('app/api/bookings/route.ts','name.length>120||email.length>254||product.length>240||note.length>2000','Booking POST phải giới hạn kích thước dữ liệu đầu vào');
+must('app/api/bookings/route.ts',"return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400})",'Booking POST phải kiểm tra email trước khi lưu/gửi mail');
+must('app/api/bookings/route.ts',"'\"':'&quot;'",'HTML email booking phải escape dấu ngoặc kép đầy đủ');
+
 if(failures.length){console.error('\nPublic privacy regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public privacy regression checks passed.');
