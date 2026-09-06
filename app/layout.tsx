@@ -60,7 +60,7 @@ export const viewport:Viewport={width:'device-width',initialScale:1,maximumScale
 const DEFAULT_DESCRIPTION='Đặt tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Giá minh bạch, tư vấn nhanh, hành trình hạnh phúc.';
 
 type SeoConfig={siteTitle?:string;description?:string;keywords?:string;ogImage?:string;organizationName?:string;canonicalBase?:string};
-type SiteConfig={brand?:string;hotline?:string;email?:string;zalo?:string};
+type SiteConfig={brand?:string;hotline?:string;email?:string;zalo?:string;facebookUrl?:string;youtubeUrl?:string;tiktokUrl?:string};
 function configValue(raw:unknown){const value=raw as any;return value?.value&&typeof value.value==='object'?value.value:value}
 async function productionConfig(){
  if(!hasDatabase())return{seo:null as SeoConfig|null,site:null as SiteConfig|null};
@@ -87,5 +87,5 @@ export async function generateMetadata():Promise<Metadata>{
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
  const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,url:siteUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
- return <html lang="vi"><body id="top" data-ui-version="happygo-public-visuals-pwa-20260906-prod"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
+ return <html lang="vi"><body id="top" data-ui-version="happygo-public-visuals-pwa-20260906-prod"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome initialSettings={site}>{children}</SiteChrome></body></html>;
 }
