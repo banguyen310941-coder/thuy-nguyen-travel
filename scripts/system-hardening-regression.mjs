@@ -8,11 +8,13 @@ const mustNot=(path,needle,label)=>{if(read(path).includes(needle))failures.push
 // Canonical host must come from deployment environment until the custom domain is intentionally attached.
 must('lib/site-url.ts','VERCEL_PROJECT_PRODUCTION_URL','Site URL phải nhận production host từ Vercel');
 must('lib/site-url.ts','NEXT_PUBLIC_SITE_URL','Site URL phải có một biến môi trường duy nhất để đổi domain sau này');
+must('lib/site-url.ts',"FALLBACK_SITE_URL='https://happygo-travel.vercel.app'",'Fallback trước cutover phải là domain Vercel production');
+mustNot('lib/site-url.ts',"FALLBACK_SITE_URL='https://happygo.vn'",'Không được fallback sang domain custom khi chưa gắn');
 must('app/layout.tsx','const base=getSiteUrl()','Root metadata phải dùng canonical runtime');
 must('app/layout.tsx','const siteUrl=getSiteUrl()','Organization schema phải dùng cùng canonical runtime');
-for(const path of ['app/stay/page.tsx','app/villa-resort/page.tsx','app/khach-san/page.tsx','app/tours/page.tsx','app/cruises/page.tsx','app/destinations/page.tsx','app/guide/page.tsx']){
- must(path,'getSiteUrl','Trang danh mục phải dùng site URL tập trung');
- mustNot(path,"const canonical='https://happygo.vn",'Trang danh mục chưa được hardcode domain custom');
+for(const path of ['app/stay/page.tsx','app/villa-resort/page.tsx','app/khach-san/page.tsx','app/tours/page.tsx','app/cruises/page.tsx','app/destinations/page.tsx','app/guide/page.tsx','app/about/page.tsx','app/contact/page.tsx','app/terms/page.tsx','app/privacy/page.tsx','app/payment-guide/page.tsx']){
+ must(path,'getSiteUrl','Trang public phải dùng site URL tập trung');
+ mustNot(path,"const canonical='https://happygo.vn",'Trang public chưa được hardcode domain custom');
 }
 
 // Public product/tour/guide surfaces must not prefer browser storage over Neon production state.
