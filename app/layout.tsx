@@ -47,6 +47,7 @@ import './partner-login-v2.css';
 import './public-ui-unified.css';
 import './contact-actions-fix.css';
 import './source-gallery-visible.css';
+import './service-stars.css';
 import './desktop-booking-cta.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
