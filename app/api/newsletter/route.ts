@@ -34,9 +34,14 @@ export async function POST(req:NextRequest){
     ) from locked
     where coalesce((select action from latest),'')<>'newsletter.subscribe'
     returning id
+   ), customer_consent as (
+    update customers set marketing_consent=true,updated_at=now()
+    where lower(email)=${email} and marketing_consent=false
+    returning id
    )
    select coalesce((select id from latest where action='newsletter.subscribe' limit 1),(select id from inserted limit 1)) as id,
-    coalesce((select action='newsletter.subscribe' from latest limit 1),false) as idempotent`)[0];
+    coalesce((select action='newsletter.subscribe' from latest limit 1),false) as idempotent,
+    (select count(*)::int from customer_consent) as customers_updated`)[0];
   if(!result?.id)throw new Error('NEWSLETTER_SUBSCRIBE_FAILED');
   return NextResponse.json({ok:true,subscribed:true,idempotent:Boolean(result.idempotent)});
  }catch(error){
@@ -68,9 +73,14 @@ export async function DELETE(req:NextRequest){
     ) from locked
     where coalesce((select action from latest),'')='newsletter.subscribe'
     returning id
+   ), customer_consent as (
+    update customers set marketing_consent=false,updated_at=now()
+    where lower(email)=${email} and marketing_consent=true
+    returning id
    )
    select exists(select 1 from inserted) as changed,
-    coalesce((select action<>'newsletter.subscribe' from latest limit 1),true) as idempotent`)[0];
+    coalesce((select action<>'newsletter.subscribe' from latest limit 1),true) as idempotent,
+    (select count(*)::int from customer_consent) as customers_updated`)[0];
   return NextResponse.json({ok:true,subscribed:false,changed:Boolean(result?.changed),idempotent:Boolean(result?.idempotent)});
  }catch(error){
   console.error('newsletter_unsubscribe_failed',error);
