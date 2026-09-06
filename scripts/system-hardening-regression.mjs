@@ -43,6 +43,14 @@ mustNot('app/api/catalog/partner-products/route.ts','partnerPricing:_partnerPric
 mustNot('app/api/catalog/partner-products/route.ts','netPrice:_netPrice','API public không được chỉ loại netPrice top-level');
 mustNot('app/api/catalog/partner-products/route.ts','apiToken:_apiToken','API public không được chỉ loại apiToken top-level');
 
+// Public site config is an explicit allowlist, never the raw audit-log object.
+must('app/api/site-config/route.ts','function publicSiteConfig(value:unknown)','Site config public phải có allowlist riêng');
+must('app/api/site-config/route.ts','function publicSeoConfig(value:unknown)','SEO config public phải có allowlist riêng');
+must('app/api/site-config/route.ts','facebookUrl:text(raw.facebookUrl)','Site config chỉ xuất các trường social/contact đã chọn');
+must('app/api/site-config/route.ts','organizationName:text(raw.organizationName)','SEO config chỉ xuất trường public đã chọn');
+mustNot('app/api/site-config/route.ts','result[id]=parseValue','Không được trả nguyên object audit log ra endpoint public');
+mustNot('app/api/site-config/route.ts','canonicalBase:text(raw.canonicalBase)','Endpoint public không cần xuất canonical override nội bộ');
+
 must('app/cam-nang/bai-viet/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server');
 must('app/guide/category/[slug]/page.tsx','initialArticles={initialArticles}','Chuyên mục Cẩm nang phải hydrate bài CMS từ server');
 must('components/GuideArticleReader.tsx','usePublicGuideArticles(initialArticles)','Reader Cẩm nang phải dùng snapshot server ngay lần render đầu');
