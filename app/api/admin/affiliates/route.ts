@@ -3,6 +3,7 @@ import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
 import {hashPassword} from '@/lib/server/portal-auth';
 import {settleAffiliateBooking} from '@/lib/server/affiliate';
+import {affiliateCommissionPolicy} from '@/lib/affiliate-commission';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['pending','active','blocked']);
@@ -25,15 +26,15 @@ export async function GET(req:NextRequest){
  try{
   const sql=db();
   const affiliates=canSeeAll
-   ?await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id order by a.created_at desc`
-   :await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id where a.sales_owner_id=${actor.id} order by a.created_at desc`;
+   ?await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id order by a.created_at desc`
+   :await sql`select a.id,a.user_id,a.sales_owner_id,a.referral_code,a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.status,a.created_at,a.updated_at,s.name,s.email,s.status as staff_status,owner.name as sales_owner_name,(select count(*) from affiliate_clicks c where c.affiliate_id=a.id)::bigint as click_count,(select count(*) from affiliate_referrals r where r.affiliate_id=a.id and r.status in ('approved','paid'))::bigint as closed_orders from affiliates a join staff s on s.id=a.user_id left join staff owner on owner.id=a.sales_owner_id where a.sales_owner_id=${actor.id} order by a.created_at desc`;
   const referrals=canSeeAll
    ?await sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id order by ar.created_at desc limit 300`
    :await sql`select ar.id,ar.affiliate_id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.id as booking_id,b.code as booking_code,b.status as booking_status,p.name as villa_name,s.name as affiliate_name from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id where a.sales_owner_id=${actor.id} order by ar.created_at desc limit 300`;
   const payouts=financeAccess?(canSeeAll
    ?await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id order by cp.created_at desc limit 200`
    :await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.payout_date,cp.receipt_url,cp.created_at,s.name as affiliate_name,a.bank_account,a.bank_name,a.account_holder from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id where a.sales_owner_id=${actor.id} order by cp.created_at desc limit 200`):[];
-  const items=affiliates.map((a:any)=>({id:String(a.id),userId:String(a.user_id),salesOwnerId:a.sales_owner_id?String(a.sales_owner_id):'',salesOwnerName:String(a.sales_owner_name||'Chưa phân công'),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:financeAccess?Number(a.total_commission||0):0,balance:financeAccess?Number(a.balance||0):0,commissionRate:financeAccess?Number(a.commission_rate||0):0,status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}));
+  const items=affiliates.map((a:any)=>{const policy=affiliateCommissionPolicy(Number(a.closed_orders||0));return{id:String(a.id),userId:String(a.user_id),salesOwnerId:a.sales_owner_id?String(a.sales_owner_id):'',salesOwnerName:String(a.sales_owner_name||'Chưa phân công'),name:String(a.name),email:String(a.email),referralCode:String(a.referral_code),phone:String(a.phone||''),zalo:String(a.zalo||''),bankAccount:String(a.bank_account||''),bankName:String(a.bank_name||''),accountHolder:String(a.account_holder||''),totalCommission:financeAccess?Number(a.total_commission||0):0,balance:financeAccess?Number(a.balance||0):0,commissionRate:financeAccess?policy.currentRate:0,commissionTierLabel:policy.currentTier.label,nextOrderNumber:policy.nextOrderNumber,status:String(a.status),staffStatus:String(a.staff_status),clicks:Number(a.click_count||0),closedOrders:Number(a.closed_orders||0),createdAt:String(a.created_at),updatedAt:String(a.updated_at)}});
   return NextResponse.json({
    ok:true,
    manageAccess,
@@ -41,6 +42,7 @@ export async function GET(req:NextRequest){
    approvalAccess,
    ownershipScope:canSeeAll?'all':'assigned',
    currentStaffId:actor.id,
+   commissionPolicy:{basis:'profit',basisLabel:'Lợi nhuận đơn = giá bán − giá vốn',tiers:[{min:1,max:10,rate:35},{min:11,max:20,rate:40},{min:21,max:50,rate:45},{min:51,max:null,rate:50}]},
    affiliates:items,
    referrals:referrals.map((r:any)=>({id:String(r.id),affiliateId:String(r.affiliate_id),affiliateName:String(r.affiliate_name),bookingId:String(r.booking_id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Villa'),customerPhone:String(r.customer_phone||''),commissionAmount:financeAccess?Number(r.commission_amount||0):0,status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
    payouts:financeAccess?payouts.map((p:any)=>({id:String(p.id),affiliateId:String(p.affiliate_id),affiliateName:String(p.affiliate_name),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at),bankAccount:String(p.bank_account||''),bankName:String(p.bank_name||''),accountHolder:String(p.account_holder||'')})):[],
@@ -71,40 +73,32 @@ export async function POST(req:NextRequest){
  try{
   if(action==='create'){
    if(!canManage)return NextResponse.json({error:'Bạn không có quyền quản lý hồ sơ CTV.'},{status:403});
-   const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),requestedStatus=statuses.has(String(body.status))?String(body.status):'pending',status=canApprove?requestedStatus:'pending',rate=Math.max(0,Math.min(100,Number(body.commissionRate)||5));
-   if(!canFinance&&rate!==5)return NextResponse.json({error:'Bạn không có quyền đặt tỷ lệ hoa hồng CTV.'},{status:403});
+   const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||''),phone=String(body.phone||'').trim(),zalo=String(body.zalo||'').trim(),bankAccount=String(body.bankAccount||'').trim(),bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),referralCode=codeOf(String(body.referralCode||''))||randomCode(),requestedStatus=statuses.has(String(body.status))?String(body.status):'pending',status=canApprove?requestedStatus:'pending';
    if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<8)return NextResponse.json({error:'Tên, email hoặc mật khẩu CTV chưa hợp lệ.'},{status:400});
    if(referralCode.length<4)return NextResponse.json({error:'Mã giới thiệu cần ít nhất 4 ký tự.'},{status:400});
    const staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
    const ownerId=canApprove?null:actor.id;
-   const rows=await sql`with new_staff as (insert into staff(name,email,phone,password_hash,role,department,status,permissions) values(${name},${email},${phone||null},${hashPassword(password)},'affiliate','affiliate',${staffStatus},'["affiliate"]'::jsonb) returning id) insert into affiliates(user_id,sales_owner_id,referral_code,phone,zalo,bank_account,bank_name,account_holder,commission_rate,status) select id,${ownerId},${referralCode},${phone||null},${zalo||null},${bankAccount||null},${bankName||null},${accountHolder||null},${rate},${status} from new_staff returning id,user_id,referral_code,sales_owner_id`;
+   const rows=await sql`with new_staff as (insert into staff(name,email,phone,password_hash,role,department,status,permissions) values(${name},${email},${phone||null},${hashPassword(password)},'affiliate','affiliate',${staffStatus},'["affiliate"]'::jsonb) returning id) insert into affiliates(user_id,sales_owner_id,referral_code,phone,zalo,bank_account,bank_name,account_holder,status) select id,${ownerId},${referralCode},${phone||null},${zalo||null},${bankAccount||null},${bankName||null},${accountHolder||null},${status} from new_staff returning id,user_id,referral_code,sales_owner_id`;
    const saved=rows[0];
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.create','affiliate',${String(saved.id)},${JSON.stringify({name,email,referralCode,commissionRate:rate,status,salesOwnerId:saved.sales_owner_id?String(saved.sales_owner_id):''})}::jsonb)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'affiliate.create','affiliate',${String(saved.id)},${JSON.stringify({name,email,referralCode,commissionPolicy:'tiered_profit_35_40_45_50',status,salesOwnerId:saved.sales_owner_id?String(saved.sales_owner_id):''})}::jsonb)`;
    return NextResponse.json({ok:true,id:String(saved.id),referralCode:String(saved.referral_code),status});
   }
 
   if(action==='update'){
+   if(body.commissionRate!==undefined)return NextResponse.json({error:'Hoa hồng CTV được tính tự động theo bậc 35/40/45/50% trên lợi nhuận và không chỉnh thủ công.'},{status:400});
+   if(!canManage)return NextResponse.json({error:'Tài khoản không có quyền quản lý hồ sơ CTV.'},{status:403});
    const id=String(body.id||'');
    if(!uuid.test(id))return NextResponse.json({error:'CTV không hợp lệ.'},{status:400});
    const current=(await sql`select a.*,s.name,s.email from affiliates a join staff s on s.id=a.user_id where a.id=${id} limit 1`)[0];
    if(!current)return NextResponse.json({error:'Không tìm thấy CTV.'},{status:404});
-   const currentRate=Number(current.commission_rate||0),requestedRate=Math.max(0,Math.min(100,Number(body.commissionRate??current.commission_rate)||0));
-   if(!canManage){
-    if(!canFinance||body.commissionRate===undefined)return NextResponse.json({error:'Bạn chỉ có quyền cập nhật tài chính CTV.'},{status:403});
-    if(requestedRate===currentRate)return NextResponse.json({ok:true});
-    await sql`update affiliates set commission_rate=${requestedRate},updated_at=now() where id=${id}`;
-    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'affiliate.rate','affiliate',${id},${JSON.stringify({commissionRate:currentRate})}::jsonb,${JSON.stringify({commissionRate:requestedRate})}::jsonb)`;
-    return NextResponse.json({ok:true});
-   }
    if(!await ownsAffiliate(id))return NextResponse.json({error:'CTV này không thuộc phạm vi phụ trách của bạn.'},{status:403});
-   if(!canFinance&&requestedRate!==currentRate)return NextResponse.json({error:'Bạn không có quyền thay đổi tỷ lệ hoa hồng CTV.'},{status:403});
    const requestedStatus=statuses.has(String(body.status))?String(body.status):String(current.status);
    if(requestedStatus!==String(current.status)&&!canApprove)return NextResponse.json({error:'Chỉ Admin/Owner được kích hoạt hoặc khóa hồ sơ CTV.'},{status:403});
-   const status=canApprove?requestedStatus:String(current.status),rate=requestedRate,phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
+   const status=canApprove?requestedStatus:String(current.status),phone=String(body.phone??current.phone??'').trim(),zalo=String(body.zalo??current.zalo??'').trim(),bankAccount=String(body.bankAccount??current.bank_account??'').trim(),bankName=String(body.bankName??current.bank_name??'').trim(),accountHolder=String(body.accountHolder??current.account_holder??'').trim(),staffStatus=status==='active'?'active':status==='blocked'?'locked':'inactive';
    const statusChanged=status!==String(current.status);
    const auditAction=statusChanged?(status==='active'?'affiliate.approve':status==='blocked'?'affiliate.block':'affiliate.pending'):'affiliate.update';
-   await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_account=${bankAccount||null},bank_name=${bankName||null},account_holder=${accountHolder||null},commission_rate=${rate},status=${status},updated_at=now() where id=${id} returning user_id) update staff set phone=${phone||null},status=${staffStatus},updated_at=now() where id=(select user_id from changed)`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},${auditAction},'affiliate',${id},${JSON.stringify({status:current.status,commissionRate:currentRate,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb,${JSON.stringify({status,commissionRate:rate,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb)`;
+   await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_account=${bankAccount||null},bank_name=${bankName||null},account_holder=${accountHolder||null},status=${status},updated_at=now() where id=${id} returning user_id) update staff set phone=${phone||null},status=${staffStatus},updated_at=now() where id=(select user_id from changed)`;
+   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},${auditAction},'affiliate',${id},${JSON.stringify({status:current.status,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb,${JSON.stringify({status,salesOwnerId:current.sales_owner_id?String(current.sales_owner_id):''})}::jsonb)`;
    return NextResponse.json({ok:true});
   }
 
