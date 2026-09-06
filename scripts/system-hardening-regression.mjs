@@ -65,6 +65,16 @@ must('components/UnifiedStayPublicDetail.tsx','providedUnits={product.units||[]}
 mustNot('components/ProductRateCalendar.tsx',"from '@/components/AdminRateCalendar'",'Public calendar không được phụ thuộc helper localStorage của Admin');
 mustNot('components/PublishedUnits.tsx',"from '@/components/AdminRateCalendar'",'Public unit list không được phụ thuộc helper localStorage của Admin');
 
+// Admin runtime SQL guards for failures observed in production logs.
+must('app/api/admin/products/route.ts','updated_at=now()','Admin Products phải để PostgreSQL tự tạo timestamp cập nhật');
+must('app/api/admin/products/route.ts','created_at,updated_at) values','Admin Products phải ghi created_at/updated_at ở DB');
+must('app/api/admin/products/route.ts','now(),now())','Admin Products không được truyền Date.toString vào timestamptz');
+mustNot('app/api/admin/products/route.ts','updated_at=${now}','Admin Products không được bind chuỗi ngày JS trực tiếp vào cột timestamptz');
+must('app/api/admin/affiliate-followups/route.ts','${nextIso}::timestamptz','Follow-up CTV phải cast lịch hẹn rõ ràng sang timestamptz');
+must('app/api/admin/affiliate-followups/route.ts','hashtext(${requestId}::text)','Follow-up CTV phải cast request id trước hàm hashtext');
+must('app/api/admin/affiliate-followups/route.ts','${affiliateId}::uuid,${actor.id}::uuid','Follow-up CTV phải cast các khóa UUID trong CTE');
+must('app/api/admin/affiliate-followups/route.ts','${requestId}::text)','Audit follow-up phải cast requestId để jsonb_build_object không mơ hồ kiểu');
+
 // CTV commission policy is automatic and profit-based; manual fixed rates are rejected.
 must('app/api/admin/affiliates/route.ts',"affiliateCommissionPolicy(Number(a.closed_orders||0))",'API CTV phải tính bậc theo số đơn chốt');
 must('app/api/admin/affiliates/route.ts','if(body.commissionRate!==undefined)','API phải từ chối chỉnh % hoa hồng thủ công');
