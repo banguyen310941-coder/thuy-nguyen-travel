@@ -29,6 +29,11 @@ mustNot('public/sw.js',"if(url.pathname.startsWith('/admin'))return (await cache
 mustNot('components/AdminInstallApp.tsx','querySelectorAll<HTMLLinkElement>(\'link[rel="manifest"]\')','Installer Admin không được sửa manifest bằng DOM sau khi trang đã tải');
 mustNot('components/AdminInstallApp.tsx','document.head.appendChild(link)','Installer Admin không được chèn manifest bằng JavaScript');
 must('components/AdminInstallApp.tsx','manifest trực tiếp từ HTML','Hướng dẫn cài Admin phải phản ánh cơ chế manifest server');
+must('components/AdminInstallApp.tsx',"document.cookie='happygo_admin_pwa=admin",'Admin installer phải đánh dấu mục tiêu app cho iPhone');
+must('components/LegacyAdminPwaRedirect.tsx',"fetch('/api/admin/auth/me'",'Icon Admin legacy chỉ được tự chuyển khi có phiên Admin hợp lệ');
+must('components/LegacyAdminPwaRedirect.tsx',"window.location.replace('/admin/?source=pwa&legacy=1')",'Icon Admin legacy phải tự hồi phục về /admin');
+must('components/LegacyAdminPwaRedirect.tsx',"window.matchMedia('(display-mode: standalone)')",'Migration chỉ chạy trong web app standalone');
+must('app/page.tsx','<LegacyAdminPwaRedirect/>','Trang chủ phải gắn migration cho icon Admin legacy');
 
 must('data/catalog.ts',"destinationVisualUrl('Phan Thiết')",'Catalog điểm đến phải dùng ảnh dùng chung');
 must('data/catalog.ts',"destinationVisualUrl('Hạ Long')",'Hạ Long phải dùng ảnh dùng chung');
