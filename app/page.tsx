@@ -6,7 +6,7 @@ import {getSiteUrl} from '@/lib/site-url';
 import {getPublicSiteState} from '@/lib/server/public-site-state';
 import './home.css';
 
-export function generateMetadata():Metadata{const site=getSiteUrl();return{title:'Du lịch Việt Nam | Tour, khách sạn, villa & du thuyền',description:'Khám phá tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Tư vấn nhanh, lựa chọn đa dạng và giá minh bạch.',alternates:{canonical:site},openGraph:{title:'HappyGo Travel - Du lịch Việt Nam',description:'Tour, khách sạn, villa, resort và du thuyền toàn quốc.',url:site}}}
+export function generateMetadata():Metadata{const site=getSiteUrl();return{title:'Du lịch Việt Nam | Tour, khách sạn, villa & du thuyền',description:'Khám phá tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Tư vấn nhanh, lựa chọn đa dạng và giá minh bạch.',manifest:'/manifest.webmanifest',alternates:{canonical:site},openGraph:{title:'HappyGo Travel - Du lịch Việt Nam',description:'Tour, khách sạn, villa, resort và du thuyền toàn quốc.',url:site}}}
 
 export default async function HomePage(){
  const site=getSiteUrl(),state=await getPublicSiteState();
