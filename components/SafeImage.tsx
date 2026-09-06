@@ -27,7 +27,7 @@ export function SafeImage({src,fallback,alt='',className,loading='lazy',fetchPri
 export function SafeBackground({src,fallback,children,className,ariaLabel}:{src?:string;fallback?:string;children?:React.ReactNode;className?:string;ariaLabel?:string}){
  const backup=fallback||TRAVEL_FALLBACKS.default;const normalized=normalizeVisualSrc(src,backup);const[current,setCurrent]=useState(normalized);
  useEffect(()=>setCurrent(normalized),[normalized]);
- return <div className={className} role={ariaLabel?'img':undefined} aria-label={ariaLabel} style={{backgroundImage:`url(${current})`}}><img src={current} alt="" aria-hidden="true" decoding="async" style={{display:'none'}} onError={()=>{if(current!==backup)setCurrent(backup)}}/>{children}</div>
+ return <div className={className} role={ariaLabel?'img':undefined} aria-label={ariaLabel} style={{backgroundImage:`url(${current})`}}><img src={current} alt="" aria-hidden="true" loading="lazy" fetchPriority="low" decoding="async" style={{display:'none'}} onError={()=>{if(current!==backup)setCurrent(backup)}}/>{children}</div>
 }
 
 export function safeBackground(primary?:string,fallback=TRAVEL_FALLBACKS.default){return normalizeVisualSrc(primary,fallback)}
