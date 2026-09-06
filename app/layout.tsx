@@ -78,7 +78,7 @@ export async function generateMetadata():Promise<Metadata>{
  const image=String(seo?.ogImage||'');
  return {
   metadataBase:new URL(base),title:{default:title,template:`%s | ${brand}`},description,applicationName:brand,
-  authors:[{name:brand,url:base}],creator:brand,publisher:brand,category:'travel',keywords,alternates:{canonical:'/'},manifest:'/manifest.webmanifest',icons:{icon:'/icon.svg',apple:'/icon.svg'},appleWebApp:{capable:true,statusBarStyle:'default',title:brand.slice(0,20)},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
+  authors:[{name:brand,url:base}],creator:brand,publisher:brand,category:'travel',keywords,alternates:{canonical:'/'},icons:{icon:'/icon.svg',apple:'/icon.svg'},appleWebApp:{capable:true,statusBarStyle:'default',title:brand.slice(0,20)},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
   openGraph:{title,description,type:'website',locale:'vi_VN',siteName:brand,url:base,...(image?{images:[{url:image}]}:{})},
   twitter:{card:'summary_large_image',title,description,...(image?{images:[image]}:{})},other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-public-sanitized-20260906-prod'}
  };
