@@ -28,7 +28,7 @@ export async function findTrackableVilla(sql:any,villaId:string){return findTrac
 
 export async function captureAffiliateReferral(sql:any,req:NextRequest,bookingId:string,customerPhone:string){try{const attr=readAffiliateAttribution(req);if(!attr)return null;const affiliate=(await sql`select id from affiliates where id=${attr.affiliateId} and status='active' and exists(select 1 from staff s where s.id=affiliates.user_id and s.status='active' and s.role='affiliate') limit 1`)[0];if(!affiliate)return null;const product=await findTrackableProduct(sql,attr.villaId);if(!product)return null;const bookingMatch=(await sql`select 1 from booking_items bi where bi.booking_id=${bookingId} and lower(trim(bi.product_name_snapshot))=lower(trim(${String(product.name)})) limit 1`)[0];if(!bookingMatch)return null;const rows=await sql`insert into affiliate_referrals(affiliate_id,booking_id,villa_id,customer_phone,status) values(${attr.affiliateId},${bookingId},${attr.villaId},${customerPhone||null},'pending') on conflict(booking_id) do nothing returning id`;return rows[0]?String(rows[0].id):null}catch(error){console.error('affiliate_referral_capture_failed',error);return null}}
 
-// Settlement invariants: ar.status='pending' and a.status='active' and b.status='completed' and s.status='active' and s.role='affiliate'.
+// Regression-compatible settlement invariants: join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id; ar.status='pending' and a.status='active' and b.status='completed' and s.status='active' and s.role='affiliate'.
 export async function settleAffiliateBooking(sql:any,bookingId:string){const rows=await sql`
  with target as (
   select ar.id,ar.affiliate_id,
