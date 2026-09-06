@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {HomeCmsHero,type HomeCmsData} from '@/components/HomeCmsHero';
 import {HomeCmsSections,type HomeCmsProduct,type HomeCmsTour} from '@/components/HomeCmsSections';
+import {LegacyAdminPwaRedirect} from '@/components/LegacyAdminPwaRedirect';
 import type {PublicGuideArticle} from '@/components/usePublicGuideArticles';
 import {getSiteUrl} from '@/lib/site-url';
 import {getPublicSiteState} from '@/lib/server/public-site-state';
@@ -15,5 +16,5 @@ export default async function HomePage(){
  const cmsTours=Array.isArray(state.tn_cms_tours_v3)?state.tn_cms_tours_v3 as HomeCmsTour[]:[];
  const articles=Array.isArray(state.tn_cms_articles_v3)?state.tn_cms_articles_v3 as PublicGuideArticle[]:[];
  const website={"@context":"https://schema.org","@type":"WebSite","name":"HappyGo Travel","url":site,"inLanguage":"vi-VN","potentialAction":{"@type":"SearchAction","target":`${site}/tim-kiem?q={search_term_string}`,"query-input":"required name=search_term_string"}};
- return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(website)}}/><HomeCmsHero initialCms={home}/><HomeCmsSections initialHome={home} initialProducts={products} initialTours={cmsTours} initialArticles={articles}/></>
+ return <><LegacyAdminPwaRedirect/><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(website)}}/><HomeCmsHero initialCms={home}/><HomeCmsSections initialHome={home} initialProducts={products} initialTours={cmsTours} initialArticles={articles}/></>
 }
