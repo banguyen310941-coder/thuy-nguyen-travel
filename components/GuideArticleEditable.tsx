@@ -1,23 +1,17 @@
 'use client';
 
-import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {ContactQuickLink} from '@/components/ContactQuickLink';
 import {guideMedia} from '@/lib/guideCloudinary';
 
 type GuideImage={src:string;alt:string;credit?:string};
 type StaticPost={slug:string;title:string;category:string;excerpt:string;image:string;coverAlt:string;gallery:GuideImage[];date:string;readTime:string;content:{heading:string;paragraphs:string[]}[];faq:{q:string;a:string}[]};
-type CmsArticle={id:string;title:string;slug:string;category:string;excerpt:string;cover:string;content:string;status:string;date:string};
-const CONTENT_KEY='tn_cms_articles_v4';
 const happyGoText=(value:string)=>value.replace(/Thúy Nguyên Travel/gi,'HappyGo Travel').replace(/THÚY NGUYÊN TRAVEL/g,'HAPPYGO TRAVEL').replace(/Thúy Nguyên/gi,'HappyGo');
 const anchor=(value:string)=>value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 function destinationLink(post:StaticPost){const text=`${post.category} ${post.title}`.toLowerCase();if(text.includes('sầm sơn'))return{href:'/diem-den/sam-son',label:'Du lịch Sầm Sơn'};if(text.includes('long hải'))return{href:'/diem-den/long-hai',label:'Du lịch Long Hải'};if(text.includes('vũng tàu'))return{href:'/diem-den/vung-tau',label:'Du lịch Vũng Tàu'};if(text.includes('hạ long'))return{href:'/diem-den/ha-long',label:'Du lịch Hạ Long'};return null}
 
 export function GuideArticleEditable({post}:{post:StaticPost}){
- const [cms,setCms]=useState<CmsArticle|null>(null);
- useEffect(()=>{const load=()=>{try{const items=JSON.parse(localStorage.getItem(CONTENT_KEY)||'[]') as CmsArticle[];setCms(items.find(x=>x.id===`seo_${post.slug}`&&x.status==='published')||null)}catch{setCms(null)}};load();window.addEventListener('tn-articles-updated',load);window.addEventListener('storage',load);return()=>{window.removeEventListener('tn-articles-updated',load);window.removeEventListener('storage',load)}},[post.slug]);
- const title=happyGoText(cms?.title||post.title),category=happyGoText(cms?.category||post.category),excerpt=happyGoText(cms?.excerpt||post.excerpt),date=cms?.date||post.date;
- // Keep the public cover canonical so list cards and article detail can never diverge because of legacy local CMS cache.
+ const title=happyGoText(post.title),category=happyGoText(post.category),excerpt=happyGoText(post.excerpt),date=post.date;
  const cover=guideMedia(post.image,post.coverAlt);const destination=destinationLink(post);
  const imageSlots=new Map<number,GuideImage[]>();
  post.gallery.forEach((item,index)=>{const slot=Math.min(post.content.length-1,Math.max(0,Math.round(((index+1)*post.content.length)/(post.gallery.length+1))-1));imageSlots.set(slot,[...(imageSlots.get(slot)||[]),item])});

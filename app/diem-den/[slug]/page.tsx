@@ -16,7 +16,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 }
 
 function cleanServiceHref(href:string){
- try{const url=new URL(href,'https://happygo.vn');const type=(url.searchParams.get('type')||'').toLowerCase();if(url.pathname==='/luu-tru'&&type==='villa'){url.pathname='/villa-resort';url.searchParams.delete('type')}if(url.pathname==='/luu-tru'&&type==='hotel'){url.pathname='/khach-san';url.searchParams.delete('type')}return `${url.pathname}${url.search}`;}catch{return href}
+ try{const url=new URL(href,'https://happygo.local');const type=(url.searchParams.get('type')||'').toLowerCase();if(url.pathname==='/luu-tru'&&type==='villa'){url.pathname='/villa-resort';url.searchParams.delete('type')}if(url.pathname==='/luu-tru'&&type==='hotel'){url.pathname='/khach-san';url.searchParams.delete('type')}return `${url.pathname}${url.search}`;}catch{return href}
 }
 
 export default async function DestinationSeoPage({params}:{params:Promise<{slug:string}>}){

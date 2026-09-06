@@ -1,6 +1,8 @@
 import type {Metadata} from 'next';
-import {CmsProductDetail} from '@/components/CmsProductDetail';
+import {CmsProductDetail,type PublicProduct} from '@/components/CmsProductDetail';
 import {getPublishedProductSeo} from '@/lib/public-product-seo';
+import type {PublicRateRange} from '@/lib/public-rate-utils';
+import {getPublicSiteState} from '@/lib/server/public-site-state';
 import {getSiteUrl} from '@/lib/site-url';
 
 type Props={params:Promise<{slug:string}>};
@@ -18,7 +20,12 @@ export async function generateMetadata({params}:Props):Promise<Metadata>{
 }
 
 export default async function CanonicalProductPage({params}:Props){
- const {slug}=await params;const product=await getPublishedProductSeo(slug);const base=getSiteUrl();const url=`${base}/san-pham/${encodeURIComponent(slug)}`;
+ const {slug}=await params;const[product,state]=await Promise.all([getPublishedProductSeo(slug),getPublicSiteState()]);const base=getSiteUrl();const url=`${base}/san-pham/${encodeURIComponent(slug)}`;
+ const publicProducts=Array.isArray(state.tn_cms_products_v3_units)?state.tn_cms_products_v3_units as PublicProduct[]:[];
+ const initialProduct=publicProducts.find(item=>item.slug===slug&&item.status==='published')||null;
+ const unitIds=new Set((initialProduct?.units||[]).map(unit=>unit.id));
+ const allRates=Array.isArray(state.tn_cms_daily_rates_v1)?state.tn_cms_daily_rates_v1 as PublicRateRange[]:[];
+ const initialRates=unitIds.size?allRates.filter(rate=>unitIds.has(rate.unitId)):[];
  const schemas:unknown[]=[];
  if(product){
   const images=[product.cover,...product.gallery].filter(Boolean).slice(0,20);const category=categoryFor(product.type,base);
@@ -27,5 +34,5 @@ export default async function CanonicalProductPage({params}:Props){
   else schemas.push({'@context':'https://schema.org','@type':'Product','@id':`${url}#product`,name:product.name,description:product.summary,url,image:images,category:product.category||product.type,brand:{'@type':'Brand',name:'HappyGo Travel'},...(offer?{offers:offer}:{})});
   schemas.push({'@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':[{'@type':'ListItem',position:1,name:'Trang chủ',item:base},{'@type':'ListItem',position:2,name:category.name,item:category.url},{'@type':'ListItem',position:3,name:product.name,item:url}]});
  }
- return <>{product&&<script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(schemas)}}/>}<CmsProductDetail slug={slug}/></>;
+ return <>{product&&<script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(schemas)}}/>}<CmsProductDetail slug={slug} initialProduct={initialProduct} initialRates={initialRates}/></>;
 }

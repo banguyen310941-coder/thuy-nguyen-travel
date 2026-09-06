@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { SearchBar } from '@/components/SearchBar';
+import {useEffect,useState} from 'react';
+import {SearchBar} from '@/components/SearchBar';
 
 export type HomeCmsData={
   eyebrow:string;title:string;subtitle:string;noteTitle:string;noteText:string;heroImage:string;
@@ -37,23 +37,23 @@ function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
  return next;
 }
 
-export function useHomeCms(){
-  const [data,setData]=useState<HomeCmsData>(defaultHomeCms);
+export function useHomeCms(initialCms:Partial<HomeCmsData>|null=defaultHomeCms){
+  const[data,setData]=useState<HomeCmsData>(()=>migrateHome(initialCms));
+  useEffect(()=>setData(migrateHome(initialCms)),[initialCms]);
   useEffect(()=>{
     let alive=true;
-    const loadLocal=()=>{try{const local=localStorage.getItem('tn_cms_homepage');const next=migrateHome(local?JSON.parse(local):null);if(alive)setData(next);if(local){const before=JSON.stringify(JSON.parse(local));const after=JSON.stringify(next);if(before!==after)localStorage.setItem('tn_cms_homepage',after)}}catch{if(alive)setData(defaultHomeCms)}};
-    loadLocal();
-    const refresh=()=>loadLocal();
+    const loadRemote=async()=>{try{const response=await fetch('/api/catalog/site-state',{cache:'no-store'});if(!response.ok)return;const payload=await response.json() as{state?:Record<string,unknown>};const value=payload.state?.tn_cms_homepage;if(alive&&value&&typeof value==='object'&&!Array.isArray(value))setData(migrateHome(value as Partial<HomeCmsData>))}catch{}};
+    void loadRemote();
+    const refresh=()=>void loadRemote();
     window.addEventListener('tn-homepage-updated',refresh);
-    window.addEventListener('storage',refresh);
     if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData(migrateHome(v.value))}).catch(()=>{});}
-    return()=>{alive=false;window.removeEventListener('tn-homepage-updated',refresh);window.removeEventListener('storage',refresh)};
+    return()=>{alive=false;window.removeEventListener('tn-homepage-updated',refresh)};
   },[]);
   return data;
 }
 
-export function HomeCmsHero(){
-  const data=useHomeCms();
+export function HomeCmsHero({initialCms=defaultHomeCms}:{initialCms?:Partial<HomeCmsData>|null}){
+  const data=useHomeCms(initialCms);
   return <section className="mock-hero" style={{backgroundImage:`url(${data.heroImage})`}}>
     <div className="mock-hero-overlay" />
     <div className="container mock-hero-content">
