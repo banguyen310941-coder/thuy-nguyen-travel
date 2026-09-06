@@ -5,6 +5,32 @@ import {adminActor} from '@/lib/server/admin-access';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const safeUrl=(value:string)=>!value||/^https:\/\//i.test(value)?value:'';
 const elevated=(actor:{role:string;permissions:string[]})=>actor.role==='owner'||actor.role==='admin'||actor.permissions.includes('*');
+const payoutPriorityHours=24;
+
+export async function GET(req:NextRequest){
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ const financeActor=await adminActor(req,'affiliate_finance');
+ if(!financeActor)return NextResponse.json({error:'Unauthorized'},{status:401});
+ const profileActor=await adminActor(req,'affiliates');
+ const actor=financeActor,financeOnly=!profileActor,canSeeAll=elevated(actor)||financeOnly;
+ try{
+  const sql=db();
+  const rows=canSeeAll
+   ?await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.created_at,a.balance,a.bank_account,a.bank_name,a.account_holder,s.name as affiliate_name from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id where cp.status='pending' order by cp.created_at asc limit 500`
+   :await sql`select cp.id,cp.affiliate_id,cp.amount,cp.status,cp.created_at,a.balance,a.bank_account,a.bank_name,a.account_holder,s.name as affiliate_name from commission_payouts cp join affiliates a on a.id=cp.affiliate_id join staff s on s.id=a.user_id where cp.status='pending' and a.sales_owner_id=${actor.id} order by cp.created_at asc limit 500`;
+  const now=Date.now();
+  const payouts=rows.map((row:any)=>{
+   const createdAt=String(row.created_at||''),createdMs=Date.parse(createdAt),ageHours=Number.isFinite(createdMs)?Math.max(0,Math.floor((now-createdMs)/3600000)):0;
+   const amount=Number(row.amount||0),affiliateBalance=Number(row.balance||0);
+   return{id:String(row.id),affiliateId:String(row.affiliate_id),affiliateName:String(row.affiliate_name||'CTV'),amount,status:String(row.status),createdAt,affiliateBalance,canPay:affiliateBalance>=amount,ageHours,bankAccount:String(row.bank_account||''),bankName:String(row.bank_name||''),accountHolder:String(row.account_holder||'')};
+  });
+  const totalAmount=payouts.reduce((sum,item)=>sum+item.amount,0),overdueCount=payouts.filter(item=>item.ageHours>=payoutPriorityHours).length,insufficientBalanceCount=payouts.filter(item=>!item.canPay).length;
+  return NextResponse.json({ok:true,ownershipScope:canSeeAll?'all':'assigned',priorityHours:payoutPriorityHours,stats:{pendingCount:payouts.length,totalAmount,overdueCount,insufficientBalanceCount,oldestCreatedAt:payouts[0]?.createdAt||''},payouts},{headers:{'Cache-Control':'no-store, max-age=0'}});
+ }catch(error){
+  console.error('affiliate_payout_queue_failed',error);
+  return NextResponse.json({error:'Không đọc được hàng chờ payout CTV.'},{status:500});
+ }
+}
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
