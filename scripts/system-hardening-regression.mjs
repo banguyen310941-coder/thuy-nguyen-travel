@@ -30,12 +30,18 @@ must('lib/server/public-site-state.ts','PRIVATE_FIELD_TOKENS','Server phải có
 must('lib/server/public-site-state.ts',"'net','cost','supplier','agency','wholesale','margin','profit','markup'",'Sanitizer phải chặn net/cost/supplier/agency/margin/profit/markup');
 must('lib/server/public-site-state.ts','function snakeField(key:string)','Sanitizer phải chuẩn hóa camelCase như netRateA và priceMarkupVnd');
 must('lib/server/public-site-state.ts',"(?:price|sheet|image|file|folder)_source",'Sanitizer phải chặn priceSource và các source nội bộ tương tự');
-must('lib/server/public-site-state.ts','function sanitizePublicValue(value:unknown):unknown','Public payload phải được lọc đệ quy');
+must('lib/server/public-site-state.ts','sanitizePublicValue(value:unknown):unknown','Public payload phải có sanitizer đệ quy dùng chung');
 must('lib/server/public-site-state.ts','if(Array.isArray(value))return value.map(sanitizePublicValue)','Mảng lồng nhau cũng phải được lọc');
 must('lib/server/public-site-state.ts','if(privateField(key))continue','Object lồng nhau phải bỏ trường nội bộ trước khi serialize');
 must('lib/server/public-site-state.ts',"state[key]=sanitizePublicValue(visibleList(value))",'Tour legacy cũng phải qua sanitizer');
 must('lib/server/public-site-state.ts',"state[key]=sanitizePublicValue(value)",'Homepage CMS cũng phải qua sanitizer');
 must('lib/server/public-site-state.ts',"giá\\s*(gốc|net|hợp tác|(?:phòng\\s*)?nguồn)",'Text public phải lọc câu chứa giá nguồn/net');
+must('app/api/catalog/partner-products/route.ts',"import {sanitizePublicValue} from '@/lib/server/public-site-state'",'API catalog đối tác phải dùng sanitizer chung');
+must('app/api/catalog/partner-products/route.ts','const sanitized=sanitizePublicValue(raw)','Dữ liệu data của sản phẩm đối tác phải được lọc đệ quy trước khi trả public');
+must('app/api/catalog/partner-products/route.ts',"const sanitizedSummary=sanitizePublicValue(row.description||data.summary||'')",'Mô tả sản phẩm đối tác cũng phải lọc text nội bộ');
+mustNot('app/api/catalog/partner-products/route.ts','partnerPricing:_partnerPricing','API public không được dựa vào blacklist 4 field top-level');
+mustNot('app/api/catalog/partner-products/route.ts','netPrice:_netPrice','API public không được chỉ loại netPrice top-level');
+mustNot('app/api/catalog/partner-products/route.ts','apiToken:_apiToken','API public không được chỉ loại apiToken top-level');
 
 must('app/cam-nang/bai-viet/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server');
 must('app/guide/category/[slug]/page.tsx','initialArticles={initialArticles}','Chuyên mục Cẩm nang phải hydrate bài CMS từ server');
