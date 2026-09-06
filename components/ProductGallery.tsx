@@ -27,9 +27,9 @@ export function ProductGallery({title,cover,gallery,kind}:{title:string;cover?:s
     const old=document.body.style.overflow;
     document.body.style.overflow='hidden';
     const onKey=(event:KeyboardEvent)=>{
-      if(event.key==='Escape')close();
-      if(event.key==='ArrowLeft')move(-1);
-      if(event.key==='ArrowRight')move(1);
+      if(event.key==='Escape')setOpen(false);
+      if(event.key==='ArrowLeft')setActive(i=>(i-1+images.length)%images.length);
+      if(event.key==='ArrowRight')setActive(i=>(i+1)%images.length);
     };
     window.addEventListener('keydown',onKey);
     return()=>{document.body.style.overflow=old;window.removeEventListener('keydown',onKey)};

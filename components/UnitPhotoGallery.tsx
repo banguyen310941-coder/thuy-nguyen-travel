@@ -9,7 +9,7 @@ export function UnitPhotoGallery({title,images,kind}:{title:string;images:string
  const [open,setOpen]=useState(false);const [active,setActive]=useState(0);
  const show=(index:number)=>{setActive(Math.max(0,Math.min(index,photos.length-1)));setOpen(true)};
  const close=()=>setOpen(false);const move=(delta:number)=>setActive(i=>(i+delta+photos.length)%photos.length);
- useEffect(()=>{if(!open)return;const old=document.body.style.overflow;document.body.style.overflow='hidden';const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')close();if(event.key==='ArrowLeft')move(-1);if(event.key==='ArrowRight')move(1)};window.addEventListener('keydown',onKey);return()=>{document.body.style.overflow=old;window.removeEventListener('keydown',onKey)}},[open,photos.length]);
+ useEffect(()=>{if(!open)return;const old=document.body.style.overflow;document.body.style.overflow='hidden';const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setOpen(false);if(event.key==='ArrowLeft')setActive(i=>(i-1+photos.length)%photos.length);if(event.key==='ArrowRight')setActive(i=>(i+1)%photos.length)};window.addEventListener('keydown',onKey);return()=>{document.body.style.overflow=old;window.removeEventListener('keydown',onKey)}},[open,photos.length]);
  if(!photos.length)return null;
  const preview=photos.slice(0,5);
  return <>
