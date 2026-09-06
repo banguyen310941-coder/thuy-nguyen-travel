@@ -53,12 +53,10 @@ import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
 import {db,hasDatabase} from '@/lib/db';
+import {getSiteUrl} from '@/lib/site-url';
 
 export const viewport:Viewport={width:'device-width',initialScale:1,maximumScale:5,viewportFit:'cover',themeColor:'#0d47a1',colorScheme:'light'};
 
-const VERCEL_PRODUCTION_SITE=process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:'';
-const VERCEL_DEPLOYMENT_SITE=process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:'';
-const DEFAULT_SITE=process.env.NEXT_PUBLIC_SITE_URL||VERCEL_PRODUCTION_SITE||VERCEL_DEPLOYMENT_SITE||'https://happygo.vn';
 const DEFAULT_DESCRIPTION='Đặt tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Giá minh bạch, tư vấn nhanh, hành trình hạnh phúc.';
 
 type SeoConfig={siteTitle?:string;description?:string;keywords?:string;ogImage?:string;organizationName?:string;canonicalBase?:string};
@@ -68,11 +66,11 @@ async function productionConfig(){
  if(!hasDatabase())return{seo:null as SeoConfig|null,site:null as SiteConfig|null};
  try{const rows=await db()`select distinct on (entity_id) entity_id,after_data from audit_logs where entity_type='site_config' order by entity_id,created_at desc,id desc`;let seo:SeoConfig|null=null,site:SiteConfig|null=null;for(const row of rows){if(String(row.entity_id)==='seo')seo=configValue(row.after_data) as SeoConfig;if(String(row.entity_id)==='site')site=configValue(row.after_data) as SiteConfig}return{seo,site}}catch{return{seo:null,site:null}}
 }
-function safeUrl(value:string,fallback:string){try{return new URL(value).toString().replace(/\/$/,'')}catch{return fallback}}
 
 export async function generateMetadata():Promise<Metadata>{
  const {seo,site}=await productionConfig();
- const base=safeUrl(String(seo?.canonicalBase||DEFAULT_SITE),DEFAULT_SITE);
+ // Canonical host is controlled only by deployment environment. This prevents CMS data from pointing search engines to a domain before it is attached.
+ const base=getSiteUrl();
  const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');
  const title=String(seo?.siteTitle||`${brand} | Tour, khách sạn, villa & du thuyền`);
  const description=String(seo?.description||DEFAULT_DESCRIPTION);
@@ -87,7 +85,7 @@ export async function generateMetadata():Promise<Metadata>{
 }
 
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
- const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=safeUrl(String(seo?.canonicalBase||DEFAULT_SITE),DEFAULT_SITE);const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
+ const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,url:siteUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
  return <html lang="vi"><body id="top" data-ui-version="happygo-public-visuals-pwa-20260906-prod"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome>{children}</SiteChrome></body></html>;
 }
