@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
+import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 
@@ -13,6 +14,7 @@ function sameOrigin(req:NextRequest){const origin=req.headers.get('origin');retu
 // does not mutate customers.marketing_consent; authenticated account/CRM flows own it.
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Hệ thống đăng ký ưu đãi chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
  if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
  const body=await req.json().catch(()=>({}));
  // Honeypot: automated form fillers commonly populate hidden website fields.
@@ -20,7 +22,12 @@ export async function POST(req:NextRequest){
  const email=normalizeEmail(body.email);
  if(!validEmail(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
  try{
-  const sql=db(),subscribedAt=new Date().toISOString();
+  const sql=db();
+  const ipAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'newsletter'),action:'public.newsletter.subscribe',scope:'newsletter-ip',maxHits:20,windowMinutes:15});
+  if(!ipAllowed)return NextResponse.json({error:'Bạn đã gửi quá nhiều yêu cầu đăng ký. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
+  const emailAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'newsletter-email',email),action:'public.newsletter.subscribe',scope:'newsletter-email',maxHits:5,windowMinutes:15});
+  if(!emailAllowed)return NextResponse.json({error:'Email này đang được gửi đăng ký quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
+  const subscribedAt=new Date().toISOString();
   const result=(await sql`with locked as (
     select pg_advisory_xact_lock(hashtext(${email}::text))
    ), latest as (
@@ -51,6 +58,7 @@ export async function POST(req:NextRequest){
 
 export async function DELETE(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Hệ thống đăng ký ưu đãi chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu hủy đăng ký quá lớn.'},{status:413});
  if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
  const body=await req.json().catch(()=>({}));const email=normalizeEmail(body.email);
  if(!validEmail(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
