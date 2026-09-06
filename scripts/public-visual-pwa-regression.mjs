@@ -5,6 +5,8 @@ const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const must=(path,needle,label)=>{if(!read(path).includes(needle))failures.push(`${label}: thiếu ${JSON.stringify(needle)} trong ${path}`)};
 const mustNot=(path,needle,label)=>{if(read(path).includes(needle))failures.push(`${label}: không được chứa ${JSON.stringify(needle)} trong ${path}`)};
 
+mustNot('app/layout.tsx',"manifest:'/manifest.webmanifest'",'Root layout không được ép manifest public lên trang Admin');
+must('app/admin/layout.tsx',"manifest:'/admin/manifest.webmanifest'",'HTML trang Admin phải khai manifest Admin ngay từ server');
 must('app/admin/manifest.webmanifest/route.ts',"id:'/admin/'",'Admin PWA phải có app identity riêng');
 must('app/admin/manifest.webmanifest/route.ts',"start_url:'/admin/?source=pwa'",'Admin PWA phải luôn khởi động trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"scope:'/admin/'",'Admin PWA phải giới hạn scope trong /admin');
