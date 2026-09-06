@@ -9,6 +9,7 @@ const must=(text,needle,label)=>{if(!text.includes(needle))fail(`${label} thiế
 const nextConfig=read('next.config.mjs');
 const sitemap=read('app/sitemap.ts');
 const robots=read('app/robots.ts');
+const siteUrl=read('lib/site-url.ts');
 
 const publicRoutes=['/luu-tru','/tour-du-lich','/du-thuyen','/diem-den','/cam-nang','/san-pham','/gioi-thieu','/lien-he'];
 for(const route of publicRoutes)must(sitemap,route,'sitemap');
@@ -21,6 +22,11 @@ must(robots,'/tim-kiem','robots');
 must(robots,'sitemap.xml','robots');
 must(sitemap,'getSiteUrl','sitemap phải dùng production host runtime');
 must(robots,'getSiteUrl','robots phải dùng production host runtime');
+must(siteUrl,'process.env.PUBLIC_SITE_URL','Canonical phải ưu tiên biến server-side PUBLIC_SITE_URL');
+must(siteUrl,'process.env.NEXT_PUBLIC_SITE_URL','Canonical vẫn hỗ trợ cấu hình public hiện có');
+must(siteUrl,'new URL(raw)','Canonical environment phải được validate như URL tuyệt đối');
+must(siteUrl,'process.env.VERCEL_PROJECT_PRODUCTION_URL','Canonical phải fallback về production domain ổn định của Vercel');
+if(siteUrl.includes('process.env.VERCEL_URL'))fail('Canonical không được tự chuyển sang preview deployment host');
 
 const metadataPages={
  'app/stay/page.tsx':'/luu-tru',
