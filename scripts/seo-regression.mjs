@@ -32,13 +32,23 @@ const metadataPages={
  'app/contact/page.tsx':'/lien-he',
  'app/terms/page.tsx':'/dieu-khoan',
  'app/privacy/page.tsx':'/chinh-sach-bao-mat',
- 'app/payment-guide/page.tsx':'/huong-dan-thanh-toan'
+ 'app/payment-guide/page.tsx':'/huong-dan-thanh-toan',
+ 'app/stay/[slug]/page.tsx':'/luu-tru/',
+ 'app/tours/[slug]/page.tsx':'/tour-du-lich/',
+ 'app/cruises/[slug]/page.tsx':'/du-thuyen/',
+ 'app/product/[slug]/page.tsx':'/san-pham/',
+ 'app/guide/[slug]/page.tsx':'/cam-nang/',
+ 'app/guide/category/[slug]/page.tsx':'/cam-nang/danh-muc/',
+ 'app/cam-nang/bai-viet/[slug]/page.tsx':'/cam-nang/bai-viet/',
+ 'app/diem-den/[slug]/page.tsx':'/diem-den/',
+ 'app/diem-den/long-hai/page.tsx':'/diem-den/long-hai',
+ 'app/diem-den/vung-tau/page.tsx':'/diem-den/vung-tau'
 };
 for(const [file,route] of Object.entries(metadataPages)){
  const text=read(file);
  must(text,'getSiteUrl',`${file} canonical runtime`);
  must(text,route,`${file} canonical path`);
- if(text.includes("const canonical='https://happygo.vn"))fail(`${file} vẫn hardcode domain chưa gắn`);
+ if(/https:\/\/happygo\.vn(?:\/|['"`])/.test(text))fail(`${file} vẫn chứa URL domain custom chưa gắn`);
  if(!/description\s*:/.test(text))fail(`${file} thiếu meta description`);
 }
 
@@ -60,6 +70,7 @@ function walk(dir){
   else if(/\.(?:ts|tsx|js|jsx|mjs)$/.test(entry.name)){
    const text=read(rel);
    for(const pattern of legacyLinkPatterns){pattern.lastIndex=0;if(pattern.test(text))fail(`${rel} còn link public cũ: ${pattern}`)}
+   if(rel.startsWith(`app${path.sep}`)&&/https:\/\/happygo\.vn(?:\/|['"`])/.test(text))fail(`${rel} còn URL happygo.vn trước khi gắn domain`);
   }
  }
 }
