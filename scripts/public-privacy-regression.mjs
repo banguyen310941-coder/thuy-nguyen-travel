@@ -21,11 +21,12 @@ mustNot('lib/server/public-site-state.ts','select id,product_id,code,name','Khô
 must('components/PublishedUnits.tsx','Còn chỗ theo lịch ngày đã chọn','UI public chỉ hiển thị trạng thái còn chỗ, không hiển thị tồn chính xác');
 mustNot('components/PublishedUnits.tsx','Còn {minQty} đơn vị','UI public không được hiển thị số tồn production chính xác');
 
-// Partner catalog may expose approved customer-facing content, but raw partner data must never escape.
-must('app/api/catalog/partner-products/route.ts',"import {publicProductData,sanitizePublicValue} from '@/lib/server/public-site-state'",'Partner catalog phải dùng public projector chung');
-must('app/api/catalog/partner-products/route.ts','const data=publicProductData(row.data)','Partner catalog phải project raw data qua allowlist');
+// Partner catalog uses defense in depth: recursive sanitizer first, then an explicit product allowlist.
+must('app/api/catalog/partner-products/route.ts',"import {sanitizePublicValue} from '@/lib/server/public-site-state'",'Partner catalog phải dùng sanitizer chung');
+must('app/api/catalog/partner-products/route.ts',"import {publicProductData} from '@/lib/server/public-site-state'",'Partner catalog phải dùng public projector chung');
+must('app/api/catalog/partner-products/route.ts','const sanitized=sanitizePublicValue(raw)','Partner catalog phải lọc data đệ quy trước');
+must('app/api/catalog/partner-products/route.ts','const data=publicProductData(sanitized)','Partner catalog phải project dữ liệu đã lọc qua allowlist');
 must('app/api/catalog/partner-products/route.ts',"const sanitizedSummary=sanitizePublicValue(row.description||data.summary||'')",'Partner catalog phải lọc mô tả public');
-mustNot('app/api/catalog/partner-products/route.ts','const sanitized=sanitizePublicValue(raw)','Partner catalog không được coi blacklist sanitizer là biên public duy nhất');
 mustNot('app/api/catalog/partner-products/route.ts','retailPriceVnd:','Partner catalog không cần lộ cột giá số dư thừa ngoài giá public chuẩn');
 mustNot('app/api/catalog/partner-products/route.ts','promoPriceVnd:','Partner catalog không cần lộ cột promo số dư thừa ngoài giá public chuẩn');
 
