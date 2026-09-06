@@ -1,5 +1,5 @@
 const CACHE='happygo-shell-v7';
-const SHELL=['/','/admin','/admin/','/admin/manifest.webmanifest','/icon.svg'];
+const SHELL=['/','/admin','/admin/','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -14,6 +14,13 @@ self.addEventListener('fetch',event=>{
   if(req.method!=='GET')return;
   const url=new URL(req.url);
   if(url.origin!==self.location.origin)return;
+
+  // Manifests define app identity/start_url. Never serve a stale cached manifest,
+  // otherwise an Admin icon can keep opening the public homepage after a fix.
+  if(url.pathname.endsWith('/manifest.webmanifest')||url.pathname==='/manifest.webmanifest'){
+    event.respondWith(fetch(req));
+    return;
+  }
 
   // Production data must never be served from the PWA cache. Catalog, pricing,
   // authentication and admin APIs are dynamic and must always hit the network.
