@@ -1,13 +1,24 @@
 import {NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
-import {sanitizePublicValue} from '@/lib/server/public-site-state';
+import {publicProductData,sanitizePublicValue} from '@/lib/server/public-site-state';
 
 function publicProduct(row:any){
-  const raw=row.data&&typeof row.data==='object'?row.data:{};
-  const sanitized=sanitizePublicValue(raw);
-  const data=sanitized&&typeof sanitized==='object'&&!Array.isArray(sanitized)?sanitized as Record<string,unknown>:{};
+  const data=publicProductData(row.data);
   const sanitizedSummary=sanitizePublicValue(row.description||data.summary||'');
-  return {...data,id:String(row.id),partnerId:String(row.partner_id),partnerName:row.partner_name||'',slug:row.slug,type:row.type,name:row.name,status:'approved',summary:String(sanitizedSummary||''),price:data.price||String(row.promo_price_vnd||row.retail_price_vnd||''),retailPriceVnd:Number(row.retail_price_vnd||0),promoPriceVnd:row.promo_price_vnd==null?null:Number(row.promo_price_vnd),updatedAt:row.updated_at,source:'partner'};
+  return {
+    ...data,
+    id:String(row.id),
+    partnerId:String(row.partner_id),
+    partnerName:String(row.partner_name||''),
+    slug:String(row.slug||''),
+    type:String(row.type||''),
+    name:String(row.name||''),
+    status:'approved',
+    summary:String(sanitizedSummary||''),
+    price:String(data.price||row.promo_price_vnd||row.retail_price_vnd||''),
+    updatedAt:String(row.updated_at||''),
+    source:'partner'
+  };
 }
 
 export async function GET(){
