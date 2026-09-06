@@ -67,14 +67,16 @@ check(has(affiliateServer,"ar.status='pending' and a.status='active' and b.statu
 check(has(affiliateDashboardApi,"const uuid=/^[0-9a-f]{8}"),'CTV self-service phải kiểm tra requestId UUID cho giao dịch rút tiền.');
 check(has(affiliateDashboardApi,"const bankFields=[bankName,bankAccount,accountHolder]"),'CTV self-service phải yêu cầu bộ thông tin ngân hàng đầy đủ hoặc để trống toàn bộ.');
 check(has(affiliateDashboardApi,"before_data,after_data"),'Cập nhật hồ sơ nhận tiền phải ghi audit trước và sau.');
-check(has(affiliateDashboardApi,'maskedAccount(previous.bank_account)'),'Audit hồ sơ CTV không được lưu nguyên số tài khoản cũ.');
+check(has(affiliateDashboardApi,"right(e.bank_account,4)"),'Audit hồ sơ CTV chỉ được giữ 4 số cuối tài khoản cũ.');
 check(has(affiliateDashboardApi,'maskedAccount(bankAccount)'),'Audit hồ sơ CTV không được lưu nguyên số tài khoản mới.');
+check(has(affiliateDashboardApi,'const profileLockKey=`affiliate-payout:${actor.id}`'),'Cập nhật hồ sơ CTV phải dùng cùng khóa với payout để tránh race ngân hàng.');
+check(has(affiliateDashboardApi,'not(e.has_pending and e.bank_changed)'),'Server phải khóa thay đổi ngân hàng khi có payout pending.');
 check(has(affiliateDashboardApi,'const lockKey=`affiliate-payout:${actor.id}`'),'Yêu cầu rút tiền CTV phải khóa theo chính tài khoản CTV.');
 check(has(affiliateDashboardApi,'await sql.transaction(['),'Yêu cầu rút tiền CTV phải dùng transaction nhiều statement để lock có hiệu lực trước snapshot xử lý.');
 check(has(affiliateDashboardApi,'pg_advisory_xact_lock(hashtext(${lockKey}))'),'Yêu cầu rút tiền phải khóa actor trước khi kiểm tra pending.');
 check(has(affiliateDashboardApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Yêu cầu rút tiền phải khóa requestId chống retry song song.');
 check(has(affiliateDashboardApi,"al.after_data->>'requestId'=${requestId}"),'CTV payout request phải idempotent theo requestId đã audit.');
-check(has(affiliateDashboardApi,"jsonb_build_object('payoutId',i.id::text,'amount',i.amount,'requestId',${requestId})"),'Audit yêu cầu rút tiền phải lưu payoutId, amount và requestId.');
+check(has(affiliateDashboardApi,"'bankAccount',case when coalesce(p.bank_account,'')='' then '' else '***'||right(p.bank_account,4) end"),'Audit yêu cầu rút phải chụp tài khoản nhận tiền dạng che số.');
 check(has(affiliateDashboardApi,"not exists(select 1 from waiting)"),'Server phải giữ nguyên tắc mỗi CTV chỉ có một payout pending.');
 check(has(affiliateDashboardApi,"if(result?.idempotent)return NextResponse.json({ok:true"),'Retry cùng requestId phải trả lại thành công thay vì tạo payout mới.');
 
@@ -103,6 +105,7 @@ check(has(followupsUi,'role="button" tabIndex={0}'),'Card CTV phải dùng đư�
 check(has(followupsUi,"e.key==='Enter'||e.key===' '"),'Card CTV phải hỗ trợ Enter/Space khi chọn.');
 
 check(has(affiliateDashboardUi,'payoutLock.current'),'Dashboard CTV phải có synchronous lock chống double-click rút tiền.');
+check(has(affiliateDashboardUi,'profileLock.current'),'Dashboard CTV phải có synchronous lock chống double-click cập nhật hồ sơ.');
 check(has(affiliateDashboardUi,'const requestId=crypto.randomUUID()'),'Dashboard CTV phải tạo requestId duy nhất cho mỗi yêu cầu rút.');
 check(has(affiliateDashboardUi,"action({action:'request_payout',amount,requestId}"),'Dashboard CTV phải gửi requestId xuống server.');
 check(has(affiliateDashboardUi,'window.confirm(`Gửi yêu cầu rút ${money(amount)}'),'CTV phải xác nhận số tiền và tài khoản trước khi gửi yêu cầu rút.');
@@ -110,6 +113,9 @@ check(has(affiliateDashboardUi,'loadRequest.current'),'Dashboard CTV phải bỏ
 check(has(affiliateDashboardUi,"window.addEventListener('focus',refresh)"),'Dashboard CTV phải tự refresh khi người dùng quay lại cửa sổ.');
 check(has(affiliateDashboardUi,"document.addEventListener('visibilitychange',visibility)"),'Dashboard CTV phải refresh khi tab trở lại visible.');
 check(has(affiliateDashboardUi,"bankFields.some(Boolean)&&!bankFields.every(Boolean)"),'UI hồ sơ CTV phải chặn lưu bộ thông tin ngân hàng thiếu trường.');
+check(has(affiliateDashboardUi,'disabled={bankLocked}'),'UI phải khóa trường ngân hàng khi payout đang pending.');
+check(has(affiliateDashboardUi,'↻ Làm mới trạng thái'),'CTV phải có thao tác làm mới trạng thái payout chủ động.');
+check(has(affiliateDashboardUi,'p.resolvedAt&&<small>Xử lý'),'Lịch sử payout phải hiển thị thời điểm đã xử lý.');
 check(has(affiliateDashboardUi,'aria-live="polite"'),'Thông báo dashboard CTV phải được công bố cho công nghệ hỗ trợ.');
 
 check(has(schema,'affiliate_followups'),'Schema repo phải chứa bảng affiliate_followups.');
@@ -119,4 +125,4 @@ if(failures.length){
  console.error('\nCTV / Affiliate regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV / Affiliate regression OK: ownership, Admin approval audit, staff/login state, payout scope, CTV self-service payout transaction/idempotency, Sale owner visibility, finance permissions and paginated/idempotent follow-up CRM are guarded.');
+console.log('CTV / Affiliate regression OK: ownership, Admin approval audit, staff/login state, payout scope, atomic CTV profile/payout locks, Sale owner visibility, finance permissions and paginated/idempotent follow-up CRM are guarded.');

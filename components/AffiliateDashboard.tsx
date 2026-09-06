@@ -5,7 +5,7 @@ import {useRouter} from 'next/navigation';
 
 type Product={id:string;slug:string;type:string;name:string;place:string;cover:string;publicPrice:number;affiliateLink:string};
 type Referral={id:string;bookingCode:string;bookingStatus:string;villaName:string;customerPhone:string;commissionAmount:number;status:string;createdAt:string;creditedAt:string};
-type Payout={id:string;amount:number;status:string;payoutDate:string;receiptUrl:string;createdAt:string};
+type Payout={id:string;amount:number;status:string;payoutDate:string;receiptUrl:string;createdAt:string;resolvedAt:string};
 type Affiliate={name:string;email:string;referralCode:string;phone:string;zalo:string;balance:number;totalCommission:number;commissionRate:number;status:string;bankAccount:string;bankName:string;accountHolder:string};
 type Dashboard={affiliate:Affiliate;stats:{clicks:number;closedOrders:number};products?:Product[];villas:Product[];referrals:Referral[];payouts:Payout[]};
 type ProfileForm={phone:string;zalo:string;bankAccount:string;bankName:string;accountHolder:string};
@@ -23,7 +23,7 @@ async function copyText(value:string){
 
 export function AffiliateDashboard(){
  const router=useRouter();
- const loadRequest=useRef(0),payoutLock=useRef(false);
+ const loadRequest=useRef(0),payoutLock=useRef(false),profileLock=useRef(false);
  const[data,setData]=useState<Dashboard|null>(null),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[busy,setBusy]=useState(true),[copied,setCopied]=useState(''),[editingProfile,setEditingProfile]=useState(false),[profile,setProfile]=useState<ProfileForm>({phone:'',zalo:'',bankAccount:'',bankName:'',accountHolder:''}),[payoutAmount,setPayoutAmount]=useState('');
 
  const load=useCallback(async()=>{
@@ -65,9 +65,11 @@ export function AffiliateDashboard(){
   }catch{setMsg('Không kết nối được API CTV.');return false}finally{setBusy(false)}
  }
  async function saveProfile(){
+  if(profileLock.current)return;
   const bankFields=[profile.bankName.trim(),profile.bankAccount.trim(),profile.accountHolder.trim()];
   if(bankFields.some(Boolean)&&!bankFields.every(Boolean)){setMsg('Vui lòng nhập đủ ngân hàng, số tài khoản và chủ tài khoản; hoặc để trống cả 3 trường.');return}
-  if(await action({action:'update_profile',...profile},'Đã cập nhật thông tin nhận hoa hồng.'))setEditingProfile(false)
+  profileLock.current=true;
+  try{if(await action({action:'update_profile',...profile},'Đã cập nhật thông tin nhận hoa hồng.'))setEditingProfile(false)}finally{profileLock.current=false}
  }
  async function requestPayout(){
   if(payoutLock.current)return;
@@ -88,8 +90,11 @@ export function AffiliateDashboard(){
 
  const a=data.affiliate;
  const pendingPayout=data.payouts.find(p=>p.status==='pending');
+ const paidPayouts=data.payouts.filter(p=>p.status==='paid').length;
+ const cancelledPayouts=data.payouts.filter(p=>p.status==='cancelled').length;
  const hasBank=Boolean(a.bankName&&a.bankAccount&&a.accountHolder);
  const requestedAmount=Math.round(Number(payoutAmount)||0);
+ const bankLocked=Boolean(pendingPayout);
 
  return <main className="affiliate-shell">
   <header className="affiliate-topbar">
@@ -125,27 +130,29 @@ export function AffiliateDashboard(){
 
    <section className="affiliate-two">
     <section className="affiliate-panel">
-     <div className="affiliate-panel-head"><div><small>THANH TOÁN</small><h2>Lịch sử & yêu cầu rút hoa hồng</h2><p>Yêu cầu mới sẽ ở trạng thái chờ cho đến khi HappyGo đối soát.</p></div></div>
+     <div className="affiliate-panel-head"><div><small>THANH TOÁN</small><h2>Lịch sử & yêu cầu rút hoa hồng</h2><p>Yêu cầu mới sẽ ở trạng thái chờ cho đến khi HappyGo đối soát. Lịch sử hiện có {paidPayouts} đã thanh toán · {cancelledPayouts} đã hủy.</p></div></div>
      <div className="affiliate-payout-request">
-      {pendingPayout?<div className="affiliate-pending-note"><b>Đang chờ xử lý: {money(pendingPayout.amount)}</b><span>Gửi lúc {date(pendingPayout.createdAt)}. Bạn có thể tạo yêu cầu mới sau khi yêu cầu này được xử lý.</span></div>:<>
+      {pendingPayout?<div className="affiliate-pending-note"><b>Đang chờ xử lý: {money(pendingPayout.amount)}</b><span>Gửi lúc {date(pendingPayout.createdAt)} vào {a.bankName||'ngân hàng'} {last4(a.bankAccount)}. Thông tin ngân hàng được khóa cho đến khi yêu cầu này hoàn tất hoặc bị hủy.</span><div className="affiliate-payout-actions"><button type="button" onClick={()=>void load()} disabled={busy}>↻ Làm mới trạng thái</button></div></div>:<>
        <label>Số tiền muốn rút<input type="number" min="1" step="1000" max={Math.max(a.balance,0)} value={payoutAmount} onChange={e=>setPayoutAmount(e.target.value)} placeholder={a.balance>0?String(Math.round(a.balance)):'0'}/></label>
        <div className="affiliate-payout-actions"><button type="button" onClick={()=>setPayoutAmount(String(Math.round(a.balance)))} disabled={a.balance<=0}>Rút toàn bộ</button><button type="button" className="primary" onClick={()=>void requestPayout()} disabled={busy||a.balance<=0||!hasBank||requestedAmount>a.balance}>Gửi yêu cầu rút</button></div>
        {!hasBank&&<span className="affiliate-form-hint">Cập nhật đủ thông tin ngân hàng trước khi gửi yêu cầu rút.</span>}
        {requestedAmount>a.balance&&<span className="affiliate-form-hint">Số tiền nhập đang vượt quá số dư ví.</span>}
       </>}
      </div>
-     <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th><th>Biên nhận</th></tr></thead><tbody>{data.payouts.map(p=><tr key={p.id}><td>{date(p.payoutDate||p.createdAt)}</td><td><b>{money(p.amount)}</b></td><td><span className={`affiliate-status ${p.status}`}>{statusLabel(p.status)}</span></td><td>{p.receiptUrl?<a href={p.receiptUrl} target="_blank" rel="noreferrer">Xem biên nhận</a>:'—'}</td></tr>)}{!data.payouts.length&&<tr><td colSpan={4}>Chưa có yêu cầu hoặc đợt thanh toán.</td></tr>}</tbody></table></div>
+     <div className="affiliate-table-wrap"><table className="affiliate-table"><thead><tr><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th><th>Biên nhận</th></tr></thead><tbody>{data.payouts.map(p=><tr key={p.id}><td>{date(p.payoutDate||p.createdAt)}</td><td><b>{money(p.amount)}</b></td><td><span className={`affiliate-status ${p.status}`}>{statusLabel(p.status)}</span>{p.resolvedAt&&<small>Xử lý {date(p.resolvedAt)}</small>}</td><td>{p.receiptUrl?<a href={p.receiptUrl} target="_blank" rel="noreferrer">Xem biên nhận</a>:'—'}</td></tr>)}{!data.payouts.length&&<tr><td colSpan={4}>Chưa có yêu cầu hoặc đợt thanh toán.</td></tr>}</tbody></table></div>
     </section>
 
     <aside className="affiliate-bank-card">
      <small>TÀI KHOẢN NHẬN HOA HỒNG</small>
      {!editingProfile?<>
       <h3>{a.accountHolder||'Chưa cập nhật'}</h3><p>{a.bankName||'Chưa có ngân hàng'}</p><strong>{a.bankAccount||'—'}</strong><span>SĐT: {a.phone||'—'} · Zalo: {a.zalo||'—'}</span>
-      <button type="button" onClick={()=>{setProfile(profileOf(a));setEditingProfile(true)}}>Cập nhật thông tin</button>
+      {bankLocked&&<span className="affiliate-form-hint">Đang có payout chờ xử lý: ngân hàng, số tài khoản và chủ tài khoản tạm thời không thể thay đổi.</span>}
+      <button type="button" onClick={()=>{setProfile(profileOf(a));setEditingProfile(true)}}>Cập nhật liên hệ / ngân hàng</button>
      </>:<div className="affiliate-profile-form">
-      <label>Ngân hàng<input value={profile.bankName} onChange={e=>setProfile({...profile,bankName:e.target.value})} placeholder="VD: Vietcombank"/></label>
-      <label>Số tài khoản<input value={profile.bankAccount} onChange={e=>setProfile({...profile,bankAccount:e.target.value})} inputMode="numeric"/></label>
-      <label>Chủ tài khoản<input value={profile.accountHolder} onChange={e=>setProfile({...profile,accountHolder:e.target.value.toUpperCase()})}/></label>
+      <label>Ngân hàng<input value={profile.bankName} onChange={e=>setProfile({...profile,bankName:e.target.value})} placeholder="VD: Vietcombank" disabled={bankLocked}/></label>
+      <label>Số tài khoản<input value={profile.bankAccount} onChange={e=>setProfile({...profile,bankAccount:e.target.value})} inputMode="numeric" disabled={bankLocked}/></label>
+      <label>Chủ tài khoản<input value={profile.accountHolder} onChange={e=>setProfile({...profile,accountHolder:e.target.value.toUpperCase()})} disabled={bankLocked}/></label>
+      {bankLocked&&<span className="affiliate-form-hint">Bạn vẫn có thể cập nhật SĐT/Zalo. Thông tin ngân hàng sẽ mở lại sau khi payout pending được xử lý.</span>}
       <label>Số điện thoại<input value={profile.phone} onChange={e=>setProfile({...profile,phone:e.target.value})} inputMode="tel"/></label>
       <label>Zalo<input value={profile.zalo} onChange={e=>setProfile({...profile,zalo:e.target.value})}/></label>
       <div className="affiliate-bank-actions"><button type="button" onClick={()=>{setProfile(profileOf(a));setEditingProfile(false)}} disabled={busy}>Hủy</button><button type="button" className="save" onClick={()=>void saveProfile()} disabled={busy}>Lưu thông tin</button></div>

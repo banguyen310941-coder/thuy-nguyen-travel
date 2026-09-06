@@ -54,7 +54,7 @@ export async function GET(req:NextRequest){
    sql`select count(*)::bigint as total from affiliate_clicks where affiliate_id=${actor.id}`,
    sql`select count(*)::bigint as total from affiliate_referrals where affiliate_id=${actor.id} and status in ('approved','paid')`,
    sql`select ar.id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.code as booking_code,b.status as booking_status,p.name as villa_name from affiliate_referrals ar join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id where ar.affiliate_id=${actor.id} order by ar.created_at desc limit 200`,
-   sql`select id,amount,status,payout_date,receipt_url,created_at from commission_payouts where affiliate_id=${actor.id} order by created_at desc limit 100`,
+   sql`select id,amount,status,payout_date,receipt_url,created_at,updated_at from commission_payouts where affiliate_id=${actor.id} order by case when status='pending' then 0 else 1 end,created_at desc limit 100`,
    sql`select p.id,p.slug,p.type,p.name,p.retail_price_vnd,p.promo_price_vnd,p.data->>'cover' as cover,p.data->'gallery' as gallery,p.data->>'place' as place,p.data->>'sourceImageFolder' as source_image_folder from products p where ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by p.updated_at desc,p.name limit 300`,
    sql`select u.id,u.product_id,u.retail_price_vnd,u.data,u.status from product_units u join products p on p.id=u.product_id where u.status<>'hidden' and ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by u.name,u.id`,
    sql`select r.product_id,r.unit_id,r.retail_price_vnd,r.inventory,r.label,r.start_date,r.end_date from rate_rules r join products p on p.id=r.product_id where r.end_date>=current_date and ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by r.start_date,r.id`
@@ -82,7 +82,7 @@ export async function GET(req:NextRequest){
    products:productItems,
    villas:villaItems,
    referrals:referrals.map((r:any)=>({id:String(r.id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Sản phẩm'),customerPhone:maskPhone(r.customer_phone),commissionAmount:Number(r.commission_amount||0),status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
-   payouts:payouts.map((p:any)=>({id:String(p.id),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at)}))
+   payouts:payouts.map((p:any)=>({id:String(p.id),amount:Number(p.amount||0),status:String(p.status),payoutDate:p.payout_date?String(p.payout_date):'',receiptUrl:String(p.receipt_url||''),createdAt:String(p.created_at),resolvedAt:String(p.status)==='pending'?'':String(p.updated_at||p.payout_date||'')}))
   },{headers:{'Cache-Control':'no-store, max-age=0'}});
  }catch(error){
   console.error('affiliate_dashboard_failed',error);
@@ -105,10 +105,45 @@ export async function POST(req:NextRequest){
    if(hasBankPart&&!hasCompleteBank)return NextResponse.json({error:'Vui lòng nhập đủ ngân hàng, số tài khoản và chủ tài khoản; hoặc để trống cả 3 trường.'},{status:400});
    if(bankAccount&&(!/^[0-9A-Za-z.-]+$/.test(bankAccount)||bankAccount.length<4))return NextResponse.json({error:'Số tài khoản chưa hợp lệ.'},{status:400});
    if(accountHolder&&accountHolder.length<2)return NextResponse.json({error:'Tên chủ tài khoản chưa hợp lệ.'},{status:400});
-   const previous=(await sql`select phone,zalo,bank_name,bank_account,account_holder from affiliates where id=${actor.id} limit 1`)[0]||{};
-   await sql`with changed as (update affiliates set phone=${phone||null},zalo=${zalo||null},bank_name=${bankName||null},bank_account=${bankAccount||null},account_holder=${accountHolder||null},updated_at=now() where id=${actor.id} returning user_id) update staff set phone=${phone||null},updated_at=now() where id=(select user_id from changed)`;
-   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.userId},'affiliate.profile.update','affiliate',${actor.id},${JSON.stringify({phone:String(previous.phone||''),zalo:String(previous.zalo||''),bankName:String(previous.bank_name||''),bankAccount:maskedAccount(previous.bank_account),accountHolder:String(previous.account_holder||'')})}::jsonb,${JSON.stringify({phone,zalo,bankName,bankAccount:maskedAccount(bankAccount),accountHolder})}::jsonb)`;
-   return NextResponse.json({ok:true});
+   const profileLockKey=`affiliate-payout:${actor.id}`;
+   const profileResults=await sql.transaction([
+    sql`select pg_advisory_xact_lock(hashtext(${profileLockKey})) as affiliate_lock`,
+    sql`with target as (
+      select id,user_id,phone,zalo,bank_name,bank_account,account_holder
+      from affiliates where id=${actor.id} for update
+     ), pending as (
+      select id from commission_payouts where affiliate_id=${actor.id} and status='pending' limit 1
+     ), evaluated as (
+      select t.*,
+       exists(select 1 from pending) as has_pending,
+       (coalesce(t.bank_name,'')<>${bankName} or coalesce(t.bank_account,'')<>${bankAccount} or coalesce(t.account_holder,'')<>${accountHolder}) as bank_changed
+      from target t
+     ), changed as (
+      update affiliates a set phone=${phone||null},zalo=${zalo||null},bank_name=${bankName||null},bank_account=${bankAccount||null},account_holder=${accountHolder||null},updated_at=now()
+      from evaluated e
+      where a.id=e.id and not(e.has_pending and e.bank_changed)
+      returning a.id,a.user_id,a.updated_at
+     ), staff_changed as (
+      update staff s set phone=${phone||null},updated_at=now()
+      from changed c where s.id=c.user_id returning s.id
+     ), logged as (
+      insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data)
+      select ${actor.userId},'affiliate.profile.update','affiliate',e.id::text,
+       jsonb_build_object('phone',coalesce(e.phone,''),'zalo',coalesce(e.zalo,''),'bankName',coalesce(e.bank_name,''),'bankAccount',case when coalesce(e.bank_account,'')='' then '' else '***'||right(e.bank_account,4) end,'accountHolder',coalesce(e.account_holder,'')),
+       jsonb_build_object('phone',${phone},'zalo',${zalo},'bankName',${bankName},'bankAccount',${maskedAccount(bankAccount)},'accountHolder',${accountHolder})
+      from evaluated e join changed c on c.id=e.id returning id
+     )
+     select exists(select 1 from target) as has_profile,
+      coalesce((select has_pending from evaluated limit 1),false) as has_pending,
+      coalesce((select bank_changed from evaluated limit 1),false) as bank_changed,
+      exists(select 1 from changed) as updated,
+      (select updated_at from changed limit 1) as updated_at`
+   ]);
+   const result=(profileResults[1] as any[])?.[0];
+   if(!result?.has_profile)return NextResponse.json({error:'Không tìm thấy hồ sơ CTV.'},{status:404});
+   if(result?.has_pending&&result?.bank_changed)return NextResponse.json({error:'Bạn đang có yêu cầu rút tiền chờ xử lý. Thông tin ngân hàng được khóa cho đến khi yêu cầu hoàn tất hoặc bị hủy.'},{status:409});
+   if(!result?.updated)return NextResponse.json({error:'Không thể cập nhật hồ sơ CTV.'},{status:409});
+   return NextResponse.json({ok:true,updatedAt:result.updated_at?String(result.updated_at):''});
   }
 
   if(action==='request_payout'){
@@ -137,8 +172,9 @@ export async function POST(req:NextRequest){
        returning id,affiliate_id,amount
       ), logged as (
        insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
-       select ${actor.userId},'affiliate.payout.request','affiliate',i.affiliate_id::text,jsonb_build_object('payoutId',i.id::text,'amount',i.amount,'requestId',${requestId})
-       from inserted i returning id
+       select ${actor.userId},'affiliate.payout.request','affiliate',i.affiliate_id::text,
+        jsonb_build_object('payoutId',i.id::text,'amount',i.amount,'requestId',${requestId},'bankName',p.bank_name,'bankAccount',case when coalesce(p.bank_account,'')='' then '' else '***'||right(p.bank_account,4) end,'accountHolder',p.account_holder)
+       from inserted i join profile p on p.id=i.affiliate_id returning id
       )
       select coalesce((select payout_id from existing_request),(select id::text from inserted)) as payout_id,
        exists(select 1 from existing_request) as idempotent,
