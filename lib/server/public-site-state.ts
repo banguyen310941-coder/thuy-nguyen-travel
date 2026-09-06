@@ -4,7 +4,7 @@ const KEYS=['tn_cms_tours_v3','tn_cms_articles_v3','tn_cms_homepage'] as const;
 type Key=(typeof KEYS)[number];
 export type PublicSiteState=Record<string,unknown>;
 
-const PRIVATE_FIELD_TOKENS=new Set(['net','cost','supplier','agency','wholesale','margin','profit','markup']);
+const PRIVATE_FIELD_TOKENS=new Set(['net','cost','supplier','agency','wholesale','margin','profit','markup','partner','affiliate','commission','owner','host','contact','phone','mobile','token','secret','password','credential']);
 const PRIVATE_TEXT=/(giá\s*(gốc|net|hợp tác|(?:phòng\s*)?nguồn)|biên\s*lợi\s*nhuận|lợi\s*nhuận|markup|cộng\s+[\d.,]+\s*đ.{0,40}(phòng|p)\/?(đêm|đ)|bảng\s*(giá\s*)?nguồn|bảng\s*SẢN PHẨM|sourceprice|netrate)/i;
 
 function envelope(value:unknown){let parsed=value;if(typeof parsed==='string'){try{parsed=JSON.parse(parsed)}catch{return null}}if(!parsed||typeof parsed!=='object'||!('value' in parsed))return null;return(parsed as{value?:unknown}).value}
