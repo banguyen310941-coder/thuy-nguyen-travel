@@ -17,7 +17,8 @@ export function GuideArticleEditable({post}:{post:StaticPost}){
  const [cms,setCms]=useState<CmsArticle|null>(null);
  useEffect(()=>{const load=()=>{try{const items=JSON.parse(localStorage.getItem(CONTENT_KEY)||'[]') as CmsArticle[];setCms(items.find(x=>x.id===`seo_${post.slug}`&&x.status==='published')||null)}catch{setCms(null)}};load();window.addEventListener('tn-articles-updated',load);window.addEventListener('storage',load);return()=>{window.removeEventListener('tn-articles-updated',load);window.removeEventListener('storage',load)}},[post.slug]);
  const title=happyGoText(cms?.title||post.title),category=happyGoText(cms?.category||post.category),excerpt=happyGoText(cms?.excerpt||post.excerpt),date=cms?.date||post.date;
- const cover=guideMedia(cms?.cover||post.image,post.coverAlt);const destination=destinationLink(post);
+ // Keep the public cover canonical so list cards and article detail can never diverge because of legacy local CMS cache.
+ const cover=guideMedia(post.image,post.coverAlt);const destination=destinationLink(post);
  const imageSlots=new Map<number,GuideImage[]>();
  post.gallery.forEach((item,index)=>{const slot=Math.min(post.content.length-1,Math.max(0,Math.round(((index+1)*post.content.length)/(post.gallery.length+1))-1));imageSlots.set(slot,[...(imageSlots.get(slot)||[]),item])});
  return <article className="public-article seo-static-article seo-guide-v2">
