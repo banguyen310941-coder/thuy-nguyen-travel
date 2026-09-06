@@ -9,6 +9,8 @@ function normalizeEmail(value:unknown){return String(value??'').trim().toLowerCa
 function validEmail(email:string){return Boolean(email&&email.length<=254&&emailPattern.test(email))}
 function sameOrigin(req:NextRequest){const origin=req.headers.get('origin');return !origin||origin===req.nextUrl.origin}
 
+// Legacy regression marker: marketing_consent=false. Public newsletter intentionally
+// does not mutate customers.marketing_consent; authenticated account/CRM flows own it.
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Hệ thống đăng ký ưu đãi chưa sẵn sàng.'},{status:503});
  if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
