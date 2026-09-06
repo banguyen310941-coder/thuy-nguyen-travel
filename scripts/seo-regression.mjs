@@ -19,22 +19,26 @@ must(robots,'/partner/','robots');
 must(robots,'/affiliate/','robots');
 must(robots,'/tim-kiem','robots');
 must(robots,'sitemap.xml','robots');
+must(sitemap,'getSiteUrl','sitemap phải dùng production host runtime');
+must(robots,'getSiteUrl','robots phải dùng production host runtime');
 
 const metadataPages={
- 'app/stay/page.tsx':'https://happygo.vn/luu-tru',
- 'app/tours/page.tsx':'https://happygo.vn/tour-du-lich',
- 'app/cruises/page.tsx':'https://happygo.vn/du-thuyen',
- 'app/destinations/page.tsx':'https://happygo.vn/diem-den',
- 'app/guide/page.tsx':'https://happygo.vn/cam-nang',
- 'app/about/page.tsx':'https://happygo.vn/gioi-thieu',
- 'app/contact/page.tsx':'https://happygo.vn/lien-he',
- 'app/terms/page.tsx':'https://happygo.vn/dieu-khoan',
- 'app/privacy/page.tsx':'https://happygo.vn/chinh-sach-bao-mat',
- 'app/payment-guide/page.tsx':'https://happygo.vn/huong-dan-thanh-toan'
+ 'app/stay/page.tsx':'/luu-tru',
+ 'app/tours/page.tsx':'/tour-du-lich',
+ 'app/cruises/page.tsx':'/du-thuyen',
+ 'app/destinations/page.tsx':'/diem-den',
+ 'app/guide/page.tsx':'/cam-nang',
+ 'app/about/page.tsx':'/gioi-thieu',
+ 'app/contact/page.tsx':'/lien-he',
+ 'app/terms/page.tsx':'/dieu-khoan',
+ 'app/privacy/page.tsx':'/chinh-sach-bao-mat',
+ 'app/payment-guide/page.tsx':'/huong-dan-thanh-toan'
 };
-for(const [file,canonical] of Object.entries(metadataPages)){
+for(const [file,route] of Object.entries(metadataPages)){
  const text=read(file);
- must(text,canonical,`${file} canonical`);
+ must(text,'getSiteUrl',`${file} canonical runtime`);
+ must(text,route,`${file} canonical path`);
+ if(text.includes("const canonical='https://happygo.vn"))fail(`${file} vẫn hardcode domain chưa gắn`);
  if(!/description\s*:/.test(text))fail(`${file} thiếu meta description`);
 }
 
