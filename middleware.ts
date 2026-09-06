@@ -12,18 +12,29 @@ function sameOrigin(req:NextRequest){
  const fetchSite=String(req.headers.get('sec-fetch-site')||'').toLowerCase();
  if(fetchSite==='cross-site')return false;
  const origin=req.headers.get('origin');
- // Native clients, cron jobs and signed server-to-server calls normally send neither Origin nor Sec-Fetch-Site.
  if(!origin)return true;
  try{return hostSet(req).has(new URL(origin).host.toLowerCase())}catch{return false}
 }
 
+function normalizePublicUrl(req:NextRequest){
+ if(req.method!=='GET'||req.nextUrl.pathname!=='/luu-tru')return null;
+ const type=(req.nextUrl.searchParams.get('type')||'').toLowerCase();
+ if(type!=='villa'&&type!=='hotel')return null;
+ const url=req.nextUrl.clone();
+ url.pathname=type==='villa'?'/villa-resort':'/khach-san';
+ url.searchParams.delete('type');
+ return NextResponse.redirect(url,308);
+}
+
 export function middleware(req:NextRequest){
+ const publicRedirect=normalizePublicUrl(req);if(publicRedirect)return publicRedirect;
  if(SIGNED_WEBHOOKS.has(req.nextUrl.pathname)||SAFE_METHODS.has(req.method)||sameOrigin(req))return NextResponse.next();
  return NextResponse.json({error:'Cross-site request blocked.'},{status:403,headers:{'Cache-Control':'no-store'}});
 }
 
 export const config={
  matcher:[
+  '/luu-tru',
   '/api/admin/:path*',
   '/api/account/:path*',
   '/api/partner/:path*',
