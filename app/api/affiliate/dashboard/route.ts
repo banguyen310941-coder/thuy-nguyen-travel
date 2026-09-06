@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {affiliateActor,maskPhone,publicBaseUrl} from '@/lib/server/affiliate';
+import {affiliateCommissionPolicy} from '@/lib/affiliate-commission';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const clean=(value:unknown,max:number)=>String(value??'').trim().slice(0,max);
@@ -50,9 +51,9 @@ export async function GET(req:NextRequest){
   if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
   const sql=db();
   const [profileRows,clickRows,orderRows,referrals,payouts,catalogProducts,catalogUnits,catalogRates]=await Promise.all([
-   sql`select a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.commission_rate,a.status from affiliates a where a.id=${actor.id} limit 1`,
+   sql`select a.phone,a.zalo,a.bank_account,a.bank_name,a.account_holder,a.total_commission,a.balance,a.status from affiliates a where a.id=${actor.id} limit 1`,
    sql`select count(*)::bigint as total from affiliate_clicks where affiliate_id=${actor.id}`,
-   sql`select count(*)::bigint as total from affiliate_referrals where affiliate_id=${actor.id} and status in ('approved','paid')`,
+   sql`select count(*)::bigint as total from affiliate_referrals ar join bookings b on b.id=ar.booking_id where ar.affiliate_id=${actor.id} and ar.status<>'cancelled' and b.status='completed'`,
    sql`select ar.id,ar.customer_phone,ar.commission_amount,ar.status,ar.created_at,ar.credited_at,b.code as booking_code,b.status as booking_status,p.name as villa_name from affiliate_referrals ar join bookings b on b.id=ar.booking_id left join products p on p.id=ar.villa_id where ar.affiliate_id=${actor.id} order by ar.created_at desc limit 200`,
    sql`select id,amount,status,payout_date,receipt_url,created_at,updated_at from commission_payouts where affiliate_id=${actor.id} order by case when status='pending' then 0 else 1 end,created_at desc limit 100`,
    sql`select p.id,p.slug,p.type,p.name,p.retail_price_vnd,p.promo_price_vnd,p.data->>'cover' as cover,p.data->'gallery' as gallery,p.data->>'place' as place,p.data->>'sourceImageFolder' as source_image_folder from products p where ((p.partner_id is null and p.status='published') or (p.partner_id is not null and p.status='approved' and exists(select 1 from partners x where x.id=p.partner_id and x.status='active'))) order by p.updated_at desc,p.name limit 300`,
@@ -61,6 +62,8 @@ export async function GET(req:NextRequest){
   ]);
   const profile=profileRows[0]||{};
   const base=publicBaseUrl(req);
+  const closedOrders=Number(orderRows[0]?.total||0);
+  const commissionPolicy=affiliateCommissionPolicy(closedOrders);
   const productItems=catalogProducts.map((p:any)=>{
    const media:string[]=[];
    const productUnits=catalogUnits.filter((u:any)=>String(u.product_id)===String(p.id));
@@ -77,8 +80,9 @@ export async function GET(req:NextRequest){
   const villaItems=productItems.filter((item:any)=>item.type==='Villa & Resort');
   return NextResponse.json({
    ok:true,
-   affiliate:{id:actor.id,name:actor.name,email:actor.email,referralCode:actor.referralCode,phone:String(profile.phone||''),zalo:String(profile.zalo||''),bankAccount:String(profile.bank_account||''),bankName:String(profile.bank_name||''),accountHolder:String(profile.account_holder||''),totalCommission:Number(profile.total_commission||0),balance:Number(profile.balance||0),commissionRate:Number(profile.commission_rate||0),status:String(profile.status||actor.status)},
-   stats:{clicks:Number(clickRows[0]?.total||0),closedOrders:Number(orderRows[0]?.total||0)},
+   affiliate:{id:actor.id,name:actor.name,email:actor.email,referralCode:actor.referralCode,phone:String(profile.phone||''),zalo:String(profile.zalo||''),bankAccount:String(profile.bank_account||''),bankName:String(profile.bank_name||''),accountHolder:String(profile.account_holder||''),totalCommission:Number(profile.total_commission||0),balance:Number(profile.balance||0),commissionRate:commissionPolicy.currentRate,status:String(profile.status||actor.status)},
+   stats:{clicks:Number(clickRows[0]?.total||0),closedOrders},
+   commissionPolicy,
    products:productItems,
    villas:villaItems,
    referrals:referrals.map((r:any)=>({id:String(r.id),bookingCode:String(r.booking_code),bookingStatus:String(r.booking_status),villaName:String(r.villa_name||'Sản phẩm'),customerPhone:maskPhone(r.customer_phone),commissionAmount:Number(r.commission_amount||0),status:String(r.status),createdAt:String(r.created_at),creditedAt:r.credited_at?String(r.credited_at):''})),
