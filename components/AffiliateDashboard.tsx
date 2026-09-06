@@ -42,16 +42,17 @@ export function AffiliateDashboard(){
    setProfile(profileOf(d.affiliate));
   }catch{if(request===loadRequest.current)setMsg('Không kết nối được dashboard CTV.')}finally{if(request===loadRequest.current)setBusy(false)}
  },[router]);
+ const invalidateLoad=useCallback(()=>{loadRequest.current++},[]);
  useEffect(()=>{
   void load();
   const refresh=()=>void load();
   const visibility=()=>{if(document.visibilityState==='visible')void load()};
   window.addEventListener('focus',refresh);
   document.addEventListener('visibilitychange',visibility);
-  return()=>{loadRequest.current++;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
- },[load]);
+  return()=>{invalidateLoad();window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',visibility)};
+ },[load,invalidateLoad]);
 
- async function logout(){loadRequest.current++;await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
+ async function logout(){invalidateLoad();await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
  async function copy(v:Product){
   const ok=await copyText(v.affiliateLink);
   if(ok){
