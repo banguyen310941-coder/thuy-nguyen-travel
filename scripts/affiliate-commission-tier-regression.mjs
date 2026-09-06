@@ -9,6 +9,8 @@ const policy=read('lib/affiliate-commission.ts');
 const server=read('lib/server/affiliate.ts');
 const dashboardApi=read('app/api/affiliate/dashboard/route.ts');
 const dashboardUi=read('components/AffiliateDashboard.tsx');
+const toolkitUi=read('components/AffiliateSalesToolkit.tsx');
+const toolkitDrawer=read('components/AffiliateSalesToolkitDrawer.tsx');
 const settlement=server.slice(server.indexOf('export async function settleAffiliateBooking'));
 
 check(has(policy,"{minOrder:1,maxOrder:10,rate:35"),'Đơn 1–10 phải hưởng 35%.');
@@ -29,9 +31,15 @@ check(has(dashboardUi,'policy.currentRate'),'CTV phải thấy mức hoa hồng 
 check(has(dashboardUi,'setLinkNotice'),'Copy link phải tạo thông báo hoa hồng cho CTV.');
 check(has(dashboardUi,'giá bán − giá vốn'),'Thông báo phải nói rõ hoa hồng tính trên lợi nhuận.');
 check(!has(dashboardUi,'Dashboard không truy vấn hoặc hiển thị tên/SĐT chủ nhà, địa chỉ cụ thể hay giá net.'),'Phải bỏ dòng cảnh báo khóa khỏi trang CTV.');
+check(has(toolkitDrawer,'commissionPolicy={data.commissionPolicy}'),'Drawer phải truyền chính sách hoa hồng động vào bộ công cụ bán hàng.');
+check(has(toolkitUi,'commissionPolicy.currentRate'),'Bộ công cụ phải hiển thị mức hoa hồng động của CTV.');
+check(has(toolkitUi,'commissionPolicy.nextOrderNumber'),'Bộ công cụ phải hiển thị số thứ tự đơn thành công tiếp theo.');
+check(has(toolkitUi,'setCommissionNotice'),'Copy/chia sẻ trong bộ công cụ phải hiện thông báo hoa hồng.');
+check(has(toolkitUi,'(giá bán − giá vốn) × tỷ lệ theo bậc đơn'),'Bộ công cụ phải nêu đúng công thức hoa hồng theo lợi nhuận.');
+check(!has(toolkitUi,'giá trị bán của booking × tỷ lệ hoa hồng của CTV'),'Bộ công cụ không được giữ công thức hoa hồng cũ trên doanh thu.');
 
 if(failures.length){
  console.error('\nCTV commission tier regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV commission tier regression OK: 35/40/45/50% tiers apply to booking profit, link-copy notice is visible, and the removed dashboard warning stays removed.');
+console.log('CTV commission tier regression OK: 35/40/45/50% tiers apply to booking profit, dashboard/toolkit link notices are consistent, and the removed dashboard warning stays removed.');
