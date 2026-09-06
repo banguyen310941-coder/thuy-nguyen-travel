@@ -50,22 +50,22 @@ export async function POST(req:NextRequest){
   const affiliate=(await sql`select id,sales_owner_id from affiliates where id=${affiliateId} limit 1`)[0];
   if(!affiliate)return NextResponse.json({error:'Không tìm thấy CTV.'},{status:404});
   if(!all&&String(affiliate.sales_owner_id||'')!==actor.id)return NextResponse.json({error:'CTV không thuộc phạm vi phụ trách của bạn.'},{status:403});
-  const nextIso=next?next.toISOString():'';
+  const nextIso=next?next.toISOString():null;
   const result=(await sql`with lock_request as (
-    select pg_advisory_xact_lock(hashtext(${requestId}))
+    select pg_advisory_xact_lock(hashtext(${requestId}::text))
    ), existing as (
     select al.after_data->>'followupId' as followup_id
     from audit_logs al,lock_request
-    where al.action='affiliate.followup.create' and al.after_data->>'requestId'=${requestId}
+    where al.action='affiliate.followup.create' and al.after_data->>'requestId'=${requestId}::text
     order by al.created_at asc limit 1
    ), inserted as (
     insert into affiliate_followups(affiliate_id,staff_id,type,content,next_follow_up_at)
-    select ${affiliateId},${actor.id},${type},${content},${next?next.toISOString():null} from lock_request
+    select ${affiliateId}::uuid,${actor.id}::uuid,${type}::text,${content}::text,${nextIso}::timestamptz from lock_request
     where not exists(select 1 from existing)
     returning id,created_at
    ), logged as (
     insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
-    select ${actor.id},'affiliate.followup.create','affiliate',${affiliateId},jsonb_build_object('followupId',i.id::text,'type',${type}::text,'nextFollowUpAt',${nextIso}::text,'requestId',${requestId}::text)
+    select ${actor.id}::uuid,'affiliate.followup.create','affiliate',${affiliateId}::text,jsonb_build_object('followupId',i.id::text,'type',${type}::text,'nextFollowUpAt',${nextIso}::text,'requestId',${requestId}::text)
     from inserted i returning id
    )
    select coalesce((select followup_id from existing),(select id::text from inserted)) as followup_id,
