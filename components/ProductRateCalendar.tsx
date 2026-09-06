@@ -2,8 +2,8 @@
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
-import {RATE_KEY,ratePriceForDate,type RateRange} from '@/components/AdminRateCalendar';
 import {configuredSeasonForDate,pricingDateKey,seasonalUnitPrice} from '@/lib/pricing-calendar';
+import {ratePriceForDate,type PublicRateRange} from '@/lib/public-rate-utils';
 
 type Unit={
   id:string;
@@ -20,22 +20,22 @@ type Unit={
   lowSeasonRanges?:string;
   status?:string;
 };
-const readRates=():RateRange[]=>{try{const raw=JSON.parse(localStorage.getItem(RATE_KEY)||'[]');return Array.isArray(raw)?raw:[]}catch{return[]}};
 const compact=(n:number)=>n>=1000000?`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:1}).format(n/1000000)}tr`:`${Math.round(n/1000)}k`;
 const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric'}).format(date);
 const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);return pricingDateKey(next)};
 
-export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{units:Unit[];label?:string}){
+export function ProductRateCalendar({units,label='Lịch giá theo ngày',initialRates=[]}:{units:Unit[];label?:string;initialRates?:PublicRateRange[]}){
   const router=useRouter();
   const pathname=usePathname();
   const availableUnits=useMemo(()=>units.filter(u=>u.status!=='hidden'),[units]);
   const [unitId,setUnitId]=useState(availableUnits[0]?.id||'');
   const [month,setMonth]=useState(()=>{const now=new Date();return new Date(now.getFullYear(),now.getMonth(),1)});
-  const [allRates,setAllRates]=useState<RateRange[]>([]);
-  const [ratesLoaded,setRatesLoaded]=useState(false);
+  const [allRates,setAllRates]=useState<PublicRateRange[]>(initialRates);
+  const [ratesLoaded,setRatesLoaded]=useState(initialRates.length>0);
   const [selected,setSelected]=useState('');
 
   useEffect(()=>{if(!availableUnits.some(u=>u.id===unitId))setUnitId(availableUnits[0]?.id||'')},[availableUnits,unitId]);
+  useEffect(()=>{setAllRates(initialRates);if(initialRates.length)setRatesLoaded(true)},[initialRates]);
 
   const loadProductionRates=useCallback(async()=>{
     try{
@@ -43,13 +43,10 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày'}:{unit
       if(!response.ok)throw new Error(`HTTP ${response.status}`);
       const payload=await response.json();
       const stateRates=payload?.state?.tn_cms_daily_rates_v1;
-      const incoming=Array.isArray(stateRates)?stateRates as RateRange[]:Array.isArray(payload?.rates)?payload.rates as RateRange[]:[];
-      setAllRates(incoming);
-      setRatesLoaded(true);
-      try{localStorage.setItem(RATE_KEY,JSON.stringify(incoming))}catch{}
-      window.dispatchEvent(new Event('tn-rates-production-loaded'));
+      setAllRates(Array.isArray(stateRates)?stateRates as PublicRateRange[]:[]);
     }catch{
-      setAllRates(readRates());
+      // Keep the server-provided snapshot when a refresh fails.
+    }finally{
       setRatesLoaded(true);
     }
   },[]);
