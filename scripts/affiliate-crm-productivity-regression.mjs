@@ -14,6 +14,9 @@ check(has(api,'a.phone,a.zalo,a.referral_code'),'CRM API phải đọc Zalo cùn
 check(has(api,"zalo:String(a.zalo||'')"),'CRM API phải trả Zalo cho UI chăm sóc.');
 check(has(api,"adminActor(req,'affiliates')"),'CRM năng suất vẫn phải yêu cầu quyền affiliates.');
 check(has(api,'where a.sales_owner_id=${actor.id}'),'Sale vẫn chỉ được đọc CTV thuộc phạm vi phụ trách.');
+check(has(api,"'type',${type}::text"),'Audit follow-up phải ép kiểu type sang text để PostgreSQL xác định kiểu tham số.');
+check(has(api,"'nextFollowUpAt',${nextIso}::text"),'Audit follow-up phải ép kiểu nextFollowUpAt sang text để PostgreSQL xác định kiểu tham số.');
+check(has(api,"'requestId',${requestId}::text"),'Audit follow-up phải ép kiểu requestId sang text để PostgreSQL xác định kiểu tham số.');
 
 check(has(ui,'type Affiliate={id:string;name:string;email:string;phone:string;zalo:string'),'UI CRM phải nhận phone, email và Zalo của CTV.');
 check(has(ui,"const templates=["),'CRM phải có bộ mẫu ghi chú nhanh.');
@@ -45,4 +48,4 @@ if(failures.length){
  console.error('\nCTV CRM Productivity regression FAILED:\n- '+failures.join('\n- '));
  process.exit(1);
 }
-console.log('CTV CRM Productivity regression OK: scoped contact actions, Zalo/call/email shortcuts, note templates, follow-up presets, keyboard save and next-CTV workflow are guarded.');
+console.log('CTV CRM Productivity regression OK: scoped contact actions, Zalo/call/email shortcuts, note templates, follow-up presets, keyboard save, next-CTV workflow and PostgreSQL audit parameter typing are guarded.');
