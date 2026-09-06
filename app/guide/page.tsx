@@ -5,17 +5,19 @@ import {ContactQuickLink} from '@/components/ContactQuickLink';
 import {guidePosts} from '@/data/guides';
 import {guideCategories} from '@/data/guideCategories';
 import {guideImage} from '@/lib/guideCloudinary';
+import {getSiteUrl} from '@/lib/site-url';
 
-const canonical='https://happygo.vn/cam-nang';
-export const metadata:Metadata={title:'Cẩm nang du lịch | Kinh nghiệm & hướng dẫn',description:'Cẩm nang du lịch HappyGo Travel với kinh nghiệm thực tế về điểm đến, tour, villa & resort, khách sạn, du thuyền và cách chuẩn bị chuyến đi.',alternates:{canonical},openGraph:{title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm thực tế, hướng dẫn chọn dịch vụ và gợi ý hành trình cho chuyến đi thuận tiện hơn.',url:canonical,type:'website'},twitter:{card:'summary_large_image',title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm điểm đến, lưu trú, tour và du thuyền từ HappyGo Travel.'}};
+const path='/cam-nang';
+export function generateMetadata():Metadata{const canonical=`${getSiteUrl()}${path}`;return{title:'Cẩm nang du lịch | Kinh nghiệm & hướng dẫn',description:'Cẩm nang du lịch HappyGo Travel với kinh nghiệm thực tế về điểm đến, tour, villa & resort, khách sạn, du thuyền và cách chuẩn bị chuyến đi.',alternates:{canonical},openGraph:{title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm thực tế, hướng dẫn chọn dịch vụ và gợi ý hành trình cho chuyến đi thuận tiện hơn.',url:canonical,type:'website'},twitter:{card:'summary_large_image',title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm điểm đến, lưu trú, tour và du thuyền từ HappyGo Travel.'}}}
 
 function count(terms:string[]){return guidePosts.filter(p=>{const hay=`${p.category} ${p.title} ${p.excerpt} ${p.keywords.join(' ')}`.toLowerCase();return terms.some(t=>hay.includes(t.toLowerCase()))}).length}
 const topCategories=guideCategories.filter(category=>['villa-resort','du-thuyen','nha-trang','phan-thiet','tour-trung-quoc'].includes(category.slug));
 
 export default function GuidePage(){
+ const base=getSiteUrl(),canonical=`${base}${path}`;
  const schema=[
-  {'@context':'https://schema.org','@type':'Blog',name:'Cẩm nang du lịch HappyGo Travel',url:canonical,description:'Kinh nghiệm du lịch, điểm đến, tour, lưu trú và du thuyền',publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:'https://happygo.vn'}},
-  {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Trang chủ',item:'https://happygo.vn'},{'@type':'ListItem',position:2,name:'Cẩm nang du lịch',item:canonical}]},
+  {'@context':'https://schema.org','@type':'Blog',name:'Cẩm nang du lịch HappyGo Travel',url:canonical,description:'Kinh nghiệm du lịch, điểm đến, tour, lưu trú và du thuyền',publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:base}},
+  {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Trang chủ',item:base},{'@type':'ListItem',position:2,name:'Cẩm nang du lịch',item:canonical}]},
  ];
  return <div className="subpage guide-portal"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
   <section className="sub-hero"><div className="container"><div className="sub-breadcrumb"><Link href="/">Trang chủ</Link> / Cẩm nang</div><div className="sub-hero-grid"><div><span className="sub-kicker">CẨM NANG DU LỊCH</span><h1>Cẩm nang du lịch</h1><p>Kinh nghiệm thực tế về điểm đến, lưu trú, tour và du thuyền; giúp bạn chọn dịch vụ phù hợp, chuẩn bị chuyến đi rõ ràng và tránh những chi phí không cần thiết.</p></div><ContactQuickLink className="solid" label="Nhận tư vấn chuyến đi"/></div></div></section>
