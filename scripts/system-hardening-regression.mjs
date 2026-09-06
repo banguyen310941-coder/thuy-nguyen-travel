@@ -24,6 +24,10 @@ for(const path of ['components/HomeCmsHero.tsx','components/HomeCmsSections.tsx'
 mustNot('components/GuideArticleEditable.tsx','tn_cms_articles_v4','Bài Cẩm nang tĩnh không được dùng cache CMS legacy v4');
 must('lib/server/public-site-state.ts','tn_cms_products_v3_units:productionProducts','Server state phải xuất sản phẩm production');
 must('lib/server/public-site-state.ts','tn_cms_daily_rates_v1:productionRates','Server state phải xuất lịch giá production');
+must('app/cam-nang/bai-viet/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server');
+must('app/guide/category/[slug]/page.tsx','initialArticles={initialArticles}','Chuyên mục Cẩm nang phải hydrate bài CMS từ server');
+must('components/GuideArticleReader.tsx','usePublicGuideArticles(initialArticles)','Reader Cẩm nang phải dùng snapshot server ngay lần render đầu');
+must('components/GuideCategoryCmsList.tsx','usePublicGuideArticles(initialArticles)','Danh mục Cẩm nang phải dùng snapshot server ngay lần render đầu');
 must('app/product/[slug]/page.tsx','initialRates={initialRates}','Trang chi tiết phải hydrate lịch giá từ server');
 must('components/CmsProductDetail.tsx','initialRates?:PublicRateRange[]','Product detail phải nhận rate snapshot từ server');
 must('components/CmsProductDetail.tsx','<UnifiedStayPublicDetail product={product} initialRates={rates}/>','Product detail phải truyền rate snapshot xuống lưu trú');
