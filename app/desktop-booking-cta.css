@@ -1,54 +1,6 @@
-/* Keep the primary booking action visible on laptop/desktop product pages. */
-@media (min-width:768px){
- .product-detail-v2{padding-bottom:78px!important}
- .product-detail-v2 .pd-price-card a[href="#booking"]{
-  position:fixed!important;
-  z-index:75!important;
-  left:50%!important;
-  right:auto!important;
-  bottom:18px!important;
-  transform:translateX(-50%)!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:8px!important;
-  width:min(340px,calc(100vw - 420px))!important;
-  min-width:260px!important;
-  min-height:50px!important;
-  margin:0!important;
-  padding:0 20px!important;
-  border:1px solid rgba(255,255,255,.55)!important;
-  border-radius:999px!important;
-  background:#ff6500!important;
-  color:#fff!important;
-  box-shadow:0 12px 30px rgba(31,63,89,.28)!important;
-  font-size:0!important;
-  font-weight:900!important;
-  letter-spacing:.25px!important;
-  text-align:center!important;
-  text-decoration:none!important;
- }
- .product-detail-v2 .pd-price-card a[href="#booking"]::before{
-  content:"⚡";
-  font-size:16px;
-  line-height:1;
- }
- .product-detail-v2 .pd-price-card a[href="#booking"]::after{
-  content:"ĐẶT NGAY";
-  font-size:13px;
-  line-height:1;
- }
- .product-detail-v2 .pd-price-card a[href="#booking"]:hover,
- .product-detail-v2 .pd-price-card a[href="#booking"]:focus-visible{
-  background:#e95700!important;
-  box-shadow:0 14px 34px rgba(31,63,89,.34)!important;
-  outline:3px solid rgba(255,101,0,.2)!important;
-  outline-offset:3px!important;
- }
- .product-detail-v2 #booking{scroll-margin-top:72px}
-}
+/* Keep the desktop booking form convenient without a floating call-to-action. */
+.product-detail-v2 #booking{scroll-margin-top:72px}
 
-/* On wide screens the booking form stays beside the product and scrolls independently. */
 @media (min-width:901px){
  .product-detail-v2 .pd-body>aside{
   max-height:calc(100vh - 76px)!important;
@@ -57,17 +9,4 @@
   scrollbar-width:thin!important;
   padding-right:4px!important;
  }
-}
-
-/* Keep the floating action compact on smaller laptops and never show it on phones. */
-@media (min-width:768px) and (max-width:1100px){
- .product-detail-v2 .pd-price-card a[href="#booking"]{
-  width:min(300px,calc(100vw - 360px))!important;
-  min-width:250px!important;
-  bottom:14px!important;
- }
-}
-
-@media (max-width:767px){
- .product-detail-v2{padding-bottom:0!important}
 }
