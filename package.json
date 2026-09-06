@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:regression": "node scripts/production-regression.mjs && node scripts/desktop-booking-regression.mjs && node scripts/service-stars-regression.mjs",
+    "test:regression": "node scripts/production-regression.mjs && node scripts/desktop-booking-regression.mjs && node scripts/service-stars-regression.mjs && node scripts/public-visual-pwa-regression.mjs",
     "test:affiliate": "node scripts/affiliate-regression.mjs && node scripts/affiliate-portal-regression.mjs && node scripts/affiliate-performance-regression.mjs && node scripts/admin-affiliate-performance-regression.mjs && node scripts/affiliate-crm-productivity-regression.mjs && node scripts/affiliate-payout-atomic-regression.mjs && node scripts/affiliate-payout-queue-regression.mjs && node scripts/affiliate-selfservice-finance-regression.mjs",
     "test:seo": "node scripts/seo-regression.mjs",
     "prepare": "husky",
