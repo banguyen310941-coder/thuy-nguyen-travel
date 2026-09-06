@@ -46,7 +46,7 @@ must('next.config.mjs',"frame-ancestors 'none'",'CSP phải chống clickjacking
 
 // Recovery baseline must document the production-only tables already present in Neon.
 for(const table of ['customer_accounts','customer_reviews','partner_accounts','partner_support_tickets','partner_support_messages','suppliers','payment_requests','payment_request_events','accounting_entries','accounting_balances']){
- must('db/production-extension.sql',`create table if not exists ${table}`,'DB bootstrap phải chứa đủ bảng production');
+ must('db/production-extension.sql',`CREATE TABLE IF NOT EXISTS ${table}`,'DB bootstrap phải chứa đủ bảng production');
 }
 must('db/README.md','production-extension.sql','Tài liệu DB phải nêu extension production');
 
