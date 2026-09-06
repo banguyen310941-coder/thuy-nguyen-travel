@@ -6,9 +6,17 @@ type InstallPrompt=Event&{
   userChoice:Promise<{outcome:'accepted'|'dismissed'}>;
 };
 
+const ADMIN_TARGET_KEY='happygo_pwa_target';
+
+function markAdminTarget(){
+ try{window.localStorage.setItem(ADMIN_TARGET_KEY,'admin')}catch{}
+ document.cookie='happygo_admin_pwa=admin; Max-Age=31536000; Path=/; SameSite=Lax; Secure';
+}
+
 export function AdminInstallApp(){
  const[prompt,setPrompt]=useState<InstallPrompt|null>(null),[installed,setInstalled]=useState(false),[ios,setIos]=useState(false),[show,setShow]=useState(false);
  useEffect(()=>{
+  markAdminTarget();
   const standalone=window.matchMedia('(display-mode: standalone)').matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone);
   setInstalled(standalone);
   setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
@@ -23,6 +31,7 @@ export function AdminInstallApp(){
  },[]);
  if(installed)return null;
  async function install(){
+  markAdminTarget();
   if(prompt){
    await prompt.prompt();
    const choice=await prompt.userChoice;
@@ -36,8 +45,8 @@ export function AdminInstallApp(){
   {show&&<div className="admin-install-overlay" onClick={()=>setShow(false)}><div className="admin-install-sheet" onClick={e=>e.stopPropagation()}>
    <button className="admin-install-close" onClick={()=>setShow(false)}>×</button>
    <div className="admin-install-logo">HG</div><small>HAPPYGO TRAVEL ADMIN</small><h3>Cài ứng dụng quản trị HappyGo</h3>
-   {ios?<p>Trên iPhone/iPad: mở trang <b>/admin</b> bằng Safari → bấm <b>Chia sẻ</b> → chọn <b>Thêm vào Màn hình chính</b> → bấm <b>Thêm</b>.</p>:<p>Trên Android/Chrome: tại trang <b>/admin</b>, mở menu <b>⋮</b> → chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b> → xác nhận.</p>}
-   <div className="admin-install-tip">Ứng dụng Admin lấy manifest trực tiếp từ HTML của <b>/admin</b> và luôn mở lại khu vực quản trị. Nếu điện thoại đang có biểu tượng HappyGo cũ từng mở ra giao diện đặt phòng, hãy xóa biểu tượng cũ rồi cài lại một lần sau khi bản production mới được triển khai.</div>
+   {ios?<p>Trên iPhone/iPad: mở trang <b>/admin</b> bằng Safari → bấm <b>Chia sẻ</b> → chọn <b>Thêm vào Màn hình chính</b> → giữ bật <b>Mở dưới dạng ứng dụng web</b> → bấm <b>Thêm</b>.</p>:<p>Trên Android/Chrome: tại trang <b>/admin</b>, mở menu <b>⋮</b> → chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b> → xác nhận.</p>}
+   <div className="admin-install-tip">Ứng dụng Admin lấy manifest trực tiếp từ HTML của <b>/admin</b> và luôn mở lại khu vực quản trị. HappyGo cũng ghi dấu mục tiêu Admin vào phiên cài đặt để iPhone không tái dùng đường dẫn Trang chủ của biểu tượng cũ.</div>
    <button className="admin-primary" onClick={()=>setShow(false)}>Đã hiểu</button>
   </div></div>}
  </>;
