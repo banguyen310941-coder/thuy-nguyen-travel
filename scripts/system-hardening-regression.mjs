@@ -18,9 +18,10 @@ for(const path of ['app/stay/page.tsx','app/villa-resort/page.tsx','app/khach-sa
 }
 
 // Public product/tour/guide surfaces must not prefer browser storage over Neon production state.
-for(const path of ['components/StayCatalog.tsx','components/TourCatalog.tsx','components/CruiseCatalog.tsx','components/usePublicGuideArticles.ts','components/DailyPriceRange.tsx','components/ProductRateCalendar.tsx','components/PublishedUnits.tsx']){
- mustNot(path,'localStorage.getItem','Public catalog không được đọc localStorage làm nguồn dữ liệu');
+for(const path of ['components/HomeCmsHero.tsx','components/HomeCmsSections.tsx','components/StayCatalog.tsx','components/TourCatalog.tsx','components/CruiseCatalog.tsx','components/usePublicGuideArticles.ts','components/GuideArticleEditable.tsx','components/CmsProductDetail.tsx','components/DailyPriceRange.tsx','components/ProductRateCalendar.tsx','components/PublishedUnits.tsx']){
+ mustNot(path,'localStorage.getItem','Public surface không được đọc localStorage làm nguồn dữ liệu');
 }
+mustNot('components/GuideArticleEditable.tsx','tn_cms_articles_v4','Bài Cẩm nang tĩnh không được dùng cache CMS legacy v4');
 must('lib/server/public-site-state.ts','tn_cms_products_v3_units:productionProducts','Server state phải xuất sản phẩm production');
 must('lib/server/public-site-state.ts','tn_cms_daily_rates_v1:productionRates','Server state phải xuất lịch giá production');
 must('app/product/[slug]/page.tsx','initialRates={initialRates}','Trang chi tiết phải hydrate lịch giá từ server');
