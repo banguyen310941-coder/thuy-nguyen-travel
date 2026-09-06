@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {readSession} from '@/lib/server/portal-auth';
 import {captureAffiliateReferral} from '@/lib/server/affiliate';
+import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
 function code(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `HG${y}${m}${day}-${Math.random().toString(36).slice(2,7).toUpperCase()}`}
@@ -26,8 +27,10 @@ async function resolveSalesAssignment(sql:any,customerId:string){
 }
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'DATABASE_URL chưa được cấu hình.'},{status:503});
+ if(requestBodyTooLarge(req))return NextResponse.json({error:'Dữ liệu đặt dịch vụ quá lớn.'},{status:413});
  const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
  const body=await req.json().catch(()=>({}));let name=String(body.customerName||'').trim(),phone=normalizePhone(body.phone),email=String(body.email||'').trim().toLowerCase();const product=String(body.product||'Dịch vụ HappyGo').trim(),note=String(body.note||'').trim();
+ if(String(body.website||'').trim())return NextResponse.json({ok:true,received:true});
  if(name.length>120||email.length>254||product.length>240||note.length>2000)return NextResponse.json({error:'Dữ liệu đặt dịch vụ vượt quá giới hạn cho phép.'},{status:400});
  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
  const bookingCode=code(),sql=db(),session=readSession(req,'happygo_customer_auth','customer');
@@ -35,6 +38,14 @@ export async function POST(req:NextRequest){
   let customerId='';
   if(session){const accountRows=await sql`select c.id,c.name,c.phone,c.email from customer_accounts ca join customers c on c.id=ca.customer_id where ca.id=${session.id} and ca.status='active' limit 1`;const account=accountRows[0];if(account){customerId=String(account.id);name=String(account.name||name);phone=normalizePhone(String(account.phone||phone));email=String(account.email||email).trim().toLowerCase()}}
   if(name.length<2||!/^0\d{9}$/.test(phone))return NextResponse.json({error:'Thông tin khách hàng chưa hợp lệ.'},{status:400});
+
+  const ipKey=publicRateKey(req,'booking');
+  const phoneKey=publicRateKey(req,'booking-phone',phone);
+  const ipAllowed=await consumePublicRateLimit(sql,{key:ipKey,action:'public.booking.submit',scope:'booking-ip',maxHits:8,windowMinutes:15});
+  if(!ipAllowed)return NextResponse.json({error:'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau khoảng 15 phút.'},{status:429,headers:{'Retry-After':'900'}});
+  const phoneAllowed=await consumePublicRateLimit(sql,{key:phoneKey,action:'public.booking.submit',scope:'booking-phone',maxHits:3,windowMinutes:10});
+  if(!phoneAllowed)return NextResponse.json({error:'Yêu cầu đặt dịch vụ đang được gửi quá nhanh. Vui lòng chờ ít phút rồi thử lại.'},{status:429,headers:{'Retry-After':'600'}});
+
   if(!customerId){const existing=await sql`select id from customers where phone=${phone} limit 1`;customerId=existing[0]?String(existing[0].id):'';if(customerId)await sql`update customers set name=${name},email=${email||null},source=coalesce(source,${String(body.source||'website')}),updated_at=now() where id=${customerId}`;else{const inserted=await sql`insert into customers(name,phone,email,status,source) values(${name},${phone},${email||null},'lead',${String(body.source||'website')}) returning id`;customerId=String(inserted[0].id)}}
   const assignment=await resolveSalesAssignment(sql,customerId);
   const created=await sql`with new_booking as (insert into bookings(code,customer_id,status,source,start_date,end_date,adults,children,rooms,customer_name_snapshot,phone_snapshot,email_snapshot,note,selling_total_vnd,sales_staff_id,sales_staff_name_snapshot,sales_assigned_at) values(${bookingCode},${customerId},'new',${String(body.source||'website')},${body.startDate||null},${body.endDate||null},${Math.max(1,Number(body.adults)||1)},${Math.max(0,Number(body.children)||0)},${Math.max(1,Number(body.rooms)||1)},${name},${phone},${email||null},${note},0,${assignment?.id||null},${assignment?.name||null},${assignment?new Date().toISOString():null}) returning id) insert into booking_items(booking_id,product_name_snapshot,quantity,selling_price_vnd,data_snapshot) select id,${product},1,0,${JSON.stringify({kind:String(body.kind||'Dịch vụ')})}::jsonb from new_booking returning booking_id`;
