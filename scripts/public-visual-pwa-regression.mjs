@@ -12,8 +12,9 @@ must('app/admin/manifest.webmanifest/route.ts',"start_url:'/admin/?source=pwa'",
 must('app/admin/manifest.webmanifest/route.ts',"scope:'/admin/'",'Admin PWA phải giới hạn scope trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"'Cache-Control':'no-store, max-age=0'",'Manifest Admin không được bị cache cũ');
 must('public/sw.js',"const CACHE='happygo-shell-v7'",'Service worker phải đổi cache version để xóa shell Admin cũ');
-must('public/sw.js',"'/admin/manifest.webmanifest'",'Service worker phải cache manifest Admin');
-mustNot('public/sw.js',"const SHELL=['/','/admin','/admin/','/manifest.webmanifest'",'Admin shell không được phụ thuộc manifest public cũ');
+mustNot('public/sw.js',"const SHELL=['/','/admin','/admin/','/admin/manifest.webmanifest'",'Service worker không được pre-cache manifest Admin');
+must('public/sw.js',"url.pathname.endsWith('/manifest.webmanifest')",'Service worker phải bypass cache cho mọi manifest');
+must('public/sw.js',"event.respondWith(fetch(req))",'Manifest phải được lấy trực tiếp từ network');
 must('public/sw.js',"if(url.pathname.startsWith('/admin'))",'Service worker phải có nhánh fallback riêng cho Admin');
 must('public/sw.js',"new Response('HappyGo Admin đang ngoại tuyến",'Admin offline phải báo trạng thái thay vì rơi về trang chủ');
 mustNot('public/sw.js',"if(url.pathname.startsWith('/admin'))return (await caches.match('/admin'))||(await caches.match('/admin/'))||(await caches.match('/'));",'Admin PWA không được fallback về homepage');
