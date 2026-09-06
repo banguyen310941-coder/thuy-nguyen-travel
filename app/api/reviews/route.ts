@@ -46,14 +46,13 @@ export async function GET(req:NextRequest){
  try{
   const actor=await customerActor(sql,req);
   const rows=await sql`
-   select cr.id,cr.rating,cr.comment,cr.verified,cr.created_at,c.name as customer_name,b.code as booking_code
+   select cr.id,cr.rating,cr.comment,cr.verified,cr.created_at,c.name as customer_name
    from customer_reviews cr
    join customers c on c.id=cr.customer_id
-   left join bookings b on b.id=cr.booking_id
    where cr.product_slug=${slug} and cr.status='published'
    order by cr.created_at desc
    limit 200`;
-  const reviews=rows.map(r=>({id:String(r.id),customerName:String(r.customer_name||'Khách hàng'),rating:Number(r.rating||0),comment:String(r.comment||''),verified:Boolean(r.verified),bookingCode:String(r.booking_code||''),createdAt:String(r.created_at)}));
+  const reviews=rows.map(r=>({id:String(r.id),customerName:String(r.customer_name||'Khách hàng'),rating:Number(r.rating||0),comment:String(r.comment||''),verified:Boolean(r.verified),createdAt:String(r.created_at)}));
   const average=reviews.length?reviews.reduce((sum,r)=>sum+r.rating,0)/reviews.length:null;
   const booking=actor?await completedBooking(sql,actor.customerId,slug,productName):null;
   const myRows=actor?await sql`select id,rating,comment from customer_reviews where product_slug=${slug} and customer_id=${actor.customerId} limit 1`:[];
