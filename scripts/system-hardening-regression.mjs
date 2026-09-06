@@ -26,8 +26,10 @@ must('lib/server/public-site-state.ts','tn_cms_daily_rates_v1:productionRates','
 must('app/product/[slug]/page.tsx','initialRates={initialRates}','Trang chi tiết phải hydrate lịch giá từ server');
 must('components/CmsProductDetail.tsx','initialRates?:PublicRateRange[]','Product detail phải nhận rate snapshot từ server');
 must('components/CmsProductDetail.tsx','<UnifiedStayPublicDetail product={product} initialRates={rates}/>','Product detail phải truyền rate snapshot xuống lưu trú');
-must('components/UnifiedStayPublicDetail.tsx','<ProductRateCalendar units={product.units||[]} initialRates={initialRates}','Lịch giá phải nhận rate snapshot');
-must('components/UnifiedStayPublicDetail.tsx','providedUnits={product.units||[]} initialRates={initialRates}','Danh sách phòng phải nhận cùng rate snapshot');
+must('components/UnifiedStayPublicDetail.tsx','<ProductRateCalendar','Trang lưu trú phải render lịch giá public');
+must('components/UnifiedStayPublicDetail.tsx','initialRates={initialRates}','Trang lưu trú phải truyền rate snapshot server xuống các khối giá');
+must('components/UnifiedStayPublicDetail.tsx','<PublishedUnits','Trang lưu trú phải render danh sách phòng/căn');
+must('components/UnifiedStayPublicDetail.tsx','providedUnits={product.units||[]}','Danh sách phòng phải dùng snapshot hạng phòng server');
 mustNot('components/ProductRateCalendar.tsx',"from '@/components/AdminRateCalendar'",'Public calendar không được phụ thuộc helper localStorage của Admin');
 mustNot('components/PublishedUnits.tsx',"from '@/components/AdminRateCalendar'",'Public unit list không được phụ thuộc helper localStorage của Admin');
 
