@@ -7,7 +7,9 @@ type Product={id:string;slug:string;type:string;name:string;place:string;cover:s
 type Referral={id:string;bookingCode:string;bookingStatus:string;villaName:string;customerPhone:string;commissionAmount:number;status:string;createdAt:string;creditedAt:string};
 type Payout={id:string;amount:number;status:string;payoutDate:string;receiptUrl:string;createdAt:string;resolvedAt:string};
 type Affiliate={name:string;email:string;referralCode:string;phone:string;zalo:string;balance:number;totalCommission:number;commissionRate:number;status:string;bankAccount:string;bankName:string;accountHolder:string};
-type Dashboard={affiliate:Affiliate;stats:{clicks:number;closedOrders:number};products?:Product[];villas:Product[];referrals:Referral[];payouts:Payout[]};
+type CommissionTier={minOrder:number;maxOrder:number|null;rate:number;label:string};
+type CommissionPolicy={basis:'profit';basisLabel:string;closedOrders:number;nextOrderNumber:number;currentRate:number;currentTier:CommissionTier;nextTier:CommissionTier|null;tiers:CommissionTier[]};
+type Dashboard={affiliate:Affiliate;stats:{clicks:number;closedOrders:number};commissionPolicy:CommissionPolicy;products?:Product[];villas:Product[];referrals:Referral[];payouts:Payout[]};
 type ProfileForm={phone:string;zalo:string;bankAccount:string;bankName:string;accountHolder:string};
 
 const money=(v:number)=>new Intl.NumberFormat('vi-VN').format(Math.round(v))+'đ';
@@ -24,7 +26,7 @@ async function copyText(value:string){
 export function AffiliateDashboard(){
  const router=useRouter();
  const loadRequest=useRef(0),payoutLock=useRef(false),profileLock=useRef(false);
- const[data,setData]=useState<Dashboard|null>(null),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[busy,setBusy]=useState(true),[copied,setCopied]=useState(''),[editingProfile,setEditingProfile]=useState(false),[profile,setProfile]=useState<ProfileForm>({phone:'',zalo:'',bankAccount:'',bankName:'',accountHolder:''}),[payoutAmount,setPayoutAmount]=useState('');
+ const[data,setData]=useState<Dashboard|null>(null),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[busy,setBusy]=useState(true),[copied,setCopied]=useState(''),[linkNotice,setLinkNotice]=useState(''),[editingProfile,setEditingProfile]=useState(false),[profile,setProfile]=useState<ProfileForm>({phone:'',zalo:'',bankAccount:'',bankName:'',accountHolder:''}),[payoutAmount,setPayoutAmount]=useState('');
 
  const load=useCallback(async()=>{
   const request=++loadRequest.current;
@@ -50,7 +52,15 @@ export function AffiliateDashboard(){
  },[load]);
 
  async function logout(){loadRequest.current++;await fetch('/api/affiliate/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/affiliate');router.refresh()}
- async function copy(v:Product){const ok=await copyText(v.affiliateLink);if(ok){setCopied(v.id);setTimeout(()=>setCopied(''),1800)}else setMsg('Không thể copy link trên trình duyệt này. Bạn có thể bôi đen link để sao chép.')}
+ async function copy(v:Product){
+  const ok=await copyText(v.affiliateLink);
+  if(ok){
+   setCopied(v.id);
+   const policy=data?.commissionPolicy;
+   setLinkNotice(policy?`✓ Đã copy link ${v.name}. Nếu đây là đơn thành công thứ ${policy.nextOrderNumber}, hoa hồng hiện tại là ${policy.currentRate}% trên lợi nhuận của đơn (giá bán − giá vốn).`:`✓ Đã copy link ${v.name}.`);
+   setTimeout(()=>setCopied(''),1800);
+  }else setMsg('Không thể copy link trên trình duyệt này. Bạn có thể bôi đen link để sao chép.');
+ }
  function openProduct(v:Product){window.open(v.affiliateLink,'_blank','noopener,noreferrer')}
  async function action(payload:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
@@ -89,6 +99,7 @@ export function AffiliateDashboard(){
  if(!data)return <main className="affiliate-shell"><div className="affiliate-loading">{msg||'Không có dữ liệu CTV.'}</div></main>;
 
  const a=data.affiliate;
+ const policy=data.commissionPolicy;
  const pendingPayout=data.payouts.find(p=>p.status==='pending');
  const paidPayouts=data.payouts.filter(p=>p.status==='paid').length;
  const cancelledPayouts=data.payouts.filter(p=>p.status==='cancelled').length;
@@ -104,21 +115,21 @@ export function AffiliateDashboard(){
   <div className="affiliate-content">
    {msg&&<p className="affiliate-message" aria-live="polite">{msg}</p>}
    <section className="affiliate-welcome">
-    <div><small>DASHBOARD CỘNG TÁC VIÊN</small><h1>Hoa hồng rõ ràng, link chia sẻ sẵn sàng</h1><p>Hoa hồng được ghi nhận khi booking hoàn tất. Tỷ lệ hiện tại: <b>{a.commissionRate}%</b>.</p></div>
-    <div className="affiliate-security-note">🔒 Dashboard không truy vấn hoặc hiển thị tên/SĐT chủ nhà, địa chỉ cụ thể hay giá net.</div>
+    <div><small>DASHBOARD CỘNG TÁC VIÊN</small><h1>Hoa hồng tăng theo số đơn thành công</h1><p>Hoa hồng tính trên <b>lợi nhuận thực tế của từng đơn (giá bán − giá vốn)</b>. Đơn thành công tiếp theo của bạn là đơn thứ <b>{policy.nextOrderNumber}</b>, mức hiện tại <b>{policy.currentRate}%</b>.</p><div className="affiliate-commission-tiers">{policy.tiers.map(tier=><span key={tier.minOrder} className={tier.rate===policy.currentRate?'active':''}><b>{tier.rate}%</b><small>{tier.label}</small></span>)}</div></div>
    </section>
 
    <section className="affiliate-kpis">
     <article><small>SỐ DƯ VÍ</small><strong>{money(a.balance)}</strong><span>Có thể gửi yêu cầu rút hoa hồng</span></article>
     <article><small>TỔNG HOA HỒNG</small><strong>{money(a.totalCommission)}</strong><span>Đã ghi nhận từ booking hoàn tất</span></article>
     <article><small>LƯỢT CLICK</small><strong>{data.stats.clicks}</strong><span>Click hợp lệ theo ngày</span></article>
-    <article><small>ĐƠN CHỐT THÀNH CÔNG</small><strong>{data.stats.closedOrders}</strong><span>Đã duyệt / đã thanh toán</span></article>
+    <article><small>ĐƠN CHỐT THÀNH CÔNG</small><strong>{data.stats.closedOrders}</strong><span>Booking completed hợp lệ</span></article>
    </section>
 
    <section className="affiliate-panel">
-    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn sản phẩm để copy link</h2><p>Link tự gắn mã CTV và sản phẩm. Tour, villa, khách sạn và du thuyền công khai đều có thể ghi nhận referral.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên / khu vực / loại sản phẩm" aria-label="Tìm sản phẩm để chia sẻ"/></div>
+    <div className="affiliate-panel-head"><div><small>LINK AFFILIATE</small><h2>Chọn sản phẩm để copy link</h2><p>Link tự gắn mã CTV và sản phẩm. Mức hoa hồng hiện tại là <b>{policy.currentRate}% lợi nhuận</b> cho đơn thành công thứ {policy.nextOrderNumber}.</p></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên / khu vực / loại sản phẩm" aria-label="Tìm sản phẩm để chia sẻ"/></div>
+    {linkNotice&&<div className="affiliate-link-notice" role="status" aria-live="polite">{linkNotice}</div>}
     <div className="affiliate-villa-grid">
-     {products.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>{productIcon(v.type)}</span>}</div><div className="affiliate-villa-body"><small>{[v.type,v.place].filter(Boolean).join(' · ')||'Sản phẩm du lịch'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink} aria-label={`Link giới thiệu ${v.name}`}/><button type="button" onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div><div className="affiliate-payout-actions"><button type="button" onClick={()=>openProduct(v)}>Mở link khách xem ↗</button></div></div></article>)}
+     {products.map(v=><article key={v.id}><div className="affiliate-villa-cover">{v.cover?<img src={v.cover} alt={v.name}/>:<span>{productIcon(v.type)}</span>}</div><div className="affiliate-villa-body"><small>{[v.type,v.place].filter(Boolean).join(' · ')||'Sản phẩm du lịch'}</small><h3>{v.name}</h3><p>Giá công khai từ <b>{v.publicPrice?money(v.publicPrice):'Liên hệ'}</b></p><p className="affiliate-product-commission">💰 Hoa hồng mức hiện tại: <b>{policy.currentRate}% lợi nhuận đơn</b></p><div className="affiliate-link-box"><input readOnly value={v.affiliateLink} aria-label={`Link giới thiệu ${v.name}`}/><button type="button" onClick={()=>void copy(v)}>{copied===v.id?'✓ Đã copy':'Copy link'}</button></div><div className="affiliate-payout-actions"><button type="button" onClick={()=>openProduct(v)}>Mở link khách xem ↗</button></div></div></article>)}
      {!products.length&&<div className="affiliate-empty">Chưa có sản phẩm phù hợp.</div>}
     </div>
    </section>
