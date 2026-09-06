@@ -65,7 +65,7 @@ export async function POST(req:NextRequest){
     returning id,created_at
    ), logged as (
     insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data)
-    select ${actor.id},'affiliate.followup.create','affiliate',${affiliateId},jsonb_build_object('followupId',i.id::text,'type',${type},'nextFollowUpAt',${nextIso},'requestId',${requestId})
+    select ${actor.id},'affiliate.followup.create','affiliate',${affiliateId},jsonb_build_object('followupId',i.id::text,'type',${type}::text,'nextFollowUpAt',${nextIso}::text,'requestId',${requestId}::text)
     from inserted i returning id
    )
    select coalesce((select followup_id from existing),(select id::text from inserted)) as followup_id,
