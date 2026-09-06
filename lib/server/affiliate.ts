@@ -30,13 +30,45 @@ export async function captureAffiliateReferral(sql:any,req:NextRequest,bookingId
 
 export async function settleAffiliateBooking(sql:any,bookingId:string){const rows=await sql`
  with target as (
-  select ar.id,ar.affiliate_id,greatest(0,round((b.selling_total_vnd::numeric*a.commission_rate)/100)::bigint) as amount
-  from affiliate_referrals ar join affiliates a on a.id=ar.affiliate_id join staff s on s.id=a.user_id join bookings b on b.id=ar.booking_id
-  where ar.booking_id=${bookingId} and ar.status='pending' and a.status='active' and b.status='completed' and s.status='active' and s.role='affiliate'
+  select ar.id,ar.affiliate_id,
+   greatest(0,(b.selling_total_vnd-b.cost_total_vnd))::bigint as profit,
+   greatest(1,(
+    select count(*)::int
+    from affiliate_referrals prior
+    join bookings pb on pb.id=prior.booking_id
+    where prior.affiliate_id=ar.affiliate_id
+      and prior.status<>'cancelled'
+      and pb.status='completed'
+      and (
+       coalesce(pb.completed_at,pb.updated_at,pb.created_at)<coalesce(b.completed_at,b.updated_at,b.created_at)
+       or (
+        coalesce(pb.completed_at,pb.updated_at,pb.created_at)=coalesce(b.completed_at,b.updated_at,b.created_at)
+        and prior.id::text<=ar.id::text
+       )
+      )
+   )) as order_number
+  from affiliate_referrals ar
+  join affiliates a on a.id=ar.affiliate_id
+  join staff s on s.id=a.user_id
+  join bookings b on b.id=ar.booking_id
+  where ar.booking_id=${bookingId}
+    and ar.status='pending'
+    and a.status='active'
+    and b.status='completed'
+    and b.cost_total_vnd is not null
+    and s.status='active'
+    and s.role='affiliate'
   for update of ar
+ ), priced as (
+  select t.*,
+   case when t.order_number<=10 then 35 when t.order_number<=20 then 40 when t.order_number<=50 then 45 else 50 end::numeric as commission_rate
+  from target t
+ ), valued as (
+  select p.*,greatest(0,round((p.profit::numeric*p.commission_rate)/100)::bigint) as amount
+  from priced p
  ), credited as (
-  update affiliate_referrals ar set commission_amount=t.amount,status='approved',credited_at=now(),updated_at=now()
-  from target t where ar.id=t.id and ar.status='pending'
+  update affiliate_referrals ar set commission_amount=v.amount,status='approved',credited_at=now(),updated_at=now()
+  from valued v where ar.id=v.id and ar.status='pending'
   returning ar.affiliate_id,ar.commission_amount
  ), wallet as (
   update affiliates a set total_commission=a.total_commission+c.commission_amount,balance=a.balance+c.commission_amount,updated_at=now()
