@@ -10,8 +10,6 @@ type LegacyProduct={
   pickup?:string;boarding?:string;content?:string;seoTitle?:string;seoDescription?:string;updatedAt?:string;
 };
 
-type CurrentProduct={RecordKey:string}&Record<string,unknown>;
-
 const LEGACY_KEY='tn_cms_products_v2';
 const PRODUCT_KEY='tn_cms_products_v3_units';
 const TOUR_KEY='tn_cms_tours_v3';

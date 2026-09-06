@@ -8,7 +8,7 @@ export type AdminAuthResult={ok:boolean;staff?:AdminStaff;message:string;needsBo
 export function readAdminSession():AdminSession|null{try{const x=JSON.parse(sessionStorage.getItem(ADMIN_SESSION_KEY)||'null');return x&&x.staffId?x:null}catch{return null}}
 export function writeAdminSession(staff:AdminStaff){
   const current=readStaff().filter(x=>x.id!==staff.id);
-  localStorage.setItem(STAFF_KEY,JSON.stringify([{...staff,password:undefined},...current].map(({password:_password,...item})=>item)));
+  localStorage.setItem(STAFF_KEY,JSON.stringify([{...staff,password:undefined},...current],(key,value)=>key==='password'?undefined:value));
   sessionStorage.setItem(ADMIN_SESSION_KEY,JSON.stringify({staffId:staff.id,loginAt:new Date().toISOString()}));
   window.dispatchEvent(new Event('tn-staff-updated'));
   window.dispatchEvent(new Event('happygo-admin-auth'));
