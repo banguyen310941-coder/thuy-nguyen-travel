@@ -1,5 +1,5 @@
-const CACHE='happygo-shell-v6';
-const SHELL=['/','/admin','/admin/','/manifest.webmanifest','/admin/manifest.webmanifest','/icon.svg'];
+const CACHE='happygo-shell-v7';
+const SHELL=['/','/admin','/admin/','/admin/manifest.webmanifest','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
