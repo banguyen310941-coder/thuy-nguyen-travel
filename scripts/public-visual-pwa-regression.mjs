@@ -11,9 +11,15 @@ must('app/admin/manifest.webmanifest/route.ts',"id:'/admin/'",'Admin PWA phải 
 must('app/admin/manifest.webmanifest/route.ts',"start_url:'/admin/?source=pwa'",'Admin PWA phải luôn khởi động trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"scope:'/admin/'",'Admin PWA phải giới hạn scope trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"'Cache-Control':'no-store, max-age=0'",'Manifest Admin không được bị cache cũ');
+must('public/sw.js',"const CACHE='happygo-shell-v7'",'Service worker phải đổi cache version để xóa shell Admin cũ');
+must('public/sw.js',"'/admin/manifest.webmanifest'",'Service worker phải cache manifest Admin');
+mustNot('public/sw.js',"const SHELL=['/','/admin','/admin/','/manifest.webmanifest'",'Admin shell không được phụ thuộc manifest public cũ');
 must('public/sw.js',"if(url.pathname.startsWith('/admin'))",'Service worker phải có nhánh fallback riêng cho Admin');
 must('public/sw.js',"new Response('HappyGo Admin đang ngoại tuyến",'Admin offline phải báo trạng thái thay vì rơi về trang chủ');
 mustNot('public/sw.js',"if(url.pathname.startsWith('/admin'))return (await caches.match('/admin'))||(await caches.match('/admin/'))||(await caches.match('/'));",'Admin PWA không được fallback về homepage');
+mustNot('components/AdminInstallApp.tsx','querySelectorAll<HTMLLinkElement>(\'link[rel="manifest"]\')','Installer Admin không được sửa manifest bằng DOM sau khi trang đã tải');
+mustNot('components/AdminInstallApp.tsx','document.head.appendChild(link)','Installer Admin không được chèn manifest bằng JavaScript');
+must('components/AdminInstallApp.tsx','manifest trực tiếp từ HTML','Hướng dẫn cài Admin phải phản ánh cơ chế manifest server');
 
 must('data/catalog.ts',"destinationVisualUrl('Phan Thiết')",'Catalog điểm đến phải dùng ảnh dùng chung');
 must('data/catalog.ts',"destinationVisualUrl('Hạ Long')",'Hạ Long phải dùng ảnh dùng chung');
