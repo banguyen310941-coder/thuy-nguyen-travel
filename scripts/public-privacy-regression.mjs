@@ -39,5 +39,12 @@ must('app/api/bookings/route.ts','name.length>120||email.length>254||product.len
 must('app/api/bookings/route.ts',"return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400})",'Booking POST phải kiểm tra email trước khi lưu/gửi mail');
 must('app/api/bookings/route.ts',"'\"':'&quot;'",'HTML email booking phải escape dấu ngoặc kép đầy đủ');
 
+// Newsletter consent is isolated from customer-account marketing consent and all writes are same-origin.
+must('app/api/newsletter/route.ts',"function sameOrigin(req:NextRequest){const origin=req.headers.get('origin');return !origin||origin===req.nextUrl.origin}",'Newsletter phải có kiểm tra same-origin dùng chung');
+must('app/api/newsletter/route.ts',"if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403})",'Subscribe/unsubscribe newsletter phải chặn cross-site request');
+mustNot('app/api/newsletter/route.ts','update customers set marketing_consent=true','Public newsletter không được tự bật marketing consent của hồ sơ khách');
+mustNot('app/api/newsletter/route.ts','update customers set marketing_consent=false','Public newsletter không được tự tắt marketing consent của hồ sơ khách');
+mustNot('app/api/newsletter/route.ts','customer_consent as','Public newsletter không được nối tác dụng phụ sang bảng customers');
+
 if(failures.length){console.error('\nPublic privacy regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public privacy regression checks passed.');
