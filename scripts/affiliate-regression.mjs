@@ -51,7 +51,7 @@ check(has(followupApi,"const limit=intParam(req.nextUrl.searchParams.get('limit'
 check(has(followupApi,"const offset=intParam(req.nextUrl.searchParams.get('offset')"),'API lịch chăm sóc phải hỗ trợ offset phân trang.');
 check(has(followupApi,'const hasMore=rawFollowups.length>limit'),'API lịch chăm sóc phải xác định còn dữ liệu để tải thêm.');
 check(has(followupApi,'pagination:{limit,offset,hasMore,nextOffset:hasMore?offset+limit:null}'),'API lịch chăm sóc phải trả metadata phân trang.');
-check(has(followupApi,'pg_advisory_xact_lock(hashtext(${requestId}))'),'Ghi chăm sóc phải khóa requestId chống double-submit server-side.');
+check(has(followupApi,'pg_advisory_xact_lock(hashtext(${requestId}::text))'),'Ghi chăm sóc phải khóa requestId chống double-submit server-side với kiểu text rõ ràng.');
 check(has(followupApi,"after_data->>'requestId'=${requestId}"),'Ghi chăm sóc phải idempotent theo requestId.');
 check(has(followupApi,"'requestId',${requestId}"),'Audit log chăm sóc phải lưu requestId.');
 
