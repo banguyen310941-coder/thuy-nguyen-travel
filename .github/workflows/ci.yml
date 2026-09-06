@@ -48,3 +48,8 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
         run: npm run build
+
+      - name: Rendered Admin PWA smoke test
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+        run: node scripts/admin-built-pwa-regression.mjs
