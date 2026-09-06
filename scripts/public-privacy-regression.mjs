@@ -5,18 +5,29 @@ const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const must=(path,needle,label)=>{if(!read(path).includes(needle))failures.push(`${label}: thiếu ${JSON.stringify(needle)} trong ${path}`)};
 const mustNot=(path,needle,label)=>{if(read(path).includes(needle))failures.push(`${label}: không được chứa ${JSON.stringify(needle)} trong ${path}`)};
 
-// Shared recursive sanitizer must protect public product/CMS payloads.
+// Shared recursive sanitizer remains the final text/object guard.
 must('lib/server/public-site-state.ts','export function sanitizePublicValue(value:unknown):unknown','Public sanitizer phải được export để mọi public API dùng chung');
 must('lib/server/public-site-state.ts','PRIVATE_FIELD_TOKENS','Public sanitizer phải chặn token trường nội bộ');
 must('lib/server/public-site-state.ts','if(privateField(key))continue','Public sanitizer phải lọc object lồng nhau');
 
-// Partner catalog may expose approved commercial content, but never raw partner data fields.
-must('app/api/catalog/partner-products/route.ts',"import {sanitizePublicValue} from '@/lib/server/public-site-state'",'Partner catalog phải dùng sanitizer chung');
-must('app/api/catalog/partner-products/route.ts','const sanitized=sanitizePublicValue(raw)','Partner catalog phải lọc data đệ quy');
+// Production catalog must be allowlist-first: arbitrary product/unit data must never be spread to public APIs.
+must('lib/server/public-site-state.ts','const PUBLIC_PRODUCT_FIELDS=','Product public phải có allowlist rõ ràng');
+must('lib/server/public-site-state.ts','const PUBLIC_UNIT_FIELDS=','Unit public phải có allowlist rõ ràng');
+must('lib/server/public-site-state.ts','export function publicProductData(value:unknown)','Product public phải đi qua projector allowlist');
+must('lib/server/public-site-state.ts','export function publicUnitData(value:unknown)','Unit public phải đi qua projector allowlist');
+must('lib/server/public-site-state.ts',"quantity:available?'1':'0'",'Public rate chỉ được lộ trạng thái còn/hết, không lộ số tồn thật');
+mustNot('lib/server/public-site-state.ts','quantity:String(row.inventory??0)','Public rate không được xuất số inventory production chính xác');
+mustNot('lib/server/public-site-state.ts','select id,product_id,code,name','Không được select mã unit nội bộ chỉ để xuất public');
+must('components/PublishedUnits.tsx','Còn chỗ theo lịch ngày đã chọn','UI public chỉ hiển thị trạng thái còn chỗ, không hiển thị tồn chính xác');
+mustNot('components/PublishedUnits.tsx','Còn {minQty} đơn vị','UI public không được hiển thị số tồn production chính xác');
+
+// Partner catalog may expose approved customer-facing content, but raw partner data must never escape.
+must('app/api/catalog/partner-products/route.ts',"import {publicProductData,sanitizePublicValue} from '@/lib/server/public-site-state'",'Partner catalog phải dùng public projector chung');
+must('app/api/catalog/partner-products/route.ts','const data=publicProductData(row.data)','Partner catalog phải project raw data qua allowlist');
 must('app/api/catalog/partner-products/route.ts',"const sanitizedSummary=sanitizePublicValue(row.description||data.summary||'')",'Partner catalog phải lọc mô tả public');
-mustNot('app/api/catalog/partner-products/route.ts','partnerPricing:_partnerPricing','Không được chỉ blacklist một số field partner top-level');
-mustNot('app/api/catalog/partner-products/route.ts','netPrice:_netPrice','Không được chỉ blacklist netPrice top-level');
-mustNot('app/api/catalog/partner-products/route.ts','apiToken:_apiToken','Không được chỉ blacklist apiToken top-level');
+mustNot('app/api/catalog/partner-products/route.ts','const sanitized=sanitizePublicValue(raw)','Partner catalog không được coi blacklist sanitizer là biên public duy nhất');
+mustNot('app/api/catalog/partner-products/route.ts','retailPriceVnd:','Partner catalog không cần lộ cột giá số dư thừa ngoài giá public chuẩn');
+mustNot('app/api/catalog/partner-products/route.ts','promoPriceVnd:','Partner catalog không cần lộ cột promo số dư thừa ngoài giá public chuẩn');
 
 // Site/SEO config endpoint must return a stable public allowlist instead of the raw audit-log object.
 must('app/api/site-config/route.ts','function publicSiteConfig(value:unknown)','Site config phải có allowlist public');
@@ -30,7 +41,6 @@ mustNot('app/api/site-config/route.ts','canonicalBase:text(raw.canonicalBase)','
 mustNot('app/api/reviews/route.ts','b.code as booking_code','Danh sách review public không được select mã booking');
 mustNot('app/api/reviews/route.ts','bookingCode:String(r.booking_code','Review public không được serialize mã booking');
 mustNot('components/CustomerReviews.tsx','bookingCode?:string};\ntype Mine','Kiểu dữ liệu từng review không được chứa bookingCode');
-// The top-level bookingCode remains intentionally available only for the authenticated customer whose own completed booking was verified.
 must('app/api/reviews/route.ts',"bookingCode:booking?.code||''",'Khách đã đăng nhập vẫn được xác nhận mã booking của chính họ');
 
 // Public booking writes must be same-origin and bounded before data reaches CRM/notifications.
