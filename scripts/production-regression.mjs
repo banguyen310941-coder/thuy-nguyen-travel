@@ -92,6 +92,41 @@ excludes('app/guide/category/[slug]/page.tsx','/cam-nang/category/${slug}','Chuy
 contains('app/sitemap.ts',"['/villa-resort',.92,'daily']",'Sitemap phải có Villa & Resort');
 contains('app/sitemap.ts',"['/khach-san',.92,'daily']",'Sitemap phải có Khách sạn');
 
+for(const [path,active] of [['app/tours/page.tsx','tour'],['app/cruises/page.tsx','cruise'],['app/destinations/page.tsx','destination']]){
+ contains(path,'PublicServiceNav','Các landing public phải dùng cùng thanh điều hướng dịch vụ');
+ contains(path,`active=\"${active}\"`,'Landing public phải đánh dấu đúng dịch vụ đang xem');
+}
+contains('app/destinations/page.tsx','href="/villa-resort"','Điểm đến phải dẫn riêng tới Villa & Resort');
+contains('app/destinations/page.tsx','href="/khach-san"','Điểm đến phải dẫn riêng tới Khách sạn');
+contains('app/diem-den/[slug]/page.tsx','PublicServiceNav active="destination"','Chi tiết điểm đến phải giữ điều hướng dịch vụ chung');
+contains('app/diem-den/long-hai/page.tsx','/villa-resort?q=Long','Long Hải phải dùng URL Villa sạch');
+contains('app/diem-den/vung-tau/page.tsx','/villa-resort?q=V%C5%A9ng','Vũng Tàu phải dùng URL Villa sạch');
+
+for(const path of ['components/TourDetailClient.tsx','components/CruiseDetailClient.tsx','components/UnifiedStayPublicDetail.tsx','components/UnifiedCruisePublicDetail.tsx','components/UnifiedTourPublicDetail.tsx'])contains(path,'PublicServiceNav','Trang chi tiết public phải giữ thanh điều hướng dịch vụ chung');
+contains('components/UnifiedStayPublicDetail.tsx',"categoryHref=isVilla?'/villa-resort':'/khach-san'",'Breadcrumb lưu trú phải quay về đúng Villa hoặc Khách sạn');
+contains('app/product/[slug]/page.tsx',"if(type==='Villa & Resort')",'Schema breadcrumb sản phẩm phải phân biệt Villa');
+contains('app/product/[slug]/page.tsx',"if(type==='Khách sạn')",'Schema breadcrumb sản phẩm phải phân biệt Khách sạn');
+
+contains('app/tours/[slug]/page.tsx','getPublishedTourSeo','Tour CMS phải có route slug public phía server');
+contains('app/tours/[slug]/page.tsx','<CmsTourDetail slug={slug}/>','Tour CMS phải render trên /tour-du-lich/{slug}');
+contains('components/CmsTourDetail.tsx','fetch(\'/api/catalog/site-state\'','Tour CMS public phải đọc dữ liệu production');
+contains('lib/public-tour-seo.ts','tn_cms_tours_v3','SEO Tour CMS phải đọc nguồn production');
+contains('app/sitemap.ts','listPublishedTourSeo','Sitemap phải chứa Tour CMS public');
+
+for(const path of ['components/GlobalSearchResults.tsx','components/GuideCmsList.tsx','components/GuideCategoryCmsList.tsx','components/HomeCmsSections.tsx']){
+ excludes(path,'/guide/read','Luồng public không được phát sinh route nội bộ /guide/read');
+ excludes(path,'/cam-nang/doc?slug=','Luồng public mới không được dùng query bài Cẩm nang');
+}
+excludes('components/GlobalSearchResults.tsx','/tour-product?slug=','Tìm kiếm không được phát sinh route Tour kỹ thuật');
+excludes('components/GlobalSearchResults.tsx','/san-pham?slug=','Tìm kiếm không được phát sinh query sản phẩm cũ');
+contains('components/GlobalSearchResults.tsx','/cam-nang/bai-viet/${encodeURIComponent(item.slug)}','Tìm kiếm phải dùng URL bài CMS sạch');
+contains('components/GuideCmsList.tsx','/cam-nang/bai-viet/${encodeURIComponent(a.slug)}','Cẩm nang CMS phải dùng URL slug sạch');
+contains('components/usePublicGuideArticles.ts','tn_cms_articles_v3','Cẩm nang CMS phải đọc nguồn production v3');
+contains('app/cam-nang/bai-viet/[slug]/page.tsx','getPublishedGuideSeo','Bài CMS phải có metadata/canonical phía server');
+contains('lib/public-guide-seo.ts','tn_cms_articles_v3','SEO bài CMS phải dùng nguồn production');
+contains('app/sitemap.ts','listPublishedGuideSeo','Sitemap phải chứa bài CMS public');
+excludes('app/guide/read/page.tsx','Thúy Nguyên Travel','Trang đọc bài tương thích không được còn thương hiệu cũ');
+
 if(failures.length){
  console.error('\nProduction regression checks FAILED:\n');
  for(const failure of failures)console.error(`- ${failure}`);
