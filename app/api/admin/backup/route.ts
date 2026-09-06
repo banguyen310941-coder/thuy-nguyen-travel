@@ -12,7 +12,7 @@ function stamp(){return new Date().toISOString().replace(/[:.]/g,'-')}
 
 async function buildBackup(){
  const sql=db();
- const [staff,customers,assignments,rotation,partners,partnerAccounts,products,units,rates,bookings,bookingItems,payments,activities,supportTickets,supportMessages,suppliers,paymentRequests,paymentEvents,accountingEntries,accountingBalances,customerAccounts,sharedRows,availabilityRows]=await Promise.all([
+ const [staff,customers,assignments,rotation,partners,partnerAccounts,products,units,rates,bookings,bookingItems,payments,activities,supportTickets,supportMessages,suppliers,paymentRequests,paymentEvents,accountingEntries,accountingBalances,customerAccounts,affiliates,affiliateClicks,affiliateReferrals,commissionPayouts,affiliateFollowups,sharedRows,availabilityRows,siteConfigRows,newsletterRows]=await Promise.all([
   sql`select coalesce(jsonb_agg(to_jsonb(t)-'password_hash'-'password'-'password_salt'),'[]'::jsonb) data from staff t`,
   sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from customers t`,
   sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from customer_assignments t`,
@@ -34,14 +34,23 @@ async function buildBackup(){
   sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from accounting_entries t`,
   sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from accounting_balances t`,
   sql`select coalesce(jsonb_agg(to_jsonb(t)-'password_hash'-'password'-'password_salt'),'[]'::jsonb) data from customer_accounts t`,
+  sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from affiliates t`,
+  sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from affiliate_clicks t`,
+  sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from affiliate_referrals t`,
+  sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from commission_payouts t`,
+  sql`select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) data from affiliate_followups t`,
   sql`select distinct on(entity_id) entity_id,after_data,created_at from audit_logs where entity_type='admin_shared_state' order by entity_id,created_at desc,id desc`,
   sql`select distinct on(entity_id) entity_id,after_data,created_at from audit_logs where entity_type='sales_availability' order by entity_id,created_at desc,id desc`,
+  sql`select distinct on(entity_id) entity_id,after_data,created_at from audit_logs where entity_type='site_config' order by entity_id,created_at desc,id desc`,
+  sql`select id,action,entity_id,after_data,created_at from audit_logs where entity_type='newsletter_subscription' order by created_at asc,id asc`,
  ]);
- const relational:Section={staff:data(staff[0]),customers:data(customers[0]),customer_assignments:data(assignments[0]),sales_rotation:data(rotation[0]),partners:data(partners[0]),partner_accounts:data(partnerAccounts[0]),products:data(products[0]),product_units:data(units[0]),rate_rules:data(rates[0]),bookings:data(bookings[0]),booking_items:data(bookingItems[0]),payments:data(payments[0]),crm_activities:data(activities[0]),partner_support_tickets:data(supportTickets[0]),partner_support_messages:data(supportMessages[0]),suppliers:data(suppliers[0]),payment_requests:data(paymentRequests[0]),payment_request_events:data(paymentEvents[0]),accounting_entries:data(accountingEntries[0]),accounting_balances:data(accountingBalances[0]),customer_accounts:data(customerAccounts[0])};
+ const relational:Section={staff:data(staff[0]),customers:data(customers[0]),customer_assignments:data(assignments[0]),sales_rotation:data(rotation[0]),partners:data(partners[0]),partner_accounts:data(partnerAccounts[0]),products:data(products[0]),product_units:data(units[0]),rate_rules:data(rates[0]),bookings:data(bookings[0]),booking_items:data(bookingItems[0]),payments:data(payments[0]),crm_activities:data(activities[0]),partner_support_tickets:data(supportTickets[0]),partner_support_messages:data(supportMessages[0]),suppliers:data(suppliers[0]),payment_requests:data(paymentRequests[0]),payment_request_events:data(paymentEvents[0]),accounting_entries:data(accountingEntries[0]),accounting_balances:data(accountingBalances[0]),customer_accounts:data(customerAccounts[0]),affiliates:data(affiliates[0]),affiliate_clicks:data(affiliateClicks[0]),affiliate_referrals:data(affiliateReferrals[0]),commission_payouts:data(commissionPayouts[0]),affiliate_followups:data(affiliateFollowups[0])};
  const sharedState=Object.fromEntries(sharedRows.map((row:any)=>[String(row.entity_id),{afterData:row.after_data,createdAt:String(row.created_at)}]));
  const salesAvailability=Object.fromEntries(availabilityRows.map((row:any)=>[String(row.entity_id),{afterData:row.after_data,createdAt:String(row.created_at)}]));
- const records=Object.values(relational).reduce((sum,items)=>sum+items.length,0)+sharedRows.length+availabilityRows.length;
- return{kind:'happygo-production-backup',schemaVersion:2,app:'HappyGo Travel',createdAt:new Date().toISOString(),source:'Neon production + server shared state',summary:{sections:Object.keys(relational).length+2,records},relational,sharedState,salesAvailability};
+ const siteConfig=Object.fromEntries(siteConfigRows.map((row:any)=>[String(row.entity_id),{afterData:row.after_data,createdAt:String(row.created_at)}]));
+ const newsletterEvents=newsletterRows.map((row:any)=>({id:String(row.id),action:String(row.action),email:String(row.entity_id),afterData:row.after_data,createdAt:String(row.created_at)}));
+ const records=Object.values(relational).reduce((sum,items)=>sum+items.length,0)+sharedRows.length+availabilityRows.length+siteConfigRows.length+newsletterRows.length;
+ return{kind:'happygo-production-backup',schemaVersion:3,app:'HappyGo Travel',createdAt:new Date().toISOString(),source:'Neon production + server shared state',summary:{sections:Object.keys(relational).length+4,records},relational,sharedState,salesAvailability,siteConfig,newsletterEvents};
 }
 
 export async function GET(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(!owner(actor))return NextResponse.json({error:'Chỉ Chủ tài khoản được xuất bản sao lưu production.'},{status:403});try{const backup=await buildBackup();if(req.nextUrl.searchParams.get('meta')==='1')return NextResponse.json({ok:true,createdAt:backup.createdAt,summary:backup.summary,source:backup.source},{headers:{'Cache-Control':'no-store, max-age=0'}});const body=JSON.stringify(backup,null,2);return new NextResponse(body,{status:200,headers:{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="happygo-production-backup_${stamp()}.json"`,'Cache-Control':'no-store, max-age=0'}})}catch(error){console.error('production_backup_failed',error);return NextResponse.json({error:'Không thể tạo bản sao lưu production.'},{status:500})}}

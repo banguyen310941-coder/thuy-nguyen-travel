@@ -2,8 +2,8 @@
 
 import {useEffect,useState} from 'react';
 
-export type SiteSettings={brand:string;hotline:string;email:string;zalo:string};
-export const defaultSiteSettings:SiteSettings={brand:'HappyGo Travel',hotline:'0969973949',email:'info@happygo.vn',zalo:'0969973949'};
+export type SiteSettings={brand:string;hotline:string;email:string;zalo:string;facebookUrl:string;youtubeUrl:string;tiktokUrl:string};
+export const defaultSiteSettings:SiteSettings={brand:'HappyGo Travel',hotline:'0969973949',email:'info@happygo.vn',zalo:'0969973949',facebookUrl:'',youtubeUrl:'',tiktokUrl:''};
 const key='tn_cms_site_settings_v1';
 
 function migrateBrand(value:Partial<SiteSettings>|null|undefined):SiteSettings{

@@ -51,6 +51,25 @@ contains('app/api/payments/webhook/route.ts','on conflict(provider,provider_refe
 contains('app/api/admin/system-health/route.ts',"id:'payment_webhook'",'System Health phải hiển thị trạng thái payment webhook');
 contains('db/schema.sql',"'affiliate'",'Schema gốc phải hỗ trợ role CTV');
 
+contains('app/api/newsletter/route.ts',"'newsletter.subscribe'",'Newsletter public phải lưu đăng ký trên server');
+contains('app/api/newsletter/route.ts',"'newsletter.unsubscribe'",'Newsletter public phải hỗ trợ hủy đăng ký');
+contains('app/api/newsletter/route.ts','marketing_consent=false','Hủy newsletter phải đồng bộ marketing consent của khách hàng');
+contains('app/api/newsletter/route.ts','pg_advisory_xact_lock','Đăng ký newsletter phải chống ghi trùng đồng thời');
+contains('components/Footer.tsx',"fetch('/api/newsletter'",'Footer phải gửi đăng ký newsletter tới API thật');
+excludes('components/Footer.tsx','href="https://facebook.com"','Footer không được trỏ Facebook về trang chung');
+excludes('components/Footer.tsx','href="https://youtube.com"','Footer không được trỏ YouTube về trang chung');
+excludes('components/Footer.tsx','href="https://tiktok.com"','Footer không được trỏ TikTok về trang chung');
+contains('components/AdminUtilityPanels.tsx','facebookUrl','Admin phải cấu hình được Facebook chính thức');
+contains('components/AdminUtilityPanels.tsx','youtubeUrl','Admin phải cấu hình được YouTube chính thức');
+contains('components/AdminUtilityPanels.tsx','tiktokUrl','Admin phải cấu hình được TikTok chính thức');
+contains('app/api/admin/email-campaigns/send/route.ts','latest_newsletter','Email marketing phải dùng cả subscriber newsletter đang hoạt động');
+contains('app/api/admin/email-campaigns/send/route.ts','/huy-dang-ky?email=','Email marketing phải có đường dẫn opt-out');
+contains('app/huy-dang-ky/page.tsx','NewsletterUnsubscribe','Website phải có trang hủy đăng ký public');
+contains('app/api/admin/backup/route.ts','affiliate_followups','Backup production phải chứa dữ liệu CRM CTV');
+contains('app/api/admin/backup/route.ts','newsletterEvents','Backup production phải chứa lịch sử consent newsletter');
+contains('app/api/admin/backup/route.ts','siteConfig','Backup production phải chứa cấu hình website');
+contains('app/api/admin/system-health/route.ts',"id:'newsletter'",'System Health phải theo dõi newsletter');
+
 if(failures.length){
  console.error('\nProduction regression checks FAILED:\n');
  for(const failure of failures)console.error(`- ${failure}`);

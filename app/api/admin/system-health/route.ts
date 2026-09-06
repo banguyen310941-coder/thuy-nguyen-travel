@@ -28,7 +28,13 @@ export async function GET(req:NextRequest){
     (select count(*) from affiliates)::int affiliates,
     (select count(*) from affiliates where status='active')::int active_affiliates,
     (select count(*) from affiliate_referrals)::int affiliate_referrals,
-    (select coalesce(sum(balance),0) from affiliates)::bigint affiliate_balance`,
+    (select coalesce(sum(balance),0) from affiliates)::bigint affiliate_balance,
+    (select count(*) from (
+      select distinct on(entity_id) entity_id,action
+      from audit_logs
+      where entity_type='newsletter_subscription' and action in ('newsletter.subscribe','newsletter.unsubscribe')
+      order by entity_id,created_at desc,id desc
+    ) n where n.action='newsletter.subscribe')::int newsletter_subscribers`,
    sql`select entity_id,max(created_at) updated_at from audit_logs where entity_type='admin_shared_state' group by entity_id`
   ]);
   const c=counts[0] as any,sharedKeys=new Set(shared.map((row:any)=>String(row.entity_id))),sharedCount=sharedKeys.size;
@@ -50,6 +56,7 @@ export async function GET(req:NextRequest){
    {id:'catalog',label:'Sản phẩm nội bộ',state:'ok',detail:`Neon products/product_units · ${Number(c.internal_products||0)} sản phẩm · ${Number(c.internal_units||0)} đơn vị bán`,count:Number(c.internal_products||0)},
    {id:'rates',label:'Lịch giá & tồn',state:'ok',detail:`Neon rate_rules · ${Number(c.internal_rates||0)} khoảng giá đang lưu`,count:Number(c.internal_rates||0)},
    {id:'content',label:'Trang chủ · Tour CMS · Bài viết',state:'ok',detail:hasContent?'API production riêng đã có dữ liệu; public site-state đang phục vụ website':'API production riêng sẵn sàng; chưa phát sinh nội dung CMS mới',count:null},
+   {id:'newsletter',label:'Newsletter & marketing consent',state:'ok',detail:`Đăng ký/hủy đăng ký lưu trên server · ${Number(c.newsletter_subscribers||0)} email đang đăng ký`,count:Number(c.newsletter_subscribers||0)},
    {id:'attendance',label:'Chấm công',state:'ok',detail:hasAttendance?'Shared-state production; server giới hạn nhân viên sửa công của chính mình và quản lý chỉnh theo vai trò':'Server reconciliation và phân quyền đã sẵn sàng; chưa phát sinh dữ liệu chấm công',count:null},
    {id:'chat',label:'Chat nội bộ',state:'ok',detail:hasChat?'Shared-state production; server kiểm phạm vi phòng, tin nhắn trực tiếp và nhóm':'Server kiểm phạm vi phòng/direct/group đã sẵn sàng; chưa phát sinh dữ liệu chat',count:null},
    {id:'operations',label:'Điều hành · NCC · Voucher · CRM Pipeline',state:'ok',detail:`${sharedCount} vùng trạng thái server đã phát sinh; vùng chưa dùng sẽ tạo khi thao tác`,count:sharedCount},
