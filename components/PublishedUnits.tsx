@@ -2,10 +2,10 @@
 
 import {useEffect,useMemo,useState} from 'react';
 import {useSearchParams} from 'next/navigation';
-import {rateForDate,ratePriceCandidates,ratePriceForDate,ratesForUnit} from '@/components/AdminRateCalendar';
-import {readPartnerPublic} from '@/components/PartnerPublicCatalog';
 import {UnitPhotoGallery} from '@/components/UnitPhotoGallery';
 import {pricingDateKey,pricingMoney} from '@/lib/pricing-calendar';
+import {rateForDate,ratePriceCandidates,ratePriceForDate,ratesForUnit,type PublicRateRange} from '@/lib/public-rate-utils';
+import type {PartnerPublicProduct} from '@/components/PartnerPublicCatalog';
 
 type Unit={
   id:string;code:string;name:string;bedrooms?:string;beds?:string;capacity:string;area:string;view:string;meal:string;
@@ -16,37 +16,49 @@ type Product={slug:string;units?:Unit[]};
 const money=pricingMoney;
 const fmt=(n:number)=>new Intl.NumberFormat('vi-VN').format(n)+'đ';
 
-export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits}:{slug:string;label?:string;providedUnits?:Unit[]}){
+export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,initialRates=[]}:{slug:string;label?:string;providedUnits?:Unit[];initialRates?:PublicRateRange[]}){
  const params=useSearchParams();
  const checkin=params.get('checkin');
  const checkout=params.get('checkout');
- const[units,setUnits]=useState<Unit[]>([]);
+ const[units,setUnits]=useState<Unit[]>(()=>Array.isArray(providedUnits)?providedUnits.filter(u=>u.status!=='hidden'):[]);
+ const[allRates,setAllRates]=useState<PublicRateRange[]>(initialRates);
  const[rev,setRev]=useState(0);
+ useEffect(()=>{if(Array.isArray(providedUnits))setUnits(providedUnits.filter(u=>u.status!=='hidden'))},[providedUnits]);
+ useEffect(()=>setAllRates(initialRates),[initialRates]);
  useEffect(()=>{
-  const load=()=>{
-   if(Array.isArray(providedUnits)){setUnits(providedUnits.filter(u=>u.status!=='hidden'));return}
+  let alive=true;
+  const load=async()=>{
    try{
-    const raw=localStorage.getItem('tn_cms_products_v3_units');
-    const products:Product[]=raw?JSON.parse(raw):[];
-    const cms=products.find(p=>p.slug===slug)?.units||[];
-    if(cms.length){setUnits(cms.filter(u=>u.status!=='hidden'));return}
-    const partner=readPartnerPublic().products.find(p=>p.slug===slug);
-    setUnits(((partner?.units||[]) as Unit[]).filter(u=>u.status!=='hidden'));
-   }catch{setUnits([])}
+    const response=await fetch('/api/catalog/site-state',{cache:'no-store'});
+    if(response.ok){
+     const payload=await response.json() as{state?:Record<string,unknown>};
+     const products=payload.state?.tn_cms_products_v3_units;
+     const rates=payload.state?.tn_cms_daily_rates_v1;
+     if(alive&&Array.isArray(rates))setAllRates(rates as PublicRateRange[]);
+     if(alive&&!Array.isArray(providedUnits)&&Array.isArray(products)){
+      const cms=(products as Product[]).find(p=>p.slug===slug)?.units||[];
+      if(cms.length){setUnits(cms.filter(u=>u.status!=='hidden'));setRev(x=>x+1);return}
+     }
+    }
+    if(!Array.isArray(providedUnits)){
+     const partnerResponse=await fetch('/api/catalog/partner-products',{cache:'no-store'});
+     if(partnerResponse.ok){const data=await partnerResponse.json() as{products?:PartnerPublicProduct[]};const partner=Array.isArray(data.products)?data.products.find(p=>p.slug===slug):undefined;if(alive)setUnits(((partner?.units||[]) as Unit[]).filter(u=>u.status!=='hidden'))}
+    }
+    if(alive)setRev(x=>x+1);
+   }catch{if(alive)setRev(x=>x+1)}
   };
-  const refresh=()=>{load();setRev(x=>x+1)};
-  load();
+  void load();
+  const refresh=()=>void load();
   window.addEventListener('tn-products-updated',refresh);
-  window.addEventListener('happygo-partner-products-updated',refresh);
   window.addEventListener('tn-rates-updated',refresh);
-  window.addEventListener('tn-rates-production-loaded',refresh);
-  window.addEventListener('storage',refresh);
+  window.addEventListener('happygo-partner-products-updated',refresh);
+  window.addEventListener('happygo-partner-rates-updated',refresh);
   return()=>{
+   alive=false;
    window.removeEventListener('tn-products-updated',refresh);
-   window.removeEventListener('happygo-partner-products-updated',refresh);
    window.removeEventListener('tn-rates-updated',refresh);
-   window.removeEventListener('tn-rates-production-loaded',refresh);
-   window.removeEventListener('storage',refresh);
+   window.removeEventListener('happygo-partner-products-updated',refresh);
+   window.removeEventListener('happygo-partner-rates-updated',refresh);
   };
  },[slug,providedUnits]);
  const selectedDates=useMemo(()=>{
@@ -66,12 +78,12 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits}
   <div className="live-unit-list">{units.map(u=>{
    const stayBasis=u.pricingBasis!=='guest'&&u.pricingBasis!=='package';
    const photos=(u.images||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-   const calendarRates=ratesForUnit(u.id);
+   const calendarRates=ratesForUnit(allRates,u.id);
    const upcomingPrices=calendarRates.filter(r=>r.end>=today&&r.status==='available'&&Number(r.quantity||0)>0).flatMap(ratePriceCandidates).filter(Boolean);
    const startingPrice=upcomingPrices.length?Math.min(...upcomingPrices):0;
    const effectiveDates=stayBasis?selectedDates:selectedDates.slice(0,1);
    const dayInfo=effectiveDates.map(date=>{
-    const rate=rateForDate(u.id,pricingDateKey(date));
+    const rate=rateForDate(allRates,u.id,pricingDateKey(date));
     const unavailable=Boolean(rate&&(rate.status!=='available'||Number(rate.quantity||0)<=0));
     const price=rate&&!unavailable?ratePriceForDate(rate,date):0;
     const missing=!rate||(!unavailable&&!price);
