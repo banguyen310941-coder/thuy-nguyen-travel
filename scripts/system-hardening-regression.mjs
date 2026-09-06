@@ -24,6 +24,19 @@ for(const path of ['components/HomeCmsHero.tsx','components/HomeCmsSections.tsx'
 mustNot('components/GuideArticleEditable.tsx','tn_cms_articles_v4','Bài Cẩm nang tĩnh không được dùng cache CMS legacy v4');
 must('lib/server/public-site-state.ts','tn_cms_products_v3_units:productionProducts','Server state phải xuất sản phẩm production');
 must('lib/server/public-site-state.ts','tn_cms_daily_rates_v1:productionRates','Server state phải xuất lịch giá production');
+
+// Public server payload must strip internal commercial fields before React/RSC/API serialization.
+must('lib/server/public-site-state.ts','PRIVATE_FIELD_TOKENS','Server phải có danh sách token trường thương mại nội bộ');
+must('lib/server/public-site-state.ts',"'net','cost','supplier','agency','wholesale','margin','profit','markup'",'Sanitizer phải chặn net/cost/supplier/agency/margin/profit/markup');
+must('lib/server/public-site-state.ts','function snakeField(key:string)','Sanitizer phải chuẩn hóa camelCase như netRateA và priceMarkupVnd');
+must('lib/server/public-site-state.ts',"(?:price|sheet|image|file|folder)_source",'Sanitizer phải chặn priceSource và các source nội bộ tương tự');
+must('lib/server/public-site-state.ts','function sanitizePublicValue(value:unknown):unknown','Public payload phải được lọc đệ quy');
+must('lib/server/public-site-state.ts','if(Array.isArray(value))return value.map(sanitizePublicValue)','Mảng lồng nhau cũng phải được lọc');
+must('lib/server/public-site-state.ts','if(privateField(key))continue','Object lồng nhau phải bỏ trường nội bộ trước khi serialize');
+must('lib/server/public-site-state.ts',"state[key]=sanitizePublicValue(visibleList(value))",'Tour legacy cũng phải qua sanitizer');
+must('lib/server/public-site-state.ts',"state[key]=sanitizePublicValue(value)",'Homepage CMS cũng phải qua sanitizer');
+must('lib/server/public-site-state.ts',"giá\\s*(gốc|net|hợp tác|(?:phòng\\s*)?nguồn)",'Text public phải lọc câu chứa giá nguồn/net');
+
 must('app/cam-nang/bai-viet/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server');
 must('app/guide/category/[slug]/page.tsx','initialArticles={initialArticles}','Chuyên mục Cẩm nang phải hydrate bài CMS từ server');
 must('components/GuideArticleReader.tsx','usePublicGuideArticles(initialArticles)','Reader Cẩm nang phải dùng snapshot server ngay lần render đầu');
