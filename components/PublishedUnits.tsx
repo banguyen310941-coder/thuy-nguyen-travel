@@ -94,7 +94,6 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,
    const min=vals.length?Math.min(...vals):0;
    const max=vals.length?Math.max(...vals):0;
    const exactRates=dayInfo.map(x=>x.rate).filter(Boolean);
-   const minQty=exactRates.length?Math.min(...exactRates.map(r=>Number(r!.quantity||0))):null;
    const minStay=stayBasis&&exactRates.length?Math.max(...exactRates.map(r=>Number(r!.minStay||1))):1;
    const oldVals=exactRates.map(r=>money(r!.oldPrice)).filter(Boolean);
    const oldPrice=oldVals.length?Math.max(...oldVals):0;
@@ -104,7 +103,7 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,
    const unitSuffix=u.pricingBasis==='guest'?'/ khách':u.pricingBasis==='package'?'/ gói':u.pricingBasis==='unit_night'?'/ căn/đêm':u.pricingBasis==='cabin_night'?'/ cabin/đêm':'/ phòng/đêm';
    return <article key={`${u.id}_${rev}`}>
     <div className="live-unit-main">
-     <div className="live-unit-info"><b>{u.name||'Chưa đặt tên'}</b><small>{u.code||'Chưa có mã'}{u.bedrooms?` · ${u.bedrooms} phòng ngủ`:''}{u.beds?` · ${u.beds}`:''}{u.capacity?` · ${u.capacity}`:' · Sức chứa liên hệ'}{u.area?` · ${u.area}`:''}{u.view?` · ${u.view}`:''}</small>{u.meal&&<span>{u.meal}</span>}{u.amenities&&<span>{u.amenities}</span>}{effectiveDates.length&&minQty!==null&&minQty>0&&minQty<50&&<span className="availability-note">Còn {minQty} đơn vị theo lịch ngày đã chọn</span>}</div>
+     <div className="live-unit-info"><b>{u.name||'Chưa đặt tên'}</b><small>{u.code||'Chưa có mã'}{u.bedrooms?` · ${u.bedrooms} phòng ngủ`:''}{u.beds?` · ${u.beds}`:''}{u.capacity?` · ${u.capacity}`:' · Sức chứa liên hệ'}{u.area?` · ${u.area}`:''}{u.view?` · ${u.view}`:''}</small>{u.meal&&<span>{u.meal}</span>}{u.amenities&&<span>{u.amenities}</span>}{exactReady&&<span className="availability-note">Còn chỗ theo lịch ngày đã chọn</span>}</div>
      {photos.length>0&&<UnitPhotoGallery title={u.name||'Hạng phòng'} images={photos} kind={/villa|căn/i.test(label)?'villa':'hotel'}/>} 
     </div>
     {effectiveDates.length?<div className={`selected-date-price ${exactReady?'exact':'missing'}`}>
