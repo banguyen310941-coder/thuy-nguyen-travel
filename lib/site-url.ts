@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL='https://happygo.vn';
+const FALLBACK_SITE_URL='https://happygo-travel.vercel.app';
 
 export function getSiteUrl(){
  const configured=String(process.env.NEXT_PUBLIC_SITE_URL||'').trim().replace(/\/$/,'');
