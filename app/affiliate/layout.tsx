@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import {AffiliatePublicActions} from '@/components/AffiliatePublicActions';
 import {PortalWorkspaceBar} from '@/components/PortalWorkspaceBar';
 import './affiliate.css';
+import './affiliate-commission.css';
 import './self-service.css';
 import './register.css';
 import './toolkit.css';
