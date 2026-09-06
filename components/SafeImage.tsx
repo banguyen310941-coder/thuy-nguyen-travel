@@ -2,7 +2,7 @@
 
 import {useEffect,useMemo,useState} from 'react';
 
-type Props={src?:string;fallback?:string;alt?:string;className?:string};
+type Props={src?:string;fallback?:string;alt?:string;className?:string;loading?:'lazy'|'eager';fetchPriority?:'high'|'low'|'auto'};
 export const TRAVEL_FALLBACKS={
  default:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
  hotel:'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85',
@@ -16,18 +16,18 @@ export function travelFallback(kind?:string){const k=(kind||'').toLowerCase();if
 
 function normalizeVisualSrc(src:string|undefined,backup:string){const s=String(src||'').trim();if(!s)return backup;if(s.includes('photo-1580974928064-f0aeef70895a'))return TRAVEL_FALLBACKS.default;if(s.includes('photo-1566847438217-76e82d383f84'))return TRAVEL_FALLBACKS.cruise;if(s.includes('dynamic-media-cdn.tripadvisor.com'))return TRAVEL_FALLBACKS.villa;return s}
 
-export function SafeImage({src,fallback,alt='',className}:Props){
+export function SafeImage({src,fallback,alt='',className,loading='lazy',fetchPriority='auto'}:Props){
  const backup=useMemo(()=>fallback||TRAVEL_FALLBACKS.default,[fallback]);
  const normalized=useMemo(()=>normalizeVisualSrc(src,backup),[src,backup]);
  const [current,setCurrent]=useState(normalized);
  useEffect(()=>setCurrent(normalized),[normalized]);
- return <img src={current} alt={alt} className={className} loading="lazy" onError={()=>{if(current!==backup)setCurrent(backup)}}/>;
+ return <img src={current} alt={alt} className={className} loading={loading} fetchPriority={fetchPriority} decoding="async" onError={()=>{if(current!==backup)setCurrent(backup)}}/>;
 }
 
 export function SafeBackground({src,fallback,children,className,ariaLabel}:{src?:string;fallback?:string;children?:React.ReactNode;className?:string;ariaLabel?:string}){
  const backup=fallback||TRAVEL_FALLBACKS.default;const normalized=normalizeVisualSrc(src,backup);const[current,setCurrent]=useState(normalized);
  useEffect(()=>setCurrent(normalized),[normalized]);
- return <div className={className} role={ariaLabel?'img':undefined} aria-label={ariaLabel} style={{backgroundImage:`url(${current})`}}><img src={current} alt="" aria-hidden="true" style={{display:'none'}} onError={()=>{if(current!==backup)setCurrent(backup)}}/>{children}</div>
+ return <div className={className} role={ariaLabel?'img':undefined} aria-label={ariaLabel} style={{backgroundImage:`url(${current})`}}><img src={current} alt="" aria-hidden="true" decoding="async" style={{display:'none'}} onError={()=>{if(current!==backup)setCurrent(backup)}}/>{children}</div>
 }
 
 export function safeBackground(primary?:string,fallback=TRAVEL_FALLBACKS.default){return normalizeVisualSrc(primary,fallback)}
