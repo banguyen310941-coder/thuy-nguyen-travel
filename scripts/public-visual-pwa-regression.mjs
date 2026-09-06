@@ -1,10 +1,18 @@
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 
 const failures=[];
-const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const url=path=>new URL(`../${path}`,import.meta.url);
+const read=path=>readFileSync(url(path),'utf8');
 const must=(path,needle,label)=>{if(!read(path).includes(needle))failures.push(`${label}: thiếu ${JSON.stringify(needle)} trong ${path}`)};
 const mustNot=(path,needle,label)=>{if(read(path).includes(needle))failures.push(`${label}: không được chứa ${JSON.stringify(needle)} trong ${path}`)};
+const mustMissing=(path,label)=>{if(existsSync(url(path)))failures.push(`${label}: ${path} không được tồn tại`)};
 
+// Next.js file-based metadata at app/manifest.ts is inherited by nested routes and
+// takes precedence over the Admin layout manifest. Keep the public manifest as a
+// normal route so /admin can own its manifest link from server-rendered metadata.
+mustMissing('app/manifest.ts','Root file-based manifest sẽ ghi đè manifest Admin');
+must('app/manifest.webmanifest/route.ts',"start_url:'/'",'Manifest public dạng route thường phải giữ start_url trang chủ');
+must('app/manifest.webmanifest/route.ts',"scope:'/'",'Manifest public phải giữ scope website');
 mustNot('app/layout.tsx',"manifest:'/manifest.webmanifest'",'Root layout không được ép manifest public lên trang Admin');
 must('app/admin/layout.tsx',"manifest:'/admin/manifest.webmanifest'",'HTML trang Admin phải khai manifest Admin ngay từ server');
 must('app/admin/manifest.webmanifest/route.ts',"id:'/admin/'",'Admin PWA phải có app identity riêng');
