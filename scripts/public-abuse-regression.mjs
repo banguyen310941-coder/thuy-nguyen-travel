@@ -6,11 +6,14 @@ const must=(path,needle,label)=>{if(!read(path).includes(needle))failures.push(`
 
 must('lib/server/public-abuse.ts','publicRateKey','Phải có fingerprint rate-limit dùng chung');
 must('lib/server/public-abuse.ts','requestBodyTooLarge','Phải chặn body public quá lớn trước khi parse');
+must('lib/server/public-abuse.ts','export async function readBoundedJson','Phải có parser JSON đo kích thước body thực tế');
+must('lib/server/public-abuse.ts',"Buffer.byteLength(text,'utf8')>maxBytes",'Giới hạn body không được chỉ tin Content-Length');
 must('lib/server/public-abuse.ts','pg_advisory_xact_lock','Rate limit phải atomic khi nhiều request đồng thời');
 must('lib/server/public-abuse.ts',"entity_type='public_rate_limit'",'Rate limit phải lưu bền qua audit_logs thay vì memory serverless');
 must('lib/server/public-abuse.ts','created_at>now()-(${windowMinutes}::int*interval \'1 minute\')','Rate limit phải có cửa sổ thời gian server-side');
 
 must('app/api/bookings/route.ts','requestBodyTooLarge(req)','Booking phải giới hạn kích thước request');
+must('app/api/bookings/route.ts','readBoundedJson(req)','Booking phải đo kích thước JSON thực tế');
 must('app/api/bookings/route.ts',"publicRateKey(req,'booking')",'Booking phải giới hạn theo nguồn request');
 must('app/api/bookings/route.ts',"publicRateKey(req,'booking-phone',phone)",'Booking phải có limiter riêng theo số điện thoại + nguồn request');
 must('app/api/bookings/route.ts','maxHits:8,windowMinutes:15','Booking phải chặn burst theo nguồn');
@@ -34,6 +37,7 @@ must('app/api/newsletter/route.ts','maxHits:5,windowMinutes:15','Newsletter ph�
 must('app/api/newsletter/route.ts',"source','public_unsubscribe'",'Luồng unsubscribe phải được giữ nguyên và không phụ thuộc limiter subscribe');
 
 must('app/api/account/route.ts','requestBodyTooLarge(req,8192)','Tài khoản khách phải chặn body quá lớn');
+must('app/api/account/route.ts','readBoundedJson(req,8192)','Tài khoản khách phải đo kích thước JSON thực tế');
 must('app/api/account/route.ts',"publicRateKey(req,'customer-register')",'Đăng ký khách phải giới hạn theo nguồn');
 must('app/api/account/route.ts','maxHits:12,windowMinutes:60','Đăng ký khách phải có ngưỡng theo giờ');
 must('app/api/account/route.ts',"publicRateKey(req,'customer-register-email',email)",'Đăng ký khách phải giới hạn lặp theo email');
@@ -51,6 +55,13 @@ for(const prefix of ['partner','affiliate']){
  must(login,'maxHits:30,windowMinutes:15',`${prefix} login phải có ngưỡng burst`);
  must(login,"headers:{'Retry-After':'900'}",`${prefix} login 429 phải trả Retry-After`);
 }
+
+for(const [path,needle,label] of [
+ ['app/api/admin/auth/login/route.ts','readBoundedJson(req,8192)','Admin login phải đo kích thước JSON thực tế'],
+ ['app/api/admin/auth/bootstrap/route.ts','readBoundedJson(req,8192)','Admin bootstrap phải đo kích thước JSON thực tế'],
+ ['app/api/payments/webhook/route.ts','readBoundedJson(req,32768)','Payment webhook phải đo kích thước JSON thực tế'],
+ ['app/api/affiliate/booking-completed/route.ts','readBoundedJson(req,32768)','Affiliate webhook phải đo kích thước JSON thực tế'],
+])must(path,needle,label);
 
 // Partner email is not guaranteed unique in the legacy table, so registration must
 // serialize same-email requests and create partner + account in one SQL statement.
