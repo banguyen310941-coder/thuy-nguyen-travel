@@ -29,11 +29,11 @@ export async function POST(req:NextRequest){
     const result=(await sql`
       with locked as (select pg_advisory_xact_lock(hashtext(${email}::text))),
       existing as (select p.id from partners p,locked where lower(p.email)=lower(${email}) limit 1),
-      new_partner as (insert into partners(name,email,phone,status,commission_percent) select ${companyName},${email},${phone},'pending',0 from locked where not exists(select 1 from existing) returning id,name,email,phone,status,created_at),
+      new_partner as (insert into partners(name,email,phone,status,commission_percent) select ${companyName},${email},${phone},'pending',0 from locked where not exists(select 1 from existing) returning id,name,email,phone,status,created_at,floor(extract(epoch from updated_at)*1000)::bigint as session_version),
       new_account as (insert into partner_accounts(partner_id,password_hash,contact_name) select id,${passwordHash},${contactName} from new_partner returning partner_id)
-      select (select id from existing limit 1) as existing_id,(select id from new_partner limit 1) as id,(select name from new_partner limit 1) as name,(select email from new_partner limit 1) as email,(select phone from new_partner limit 1) as phone,(select status from new_partner limit 1) as status,(select created_at from new_partner limit 1) as created_at,(select count(*) from new_account)::int as account_created`)[0];
+      select (select id from existing limit 1) as existing_id,(select id from new_partner limit 1) as id,(select name from new_partner limit 1) as name,(select email from new_partner limit 1) as email,(select phone from new_partner limit 1) as phone,(select status from new_partner limit 1) as status,(select created_at from new_partner limit 1) as created_at,(select session_version from new_partner limit 1) as session_version,(select count(*) from new_account)::int as account_created`)[0];
     if(result?.existing_id)return NextResponse.json({error:'Email này đã có tài khoản đối tác.'},{status:409});
     if(!result?.id||Number(result.account_created)!==1)throw new Error('PARTNER_REGISTER_ATOMIC_FAILED');
-    const response=NextResponse.json({ok:true,partner:{id:String(result.id),name:result.name,email:result.email,phone:result.phone,status:result.status,contact:contactName,website:'',taxCode:'',address:'',createdAt:result.created_at}});setSessionCookie(response,COOKIE,'partner',String(result.id));return response;
+    const response=NextResponse.json({ok:true,partner:{id:String(result.id),name:result.name,email:result.email,phone:result.phone,status:result.status,contact:contactName,website:'',taxCode:'',address:'',createdAt:result.created_at}});setSessionCookie(response,COOKIE,'partner',String(result.id),String(result.session_version));return response;
   }catch(error){console.error('partner_register_failed',error);return NextResponse.json({error:'Không thể tạo tài khoản đối tác lúc này.'},{status:500})}
 }
