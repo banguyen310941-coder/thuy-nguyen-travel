@@ -3,6 +3,7 @@ import {AdminStorageGuard} from '@/components/AdminStorageGuard';
 import {AdminSeoGuideSeedSync} from '@/components/AdminSeoGuideSeedSync';
 import {AdminSeoDemoSeeder} from '@/components/AdminSeoDemoSeeder';
 import {AdminTourSeedSync} from '@/components/AdminTourSeedSync';
+import {AdminNotificationSoundMonitor} from '@/components/AdminNotificationSoundMonitor';
 import {PortalWorkspaceBar} from '@/components/PortalWorkspaceBar';
 import './admin.css';
 import './bookings.css';
@@ -29,4 +30,4 @@ import './affiliate-applications.css';
 import './network-workspace.css';
 
 export const metadata:Metadata={title:'Quản trị HappyGo Travel',description:'Ứng dụng quản trị và điều hành HappyGo Travel.',applicationName:'HappyGo Travel Admin',manifest:'/admin/manifest.webmanifest',appleWebApp:{capable:true,statusBarStyle:'default',title:'HappyGo Admin'},robots:{index:false,follow:false,nocache:true}};
-export default function AdminLayout({children}:{children:React.ReactNode}){return <><PortalWorkspaceBar scope="admin" status="Production"/><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/>{children}</>}
+export default function AdminLayout({children}:{children:React.ReactNode}){return <><PortalWorkspaceBar scope="admin" status="Production"/><AdminStorageGuard/><AdminSeoGuideSeedSync/><AdminSeoDemoSeeder/><AdminTourSeedSync/><AdminNotificationSoundMonitor/>{children}</>}
