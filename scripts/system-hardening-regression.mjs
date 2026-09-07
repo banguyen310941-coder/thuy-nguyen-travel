@@ -51,10 +51,10 @@ must('app/api/site-config/route.ts','organizationName:text(raw.organizationName)
 mustNot('app/api/site-config/route.ts','result[id]=parseValue','Không được trả nguyên object audit log ra endpoint public');
 mustNot('app/api/site-config/route.ts','canonicalBase:text(raw.canonicalBase)','Endpoint public không cần xuất canonical override nội bộ');
 
-must('app/cam-nang/bai-viet/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server');
+must('app/guide/[slug]/page.tsx','initialArticles={initialArticles}','Chi tiết Cẩm nang CMS phải hydrate nội dung từ server trên URL canonical');
 must('app/guide/category/[slug]/page.tsx','initialArticles={initialArticles}','Chuyên mục Cẩm nang phải hydrate bài CMS từ server');
 must('components/GuideArticleReader.tsx','usePublicGuideArticles(initialArticles)','Reader Cẩm nang phải dùng snapshot server ngay lần render đầu');
-must('components/GuideCategoryCmsList.tsx','usePublicGuideArticles(initialArticles)','Danh mục Cẩm nang phải dùng snapshot server ngay lần render đầu');
+must('components/UnifiedGuideGrid.tsx','usePublicGuideArticles(initialArticles)','Grid Cẩm nang thống nhất phải dùng snapshot server ngay lần render đầu');
 must('app/product/[slug]/page.tsx','initialRates={initialRates}','Trang chi tiết phải hydrate lịch giá từ server');
 must('components/CmsProductDetail.tsx','initialRates?:PublicRateRange[]','Product detail phải nhận rate snapshot từ server');
 must('components/CmsProductDetail.tsx','<UnifiedStayPublicDetail product={product} initialRates={rates}/>','Product detail phải truyền rate snapshot xuống lưu trú');
