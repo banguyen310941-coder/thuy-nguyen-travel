@@ -4,7 +4,7 @@ import {readSession} from '@/lib/server/portal-auth';
 import {captureAffiliateReferral} from '@/lib/server/affiliate';
 import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
-function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
+function normalizePhone(raw:unknown){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
 function code(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `HG${y}${m}${day}-${Math.random().toString(36).slice(2,7).toUpperCase()}`}
 function esc(v:unknown){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))}
 async function sendEmail(to:string,subject:string,html:string){const key=process.env.RESEND_API_KEY;if(!key)return;const from=process.env.EMAIL_FROM||'HappyGo Travel <booking@happygo.vn>';const replyTo=process.env.EMAIL_REPLY_TO||'info@happygo.vn';await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],reply_to:replyTo,subject,html})})}
