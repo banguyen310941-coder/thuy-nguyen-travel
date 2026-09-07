@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['lead','contacting','customer','inactive']);
@@ -42,15 +43,16 @@ export async function GET(req:NextRequest){
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  const actor=await adminActor(req,'customers');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
- const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();
+ if(requestBodyTooLarge(req,131_072))return NextResponse.json({error:'Dữ liệu CRM quá lớn.'},{status:413});const parsed=await readBoundedJson(req,131_072);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu CRM quá lớn.'},{status:413});
+ const body=parsed.body;const action=String(body.action||'');const sql=db();
  try{
   if(action==='create'){
-   const name=String(body.name||'').trim(),phone=String(body.phone||'').trim(),email=String(body.email||'').trim().toLowerCase(),source=String(body.source||'Nhập thủ công').trim(),note=String(body.note||'').trim();
+   const name=String(body.name||'').trim().slice(0,300),phone=String(body.phone||'').trim().slice(0,100),email=String(body.email||'').trim().toLowerCase().slice(0,320),source=String(body.source||'Nhập thủ công').trim().slice(0,200),note=String(body.note||'').trim().slice(0,6000);
    if(name.length<2||(!phone&&!email))return NextResponse.json({error:'Cần tên khách và ít nhất SĐT hoặc email.'},{status:400});
    const duplicate=phone?await sql`select id from customers where regexp_replace(coalesce(phone,''),'[^0-9]','','g')=regexp_replace(${phone},'[^0-9]','','g') limit 1`:await sql`select id from customers where lower(coalesce(email,''))=${email} limit 1`;
    if(duplicate.length)return NextResponse.json({error:'Khách này đã có trong CRM.'},{status:409});
    const rows=await sql`insert into customers(name,phone,email,status,source,note,updated_at) values(${name},${phone||null},${email||null},'lead',${source||null},${note||null},now()) returning *`;const customer=rows[0];
-   const requested=String(body.salesStaffId||'');if(requested){if(!elevated(actor.role)&&requested!==actor.id)return NextResponse.json({error:'Bạn không có quyền giao khách cho Sale khác.'},{status:403});const staff=await sql`select id from staff where id=${requested} and status='active' limit 1`;if(staff.length)await sql`insert into customer_assignments(customer_id,staff_id,source) values(${String(customer.id)},${requested},'manual') on conflict(customer_id) do update set staff_id=excluded.staff_id,source='manual',assigned_at=now()`}
+   const requested=String(body.salesStaffId||'');if(requested){if(!uuid.test(requested))return NextResponse.json({error:'Nhân viên Sale không hợp lệ.'},{status:400});if(!elevated(actor.role)&&requested!==actor.id)return NextResponse.json({error:'Bạn không có quyền giao khách cho Sale khác.'},{status:403});const staff=await sql`select id from staff where id=${requested} and status='active' limit 1`;if(staff.length)await sql`insert into customer_assignments(customer_id,staff_id,source) values(${String(customer.id)},${requested},'manual') on conflict(customer_id) do update set staff_id=excluded.staff_id,source='manual',assigned_at=now()`}
    else if(actor.role==='sales')await sql`insert into customer_assignments(customer_id,staff_id,source) values(${String(customer.id)},${actor.id},'manual') on conflict(customer_id) do nothing`;
    else await assignRoundRobin(sql,String(customer.id));
    await sql`insert into crm_activities(customer_id,staff_id,type,content) values(${String(customer.id)},${actor.id},'created',${`Tạo lead từ ${source}`})`;
@@ -74,7 +76,7 @@ export async function POST(req:NextRequest){
    const customerId=String(body.customerId||''),status=String(body.status||'');if(!uuid.test(customerId)||!statuses.has(status))return NextResponse.json({error:'Dữ liệu không hợp lệ.'},{status:400});if(!elevated(actor.role)){const own=await sql`select customer_id from customer_assignments where customer_id=${customerId} and staff_id=${actor.id} limit 1`;if(!own.length)return NextResponse.json({error:'Bạn không có quyền cập nhật khách này.'},{status:403})}const before=await sql`select * from customers where id=${customerId} limit 1`;await sql`update customers set status=${status},updated_at=now() where id=${customerId}`;const after=await sql`select * from customers where id=${customerId} limit 1`;await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'crm.customer.status','customer',${customerId},${JSON.stringify(before[0]||null)}::jsonb,${JSON.stringify(after[0]||null)}::jsonb)`;return NextResponse.json({ok:true});
   }
   if(action==='activity'){
-   const customerId=String(body.customerId||''),type=String(body.type||'note').slice(0,50),content=String(body.content||'').trim().slice(0,5000),next=String(body.nextFollowUpAt||'');if(!uuid.test(customerId)||!content)return NextResponse.json({error:'Nội dung chăm sóc chưa hợp lệ.'},{status:400});if(!elevated(actor.role)){const own=await sql`select customer_id from customer_assignments where customer_id=${customerId} and staff_id=${actor.id} limit 1`;if(!own.length)return NextResponse.json({error:'Bạn không có quyền cập nhật khách này.'},{status:403})}await sql`insert into crm_activities(customer_id,staff_id,type,content,next_follow_up_at) values(${customerId},${actor.id},${type},${content},${next?new Date(next).toISOString():null})`;await sql`update customers set updated_at=now() where id=${customerId}`;return NextResponse.json({ok:true});
+   const customerId=String(body.customerId||''),type=String(body.type||'note').slice(0,50),content=String(body.content||'').trim().slice(0,5000),next=String(body.nextFollowUpAt||'');if(!uuid.test(customerId)||!content)return NextResponse.json({error:'Nội dung chăm sóc chưa hợp lệ.'},{status:400});if(next&&Number.isNaN(+new Date(next)))return NextResponse.json({error:'Thời gian chăm sóc tiếp không hợp lệ.'},{status:400});if(!elevated(actor.role)){const own=await sql`select customer_id from customer_assignments where customer_id=${customerId} and staff_id=${actor.id} limit 1`;if(!own.length)return NextResponse.json({error:'Bạn không có quyền cập nhật khách này.'},{status:403})}await sql`insert into crm_activities(customer_id,staff_id,type,content,next_follow_up_at) values(${customerId},${actor.id},${type},${content},${next?new Date(next).toISOString():null})`;await sql`update customers set updated_at=now() where id=${customerId}`;return NextResponse.json({ok:true});
   }
   return NextResponse.json({error:'Hành động không hỗ trợ.'},{status:400});
  }catch(error){console.error('admin_crm_post_failed',error);return NextResponse.json({error:'Không thể cập nhật CRM production.'},{status:500})}
