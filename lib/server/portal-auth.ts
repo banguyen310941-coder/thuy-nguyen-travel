@@ -2,7 +2,7 @@ import {createHmac,randomBytes,scryptSync,timingSafeEqual} from 'crypto';
 import type {NextRequest,NextResponse} from 'next/server';
 
 export type PortalKind='partner'|'admin'|'customer'|'affiliate';
-type SessionPayload={kind:PortalKind;id:string;exp:number;iat?:number};
+type SessionPayload={kind:PortalKind;id:string;exp:number;iat?:number;ver?:string};
 
 const HOUR=60*60;
 const DAY=24*HOUR;
@@ -10,6 +10,7 @@ const MAX_SESSION_TOKEN_LENGTH=2048;
 const MAX_SESSION_BODY_LENGTH=1536;
 const SESSION_SIGNATURE_LENGTH=43;
 const BASE64URL=/^[A-Za-z0-9_-]+$/;
+const SESSION_VERSION=/^[A-Za-z0-9_-]{1,128}$/;
 
 function secret(){
   const value=process.env.AUTH_SECRET?.trim()||process.env.ADMIN_API_KEY?.trim();
@@ -40,9 +41,13 @@ export function verifyPassword(password:string,stored:string){
   return actual.length===expected.length&&timingSafeEqual(actual,expected);
 }
 
-export function createSession(kind:PortalKind,id:string,maxAgeSeconds=sessionMaxAge(kind)){
+export function createSession(kind:PortalKind,id:string,maxAgeSeconds=sessionMaxAge(kind),version=''){
   const now=Math.floor(Date.now()/1000);
   const payload:SessionPayload={kind,id,iat:now,exp:now+maxAgeSeconds};
+  if(version){
+    if(!SESSION_VERSION.test(version))throw new Error('INVALID_SESSION_VERSION');
+    payload.ver=version;
+  }
   const body=b64(JSON.stringify(payload));
   const sig=createHmac('sha256',secret()).update(body).digest('base64url');
   return `${body}.${sig}`;
@@ -63,6 +68,7 @@ export function readSession(req:NextRequest,cookieName:string,kind:PortalKind){
     const payload=JSON.parse(unb64(body)) as SessionPayload;
     const now=Math.floor(Date.now()/1000),maxAge=sessionMaxAge(kind);
     if(payload.kind!==kind||!payload.id||!Number.isFinite(payload.exp)||payload.exp<now)return null;
+    if(payload.ver!==undefined&&(typeof payload.ver!=='string'||!SESSION_VERSION.test(payload.ver)))return null;
     if(payload.iat!==undefined){
       if(!Number.isFinite(payload.iat)||payload.iat>now+60)return null;
       if(payload.exp-payload.iat>maxAge+60||now-payload.iat>maxAge+60)return null;
@@ -75,9 +81,9 @@ export function readSession(req:NextRequest,cookieName:string,kind:PortalKind){
   }catch{return null}
 }
 
-export function setSessionCookie(response:NextResponse,cookieName:string,kind:PortalKind,id:string){
+export function setSessionCookie(response:NextResponse,cookieName:string,kind:PortalKind,id:string,version=''){
   const maxAge=sessionMaxAge(kind);
-  response.cookies.set(cookieName,createSession(kind,id,maxAge),{
+  response.cookies.set(cookieName,createSession(kind,id,maxAge,version),{
     httpOnly:true,
     sameSite:'lax',
     secure:process.env.NODE_ENV==='production',
