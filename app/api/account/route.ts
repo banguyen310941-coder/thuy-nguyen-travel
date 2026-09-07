@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {clearSessionCookie,hashPassword,readSession,setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_customer_auth';
 function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
@@ -28,7 +28,8 @@ export async function GET(req:NextRequest){
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu tài khoản quá lớn.'},{status:413});
- const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();let provisionalCustomerId='';
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu tài khoản quá lớn.'},{status:413});
+ const body=parsed.body;const action=String(body.action||'');const sql=db();let provisionalCustomerId='';
  try{
   if(action==='register'){
    const name=String(body.name||'').trim().slice(0,120),phone=normalizePhone(String(body.phone||'')),email=String(body.email||'').trim().toLowerCase().slice(0,254),password=String(body.password||'');
