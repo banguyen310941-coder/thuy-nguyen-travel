@@ -20,6 +20,9 @@ const routes=[
  ['app/api/admin/customer-feedback/route.ts','65_536','req','Phản hồi khách'],
  ['app/api/admin/customer-receipts/route.ts','65_536','req','Phiếu thu'],
  ['app/api/admin/service-operations/route.ts','131_072','req','Điều hành dịch vụ'],
+ ['app/api/admin/partners/route.ts','32_768','req','Quản lý đối tác'],
+ ['app/api/admin/partner-support/route.ts','65_536','req','Hỗ trợ đối tác'],
+ ['app/api/admin/sales-availability/route.ts','32_768','req','Trạng thái nhận khách Sale'],
  ['app/api/admin/shared-data/route.ts','MAX_BODY_SIZE','request','Dữ liệu dùng chung'],
 ];
 
@@ -31,6 +34,10 @@ for(const [path,limit,param,label] of routes){
  mustNot(path,`await ${param}.json()`,`${label} không được buffer JSON không giới hạn`);
 }
 
+must('app/api/admin/partner-support/route.ts','readBoundedJson(req,32_768)','Cập nhật trạng thái ticket cũng phải có trần riêng');
+must('app/api/admin/partners/route.ts','if(!uuid.test(id))','Đối tác phải từ chối UUID sai trước khi gọi PostgreSQL');
+must('app/api/admin/partner-support/route.ts','!uuid.test(ticketId)','Ticket hỗ trợ phải từ chối UUID sai trước khi gọi PostgreSQL');
+must('app/api/admin/sales-availability/route.ts','if(!uuid.test(staffId))','Trạng thái Sale phải từ chối UUID sai trước khi gọi PostgreSQL');
 mustNot('app/api/admin/shared-data/route.ts','await request.text()','Dữ liệu dùng chung không được buffer raw body trước khi kiểm kích thước');
 must('app/api/admin/shared-data/route.ts','const MAX_BODY_SIZE = 3_800_000','Dữ liệu dùng chung phải giữ trần payload production');
 must('lib/server/public-abuse.ts','totalBytes>maxBytes','Bounded parser phải đếm byte thực tế khi stream');
