@@ -16,6 +16,10 @@ const routes=[
  ['app/api/admin/accounting/route.ts','65_536','req','Kế toán'],
  ['app/api/admin/marketing-budget/route.ts','131_072','req','Ngân sách Marketing'],
  ['app/api/admin/supplier-orders/route.ts','131_072','req','Đơn nhà cung cấp'],
+ ['app/api/admin/customer-vouchers/route.ts','65_536','req','Voucher khách'],
+ ['app/api/admin/customer-feedback/route.ts','65_536','req','Phản hồi khách'],
+ ['app/api/admin/customer-receipts/route.ts','65_536','req','Phiếu thu'],
+ ['app/api/admin/service-operations/route.ts','131_072','req','Điều hành dịch vụ'],
  ['app/api/admin/shared-data/route.ts','MAX_BODY_SIZE','request','Dữ liệu dùng chung'],
 ];
 
