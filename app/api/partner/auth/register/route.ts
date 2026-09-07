@@ -24,13 +24,41 @@ export async function POST(req:NextRequest){
     if(!ipAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng ký đối tác từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
     const emailAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'partner-register-email',email),action:'partner.register.submit',scope:'partner-register-email',maxHits:3,windowMinutes:60});
     if(!emailAllowed)return NextResponse.json({error:'Email này đang được gửi đăng ký quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
-    const exists=await sql`select id from partners where lower(email)=lower(${email}) limit 1`;
-    if(exists.length)return NextResponse.json({error:'Email này đã có tài khoản đối tác.'},{status:409});
-    const rows=await sql`insert into partners(name,email,phone,status,commission_percent) values(${companyName},${email},${phone},'pending',0) returning id,name,email,phone,status,created_at`;
-    const partner=rows[0];
-    await sql`insert into partner_accounts(partner_id,password_hash,contact_name) values(${partner.id},${hashPassword(password)},${contactName})`;
-    const response=NextResponse.json({ok:true,partner:{id:String(partner.id),name:partner.name,email:partner.email,phone:partner.phone,status:partner.status,contact:contactName,website:'',taxCode:'',address:'',createdAt:partner.created_at}});
-    setSessionCookie(response,COOKIE,'partner',String(partner.id));
+
+    const passwordHash=hashPassword(password);
+    const result=(await sql`
+      with locked as (
+        select pg_advisory_xact_lock(hashtext(${email}::text))
+      ), existing as (
+        select p.id from partners p,locked
+        where lower(p.email)=lower(${email})
+        limit 1
+      ), new_partner as (
+        insert into partners(name,email,phone,status,commission_percent)
+        select ${companyName},${email},${phone},'pending',0 from locked
+        where not exists(select 1 from existing)
+        returning id,name,email,phone,status,created_at
+      ), new_account as (
+        insert into partner_accounts(partner_id,password_hash,contact_name)
+        select id,${passwordHash},${contactName} from new_partner
+        returning partner_id
+      )
+      select
+        (select id from existing limit 1) as existing_id,
+        (select id from new_partner limit 1) as id,
+        (select name from new_partner limit 1) as name,
+        (select email from new_partner limit 1) as email,
+        (select phone from new_partner limit 1) as phone,
+        (select status from new_partner limit 1) as status,
+        (select created_at from new_partner limit 1) as created_at,
+        (select count(*) from new_account)::int as account_created
+    `)[0];
+
+    if(result?.existing_id)return NextResponse.json({error:'Email này đã có tài khoản đối tác.'},{status:409});
+    if(!result?.id||Number(result.account_created)!==1)throw new Error('PARTNER_REGISTER_ATOMIC_FAILED');
+
+    const response=NextResponse.json({ok:true,partner:{id:String(result.id),name:result.name,email:result.email,phone:result.phone,status:result.status,contact:contactName,website:'',taxCode:'',address:'',createdAt:result.created_at}});
+    setSessionCookie(response,COOKIE,'partner',String(result.id));
     return response;
   }catch(error){
     console.error('partner_register_failed',error);
