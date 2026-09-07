@@ -18,6 +18,14 @@ must('app/api/bookings/route.ts','maxHits:3,windowMinutes:10','Booking phải ch
 must('app/api/bookings/route.ts',"status:429,headers:{'Retry-After':'900'}",'Booking bị giới hạn phải trả 429 + Retry-After');
 must('app/api/bookings/route.ts',"String(body.website||'').trim()",'Booking phải có honeypot tương thích form public');
 
+for(const path of ['components/BookingInquiry.tsx','components/TourBookingInquiry.tsx']){
+ must(path,'name="website"','Form booking phải render honeypot ẩn thật');
+ must(path,"website:String(data.get('website')||'')",'Form booking phải gửi honeypot lên server');
+ must(path,'const result=await response.json().catch(()=>({}))','Form booking phải đọc lỗi API để hiển thị đúng cho khách');
+ must(path,'if(response.status<500)','Lỗi 4xx/429 không được bị hiểu nhầm thành mất mạng');
+ must(path,"setMessage(String(result.error||'Không thể gửi yêu cầu lúc này. Vui lòng kiểm tra thông tin và thử lại.'))",'Form booking phải hiển thị thông báo server khi bị giới hạn hoặc dữ liệu sai');
+}
+
 must('app/api/newsletter/route.ts','requestBodyTooLarge(req,8192)','Newsletter phải giới hạn kích thước request');
 must('app/api/newsletter/route.ts',"publicRateKey(req,'newsletter')",'Newsletter phải giới hạn burst theo nguồn');
 must('app/api/newsletter/route.ts',"publicRateKey(req,'newsletter-email',email)",'Newsletter phải giới hạn gửi lặp theo email + nguồn');
