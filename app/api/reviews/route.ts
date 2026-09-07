@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {readSession} from '@/lib/server/portal-auth';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_customer_auth';
 
@@ -67,10 +68,12 @@ export async function GET(req:NextRequest){
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đánh giá quá lớn.'},{status:413});
  const origin=req.headers.get('origin');
  if(origin&&origin!==req.nextUrl.origin)return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
- const body=await req.json().catch(()=>({}));
- const slug=text(body.slug),productName=text(body.productName),comment=text(body.comment),rating=Number(body.rating);
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đánh giá quá lớn.'},{status:413});
+ const body=parsed.body;
+ const slug=text(body.slug).slice(0,200),productName=text(body.productName).slice(0,240),comment=text(body.comment),rating=Number(body.rating);
  if(!slug||!productName)return NextResponse.json({error:'Thiếu thông tin sản phẩm.'},{status:400});
  if(!Number.isInteger(rating)||rating<1||rating>10)return NextResponse.json({error:'Vui lòng chọn điểm đánh giá từ 1 đến 10.'},{status:400});
  if(comment.length<10||comment.length>2000)return NextResponse.json({error:'Nhận xét cần từ 10 đến 2.000 ký tự.'},{status:400});
@@ -78,6 +81,8 @@ export async function POST(req:NextRequest){
  try{
   const actor=await customerActor(sql,req);
   if(!actor)return NextResponse.json({error:'Vui lòng đăng nhập tài khoản khách hàng để đánh giá.'},{status:401});
+  const allowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'review-submit',`${actor.accountId}|${slug}`),action:'customer.review.submit',scope:'review-account-product',maxHits:10,windowMinutes:15});
+  if(!allowed)return NextResponse.json({error:'Bạn đang cập nhật đánh giá quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
   const booking=await completedBooking(sql,actor.customerId,slug,productName);
   if(!booking)return NextResponse.json({error:'Chỉ khách đã hoàn thành booking sản phẩm này mới được đánh giá.'},{status:403});
   const products=await sql`select id,name from products where lower(slug)=lower(${slug}) limit 1`;
