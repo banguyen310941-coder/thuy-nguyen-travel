@@ -50,6 +50,7 @@ import './source-gallery-visible.css';
 import './service-stars.css';
 import './desktop-booking-cta.css';
 import './home-premium.css';
+import './home-premium-addon.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
