@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_admin_auth';
 function shape(row:any){return{id:String(row.id),name:row.name,email:row.email,phone:row.phone||'',role:row.role,department:row.department||'',status:row.status,permissions:Array.isArray(row.permissions)?row.permissions:[],createdAt:row.created_at}}
@@ -11,7 +11,8 @@ export async function POST(req:NextRequest){
   if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
   if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
   const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
-  const body=await req.json().catch(()=>({}));const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!email||!password)return NextResponse.json({error:'Vui lòng nhập email và mật khẩu.'},{status:400});
+  const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
+  const body=parsed.body;const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!email||!password)return NextResponse.json({error:'Vui lòng nhập email và mật khẩu.'},{status:400});
   const sql=db(),attemptKey=authAttemptKey(req,'admin',email);
   try{
     const burstAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'admin-login'),action:'admin.login.submit',scope:'admin-login-ip',maxHits:30,windowMinutes:15});
