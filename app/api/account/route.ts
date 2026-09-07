@@ -22,12 +22,15 @@ export async function GET(req:NextRequest){
     coalesce((select jsonb_agg(jsonb_build_object('name',bi.product_name_snapshot,'unit',coalesce(bi.unit_name_snapshot,''),'quantity',bi.quantity,'sellingPrice',bi.selling_price_vnd) order by bi.id) from booking_items bi where bi.booking_id=b.id),'[]'::jsonb) as products
    from bookings b
    where b.customer_id=${String(me.customer_id)}
-    and not exists(
-      select 1 from audit_logs al
+    and coalesce((
+      select al.action
+      from audit_logs al
       where al.entity_type='booking_account'
        and al.entity_id=b.id::text
-       and al.action='booking.account.unverified'
-    )
+       and al.action in ('booking.account.linked','booking.account.unverified')
+      order by al.created_at desc,al.id desc
+      limit 1
+    ),'booking.account.legacy')<>'booking.account.unverified'
    order by b.created_at desc limit 200`;
   return NextResponse.json({ok:true,authenticated:true,account:{id:String(me.account_id),customerId:String(me.customer_id),name:String(me.name||''),phone:String(me.phone||''),email:String(me.email||''),status:String(me.status),createdAt:String(me.account_created_at),lastLoginAt:me.last_login_at?String(me.last_login_at):''},bookings:bookings.map(shapeBooking)});
  }catch(error){console.error('customer_account_get_failed',error);return NextResponse.json({error:'Không đọc được tài khoản khách hàng.'},{status:500})}
