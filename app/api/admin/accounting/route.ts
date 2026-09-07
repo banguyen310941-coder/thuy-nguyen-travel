@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const funds=new Set(['cash','bank','wallet']);
@@ -19,7 +20,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'ledger');if(!actor||!allowed(actor.role))return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});if(requestBodyTooLarge(req,65_536))return NextResponse.json({error:'Dữ liệu kế toán quá lớn.'},{status:413});const actor=await adminActor(req,'ledger');if(!actor||!allowed(actor.role))return NextResponse.json({error:'Unauthorized'},{status:401});const parsed=await readBoundedJson(req,65_536);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu kế toán quá lớn.'},{status:413});const body=parsed.body as any;const action=String(body.action||'');const sql=db();
  try{
   if(action==='manual'){
    const type=String(body.type||''),date=String(body.date||new Date().toISOString().slice(0,10)),category=String(body.category||'').trim(),description=String(body.description||'').trim(),counterparty=String(body.counterparty||'').trim(),fund=String(body.fund||'bank'),amount=Math.round(Number(body.amount)||0),documentRef=String(body.documentRef||'').trim(),note=String(body.note||'').trim();if(!['income','expense'].includes(type)||!funds.has(fund)||!category||!description||amount<=0)return NextResponse.json({error:'Thông tin bút toán chưa hợp lệ.'},{status:400});const no=voucher(type);const rows=await sql`insert into accounting_entries(voucher_no,entry_type,entry_date,category,description,counterparty,fund,amount_vnd,document_ref,note,source,created_by_staff_id) values(${no},${type},${date},${category},${description},${counterparty||null},${fund},${amount},${documentRef||null},${note||null},'manual',${actor.id}) returning *`;await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'accounting.entry.create','accounting_entry',${String(rows[0].id)},${JSON.stringify(rows[0])}::jsonb)`;return NextResponse.json({ok:true,voucherNo:no});
