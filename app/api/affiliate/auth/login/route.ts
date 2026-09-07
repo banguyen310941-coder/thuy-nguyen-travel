@@ -3,12 +3,13 @@ import {db,hasDatabase} from '@/lib/db';
 import {setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {AFFILIATE_SESSION_COOKIE} from '@/lib/server/affiliate';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
- const body=await req.json().catch(()=>({}));const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
+ const body=parsed.body;const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
  if(!email||!password)return NextResponse.json({error:'Vui lòng nhập email và mật khẩu.'},{status:400});
  const sql=db(),attemptKey=authAttemptKey(req,'affiliate',email);
  try{
