@@ -17,6 +17,17 @@ export function requestBodyTooLarge(req:NextRequest,maxBytes=16_384){
  return Number.isFinite(size)&&size>maxBytes;
 }
 
+export async function readBoundedJson(req:NextRequest,maxBytes=16_384){
+ if(requestBodyTooLarge(req,maxBytes))return{tooLarge:true,body:{} as Record<string,unknown>};
+ const text=await req.text();
+ if(Buffer.byteLength(text,'utf8')>maxBytes)return{tooLarge:true,body:{} as Record<string,unknown>};
+ if(!text.trim())return{tooLarge:false,body:{} as Record<string,unknown>};
+ try{
+  const parsed=JSON.parse(text);
+  return{tooLarge:false,body:parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed as Record<string,unknown>:{} as Record<string,unknown>};
+ }catch{return{tooLarge:false,body:{} as Record<string,unknown>}}
+}
+
 export async function consumePublicRateLimit(sql:any,{key,action,scope,maxHits,windowMinutes}:{key:string;action:string;scope:string;maxHits:number;windowMinutes:number}){
  const rows=await sql`
   with locked as (
