@@ -10,9 +10,8 @@ function sanitizeEditorHtml(value:string){
  return happyGoText(value)
   .replace(/<script\b[\s\S]*?<\/script\s*>/gi,'')
   .replace(/<iframe\b[\s\S]*?<\/iframe\s*>/gi,'')
-  .replace(/<iframe\b[^>]*\/?\s*>/gi,'')
   .replace(/<object\b[\s\S]*?<\/object\s*>/gi,'')
-  .replace(/<embed\b[^>]*>/gi,'')
+  .replace(/<\/?(?:script|iframe|object|embed)\b[^>]*>/gi,'')
   .replace(/\s(?:on[a-z0-9_-]+|srcdoc)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
   .replace(/\b(?:javascript|vbscript)\s*:/gi,'');
 }
