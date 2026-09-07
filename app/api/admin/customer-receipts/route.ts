@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function elevated(role:string){return role==='owner'||role==='admin'}
@@ -19,7 +20,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'receipts');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({}));const bookingId=String(body.bookingId||''),amount=Math.round(Number(body.amount)||0),method=String(body.method||'Chuyển khoản').trim(),transactionRef=String(body.transactionRef||'').trim(),note=String(body.note||'').trim().slice(0,4000),paidAt=body.paidAt?new Date(String(body.paidAt)):new Date();if(!uuid.test(bookingId)||amount<=0||Number.isNaN(+paidAt))return NextResponse.json({error:'Thông tin phiếu thu chưa hợp lệ.'},{status:400});const sql=db();
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'receipts');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(requestBodyTooLarge(req,65_536))return NextResponse.json({error:'Dữ liệu phiếu thu quá lớn.'},{status:413});const parsed=await readBoundedJson(req,65_536);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu phiếu thu quá lớn.'},{status:413});const body=parsed.body;const bookingId=String(body.bookingId||''),amount=Math.round(Number(body.amount)||0),method=String(body.method||'Chuyển khoản').trim(),transactionRef=String(body.transactionRef||'').trim(),note=String(body.note||'').trim().slice(0,4000),paidAt=body.paidAt?new Date(String(body.paidAt)):new Date();if(!uuid.test(bookingId)||amount<=0||Number.isNaN(+paidAt))return NextResponse.json({error:'Thông tin phiếu thu chưa hợp lệ.'},{status:400});const sql=db();
  try{
   const bookingRows=await sql`select id,code,customer_name_snapshot,selling_total_vnd,sales_staff_id from bookings where id=${bookingId} limit 1`;const booking=bookingRows[0];if(!booking)return NextResponse.json({error:'Không tìm thấy booking.'},{status:404});if(!canSeeAll(actor.role)&&String(booking.sales_staff_id||'')!==actor.id)return NextResponse.json({error:'Bạn không có quyền ghi thu cho booking này.'},{status:403});
   const paidRows=await sql`select coalesce(sum(amount_vnd),0)::bigint as paid from payments where booking_id=${bookingId} and status='paid'`;const beforePaid=Number(paidRows[0]?.paid||0),selling=Number(booking.selling_total_vnd||0),type=selling>0&&beforePaid+amount>=selling?'full':'deposit';
