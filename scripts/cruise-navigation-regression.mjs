@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 const failures=[];
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const must=(path,needle,label)=>{if(!read(path).includes(needle))failures.push(`${label}: thiếu ${JSON.stringify(needle)} trong ${path}`)};
+const mustNot=(path,needle,label)=>{if(read(path).includes(needle))failures.push(`${label}: không được chứa ${JSON.stringify(needle)} trong ${path}`)};
 
 must('components/CruiseCatalog.tsx',"const cardHitStyle={position:'absolute' as const,inset:0,zIndex:1}",'Card du thuyền phải có vùng click phủ toàn bộ');
 must('components/CruiseCatalog.tsx','aria-label={`Xem chi tiết ${item.name}`}','Card du thuyền CMS/static phải có link phủ card có nhãn');
@@ -16,6 +17,7 @@ must('components/GlobalSearchResults.tsx','href={`/du-thuyen/${encodeURIComponen
 must('app/cruises/[slug]/page.tsx','CmsProductDetail,type PublicProduct','Route du thuyền phải dùng model sản phẩm chung');
 must('app/cruises/[slug]/page.tsx','getPublicSiteState','Route du thuyền phải đọc site-state production chung');
 must('app/cruises/[slug]/page.tsx','initialRates={initialRates}','Route du thuyền phải truyền lịch giá production vào chi tiết chung');
+mustNot('app/cruises/[slug]/page.tsx','CruiseDetailClient','Route du thuyền không được quay lại trang chi tiết standalone legacy');
 must('components/CmsProductDetail.tsx','canonicalPartnerProduct','Sản phẩm Partner phải được chuẩn hóa bằng canonical product model');
 must('components/CmsProductDetail.tsx','seedPublicCommerceRuntime(product,rates)','Chi tiết sản phẩm phải đưa snapshot production vào commerce runtime chung');
 must('components/CmsProductDetail.tsx','<UnifiedCruisePublicDetail product={product} initialRates={rates}/>','Du thuyền phải nhận chung lịch giá từ CmsProductDetail');
