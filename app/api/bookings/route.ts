@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {readSession} from '@/lib/server/portal-auth';
 import {captureAffiliateReferral} from '@/lib/server/affiliate';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
 function code(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `HG${y}${m}${day}-${Math.random().toString(36).slice(2,7).toUpperCase()}`}
@@ -29,7 +29,8 @@ export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'DATABASE_URL chưa được cấu hình.'},{status:503});
  if(requestBodyTooLarge(req))return NextResponse.json({error:'Dữ liệu đặt dịch vụ quá lớn.'},{status:413});
  const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
- const body=await req.json().catch(()=>({}));let name=String(body.customerName||'').trim(),phone=normalizePhone(body.phone),email=String(body.email||'').trim().toLowerCase();const product=String(body.product||'Dịch vụ HappyGo').trim(),note=String(body.note||'').trim();
+ const parsed=await readBoundedJson(req);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đặt dịch vụ quá lớn.'},{status:413});
+ const body=parsed.body;let name=String(body.customerName||'').trim(),phone=normalizePhone(body.phone),email=String(body.email||'').trim().toLowerCase();const product=String(body.product||'Dịch vụ HappyGo').trim(),note=String(body.note||'').trim();
  if(String(body.website||'').trim())return NextResponse.json({ok:true,received:true});
  if(name.length>120||email.length>254||product.length>240||note.length>2000)return NextResponse.json({error:'Dữ liệu đặt dịch vụ vượt quá giới hạn cho phép.'},{status:400});
  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
