@@ -12,6 +12,14 @@ const robots=read('app/robots.ts');
 const siteUrl=read('lib/site-url.ts');
 const homePage=read('app/page.tsx');
 const safeImage=read('components/SafeImage.tsx');
+const guidePage=read('app/guide/page.tsx');
+const guideCategory=read('app/guide/category/[slug]/page.tsx');
+const guideDetail=read('app/guide/[slug]/page.tsx');
+const legacyCmsGuide=read('app/cam-nang/bai-viet/[slug]/page.tsx');
+const unifiedGuideGrid=read('components/UnifiedGuideGrid.tsx');
+const adminContentEditor=read('components/AdminContentEditor.tsx');
+const adminCmsApi=read('app/api/admin/cms-content/route.ts');
+const publishingStandard=read('lib/guide-publishing-standard.ts');
 
 const publicRoutes=['/luu-tru','/tour-du-lich','/du-thuyen','/diem-den','/cam-nang','/san-pham','/gioi-thieu','/lien-he'];
 for(const route of publicRoutes)must(sitemap,route,'sitemap');
@@ -35,6 +43,24 @@ must(safeImage,'decoding="async"','Ảnh dùng chung phải decode bất đồng
 must(safeImage,'new window.Image()','Ảnh nền phải probe lỗi bằng Image API thay vì render ảnh ẩn');
 if(safeImage.includes('aria-hidden="true"')||safeImage.includes("style={{display:'none'}}"))fail('SafeBackground không được render ảnh probe ẩn');
 
+// Cẩm nang phải có đúng một luồng public: bài CMS hòa vào grid chuẩn, có ảnh đại diện và URL /cam-nang/:slug.
+must(guidePage,'UnifiedGuideGrid','Trang Cẩm nang phải dùng grid thống nhất');
+must(guideCategory,'UnifiedGuideGrid','Chuyên mục Cẩm nang phải dùng grid thống nhất');
+if(guidePage.includes('GuideCmsList')||guidePage.includes('BÀI VIẾT TỪ QUẢN TRỊ')||guidePage.includes('Nội dung mới xuất bản'))fail('Trang Cẩm nang không được tách khu bài quản trị');
+if(guideCategory.includes('GuideCategoryCmsList')||guideCategory.includes('BÀI MỚI TỪ QUẢN TRỊ'))fail('Chuyên mục Cẩm nang không được tách khu bài quản trị');
+must(unifiedGuideGrid,'/cam-nang/${encodeURIComponent(item.slug)}','Bài CMS phải dùng URL Cẩm nang chuẩn');
+must(unifiedGuideGrid,'item.cover','Card Cẩm nang phải dùng ảnh đại diện thật');
+must(guideDetail,'getPublishedGuideSeo','URL Cẩm nang chuẩn phải đọc được bài CMS');
+must(legacyCmsGuide,'permanentRedirect','URL CMS cũ phải redirect vĩnh viễn');
+must(legacyCmsGuide,'/cam-nang/${encodeURIComponent(slug)}','URL CMS cũ phải về canonical /cam-nang/:slug');
+must(adminContentEditor,'guidePublishIssues','Admin phải chặn bài chưa đạt chuẩn SEO');
+must(adminContentEditor,'Ảnh đại diện *','Admin phải đánh dấu ảnh đại diện bắt buộc');
+must(adminContentEditor,'GUIDE_SEO_TEMPLATE','Bài mới phải có khung SEO chuẩn');
+must(adminCmsApi,'guidePublishIssues','API phải kiểm tra chuẩn SEO phía server');
+must(adminCmsApi,'GUIDE_ARTICLE_STATE_KEY','Admin và public phải dùng cùng nguồn bài viết');
+must(publishingStandard,"issues.push('Bắt buộc có ảnh đại diện')",'Chuẩn SEO phải bắt buộc ảnh đại diện');
+must(publishingStandard,'words<700','Chuẩn SEO phải kiểm tra chiều sâu nội dung');
+
 const metadataPages={
  'app/stay/page.tsx':'/luu-tru',
  'app/tours/page.tsx':'/tour-du-lich',
@@ -52,7 +78,6 @@ const metadataPages={
  'app/product/[slug]/page.tsx':'/san-pham/',
  'app/guide/[slug]/page.tsx':'/cam-nang/',
  'app/guide/category/[slug]/page.tsx':'/cam-nang/danh-muc/',
- 'app/cam-nang/bai-viet/[slug]/page.tsx':'/cam-nang/bai-viet/',
  'app/diem-den/[slug]/page.tsx':'/diem-den/',
  'app/diem-den/long-hai/page.tsx':'/diem-den/long-hai',
  'app/diem-den/vung-tau/page.tsx':'/diem-den/vung-tau'
