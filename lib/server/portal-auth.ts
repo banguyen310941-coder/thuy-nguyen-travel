@@ -2,7 +2,10 @@ import {createHmac,randomBytes,scryptSync,timingSafeEqual} from 'crypto';
 import type {NextRequest,NextResponse} from 'next/server';
 
 export type PortalKind='partner'|'admin'|'customer'|'affiliate';
-type SessionPayload={kind:PortalKind;id:string;exp:number};
+type SessionPayload={kind:PortalKind;id:string;exp:number;iat?:number};
+
+const HOUR=60*60;
+const DAY=24*HOUR;
 
 function secret(){
   const value=process.env.AUTH_SECRET?.trim()||process.env.ADMIN_API_KEY?.trim();
@@ -12,6 +15,12 @@ function secret(){
 
 function b64(value:string){return Buffer.from(value).toString('base64url')}
 function unb64(value:string){return Buffer.from(value,'base64url').toString('utf8')}
+
+export function sessionMaxAge(kind:PortalKind){
+  if(kind==='admin')return 12*HOUR;
+  if(kind==='partner'||kind==='affiliate')return 7*DAY;
+  return 30*DAY;
+}
 
 export function hashPassword(password:string){
   const salt=randomBytes(16).toString('hex');
@@ -27,8 +36,9 @@ export function verifyPassword(password:string,stored:string){
   return actual.length===expected.length&&timingSafeEqual(actual,expected);
 }
 
-export function createSession(kind:PortalKind,id:string,maxAgeSeconds=60*60*24*30){
-  const payload:SessionPayload={kind,id,exp:Math.floor(Date.now()/1000)+maxAgeSeconds};
+export function createSession(kind:PortalKind,id:string,maxAgeSeconds=sessionMaxAge(kind)){
+  const now=Math.floor(Date.now()/1000);
+  const payload:SessionPayload={kind,id,iat:now,exp:now+maxAgeSeconds};
   const body=b64(JSON.stringify(payload));
   const sig=createHmac('sha256',secret()).update(body).digest('base64url');
   return `${body}.${sig}`;
@@ -43,13 +53,22 @@ export function readSession(req:NextRequest,cookieName:string,kind:PortalKind){
   if(a.length!==b.length||!timingSafeEqual(a,b))return null;
   try{
     const payload=JSON.parse(unb64(body)) as SessionPayload;
-    if(payload.kind!==kind||!payload.id||payload.exp<Math.floor(Date.now()/1000))return null;
+    const now=Math.floor(Date.now()/1000),maxAge=sessionMaxAge(kind);
+    if(payload.kind!==kind||!payload.id||!Number.isFinite(payload.exp)||payload.exp<now)return null;
+    if(payload.iat!==undefined){
+      if(!Number.isFinite(payload.iat)||payload.iat>now+60)return null;
+      if(payload.exp-payload.iat>maxAge+60||now-payload.iat>maxAge+60)return null;
+    }else if(kind==='admin'&&payload.exp-now>maxAge+60){
+      // Legacy Admin tokens were valid for 30 days. Reject those that still exceed
+      // the new 12-hour ceiling so privileged sessions are rotated after deploy.
+      return null;
+    }
     return payload;
   }catch{return null}
 }
 
 export function setSessionCookie(response:NextResponse,cookieName:string,kind:PortalKind,id:string){
-  const maxAge=60*60*24*30;
+  const maxAge=sessionMaxAge(kind);
   response.cookies.set(cookieName,createSession(kind,id,maxAge),{
     httpOnly:true,
     sameSite:'lax',
