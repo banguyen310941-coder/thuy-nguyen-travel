@@ -2,21 +2,25 @@ import {parsePricingDate,pricingMoney,seasonalUnitPrice} from '@/lib/pricing-cal
 import {rateForDate,ratePriceForDate,type PublicRateRange} from '@/lib/public-rate-utils';
 import type {PricingBasis} from '@/components/ProductModel';
 
-type RuntimeUnit={id:string;pricingBasis?:PricingBasis;weekdayPrice?:string;weekendPrice?:string;holidayPrice?:string;lowWeekdayPrice?:string;lowWeekendPrice?:string;highWeekdayPrice?:string;highWeekendPrice?:string;highSeasonRanges?:string;lowSeasonRanges?:string};
-type RuntimeProduct={id?:string;slug?:string;price?:string;pricingBasis?:PricingBasis;units?:RuntimeUnit[]};
-type RuntimeEntry={product:RuntimeProduct;rates:PublicRateRange[]};
+export type RuntimeUnit={id:string;pricingBasis?:PricingBasis;weekdayPrice?:string;weekendPrice?:string;holidayPrice?:string;lowWeekdayPrice?:string;lowWeekendPrice?:string;highWeekdayPrice?:string;highWeekendPrice?:string;highSeasonRanges?:string;lowSeasonRanges?:string};
+export type RuntimeProduct={id?:string;slug?:string;name?:string;price?:string;pricingBasis?:PricingBasis;units?:RuntimeUnit[]};
+export type PublicCommerceRuntimeEntry={product:RuntimeProduct;rates:PublicRateRange[]};
 export type PublicCommerceRuntimeSnapshot={sellingPrice:number;availableQuantity:number|null;isAvailable:boolean;pricingBasis?:PricingBasis;sellingSource:'unit_calendar'|'unit_base'|'product'|'unknown';inventorySource:'unit_calendar'|'unknown';sourceLabel:string};
 
-const byId=new Map<string,RuntimeEntry>();
-const bySlug=new Map<string,RuntimeEntry>();
+const byId=new Map<string,PublicCommerceRuntimeEntry>();
+const bySlug=new Map<string,PublicCommerceRuntimeEntry>();
 const qty=(value?:string|number|null)=>{if(value==null||String(value).trim()==='')return null;const n=Number(String(value).replace(/[^0-9-]/g,''));return Number.isFinite(n)?Math.max(0,Math.floor(n)):null};
 
 export function seedPublicCommerceRuntime(product:RuntimeProduct|null|undefined,rates:PublicRateRange[]=[]){
- if(!product)return;const entry={product,rates:Array.isArray(rates)?rates:[]};if(product.id)byId.set(product.id,entry);if(product.slug)bySlug.set(product.slug,entry);
+ if(!product)return;const unitIds=new Set((product.units||[]).map(unit=>unit.id));const scopedRates=unitIds.size?rates.filter(rate=>unitIds.has(rate.unitId)):[];const entry={product,rates:scopedRates};if(product.id)byId.set(product.id,entry);if(product.slug)bySlug.set(product.slug,entry);
+}
+
+export function getPublicCommerceRuntimeEntry(input:{productId?:string;productSlug?:string}){
+ return(input.productId?byId.get(input.productId):undefined)||(input.productSlug?bySlug.get(input.productSlug):undefined)||null;
 }
 
 export function resolvePublicCommerceRuntime(input:{productId?:string;productSlug?:string;unitId?:string;date?:string}):PublicCommerceRuntimeSnapshot|null{
- const entry=(input.productId?byId.get(input.productId):undefined)||(input.productSlug?bySlug.get(input.productSlug):undefined);if(!entry)return null;
+ const entry=getPublicCommerceRuntimeEntry(input);if(!entry)return null;
  const product=entry.product;const unit=input.unitId?(product.units||[]).find(item=>item.id===input.unitId):undefined;if(input.unitId&&!unit)return null;
  const pricingBasis=unit?.pricingBasis||product.pricingBasis;
  if(unit&&input.date){
