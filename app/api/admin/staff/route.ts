@@ -1,11 +1,13 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
-import {hashPassword,readSession} from '@/lib/server/portal-auth';
+import {hashPassword} from '@/lib/server/portal-auth';
+import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const roles=new Set(['admin','sales','content','operations','accounting']);
 const statuses=new Set(['active','inactive','locked']);
 function shape(row:any){return{id:String(row.id),name:row.name,email:row.email,phone:row.phone||'',role:row.role,department:row.department||'',status:row.status,permissions:Array.isArray(row.permissions)?row.permissions:[],createdAt:row.created_at}}
-async function actor(req:NextRequest){const session=readSession(req,'happygo_admin_auth','admin');if(!session)return null;const sql=db();const rows=await sql`select id,role,status from staff where id=${session.id} and status='active' limit 1`;const row=rows[0];return row&&(row.role==='owner'||row.role==='admin')?row:null}
+async function actor(req:NextRequest){const current=await adminActor(req);return current&&(current.role==='owner'||current.role==='admin')?current:null}
 
 export async function GET(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
@@ -14,9 +16,11 @@ export async function GET(req:NextRequest){
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,16384))return NextResponse.json({error:'Dữ liệu nhân viên quá lớn.'},{status:413});
  try{
   const current=await actor(req);if(!current)return NextResponse.json({error:'Unauthorized'},{status:401});
-  const body=await req.json().catch(()=>({}));const id=String(body.id||''),name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),phone=String(body.phone||'').trim(),role=String(body.role||'sales'),department=String(body.department||'sales').trim()||'sales',status=statuses.has(String(body.status))?String(body.status):'active',permissions=Array.isArray(body.permissions)?body.permissions.map(String):[],password=String(body.password||'');
+  const parsed=await readBoundedJson(req,16384);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu nhân viên quá lớn.'},{status:413});
+  const body=parsed.body;const id=String(body.id||''),name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase(),phone=String(body.phone||'').trim(),role=String(body.role||'sales'),department=String(body.department||'sales').trim()||'sales',status=statuses.has(String(body.status))?String(body.status):'active',permissions=Array.isArray(body.permissions)?body.permissions.map(String):[],password=String(body.password||'');
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||!roles.has(role))return NextResponse.json({error:'Thông tin nhân viên chưa hợp lệ.'},{status:400});
   const sql=db();let rows:any[]=[];
   if(id){
