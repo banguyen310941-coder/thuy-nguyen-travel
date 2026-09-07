@@ -2,14 +2,15 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_partner_auth';
 
 export async function POST(req:NextRequest){
   if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
   if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
-  const body=await req.json().catch(()=>({}));
+  const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
+  const body=parsed.body;
   const email=String(body.email||'').trim().toLowerCase();
   const password=String(body.password||'');
   if(!email||!password)return NextResponse.json({error:'Vui lòng nhập email và mật khẩu.'},{status:400});
@@ -25,10 +26,6 @@ export async function POST(req:NextRequest){
     if(row.status==='blocked')return NextResponse.json({error:'Tài khoản đã bị khóa. Vui lòng liên hệ HappyGo để được hỗ trợ.'},{status:403});
     await sql`update partner_accounts set last_login_at=now(),updated_at=now() where partner_id=${row.id}`;
     const response=NextResponse.json({ok:true,partner:{id:String(row.id),name:row.name,email:row.email,phone:row.phone,status:row.status,contact:row.contact_name||'',website:row.website||'',taxCode:row.tax_code||'',address:row.address||'',createdAt:row.created_at}});
-    setSessionCookie(response,COOKIE,'partner',String(row.id));
-    return response;
-  }catch(error){
-    console.error('partner_login_failed',error);
-    return NextResponse.json({error:'Không thể đăng nhập lúc này.'},{status:500});
-  }
+    setSessionCookie(response,COOKIE,'partner',String(row.id));return response;
+  }catch(error){console.error('partner_login_failed',error);return NextResponse.json({error:'Không thể đăng nhập lúc này.'},{status:500})}
 }
