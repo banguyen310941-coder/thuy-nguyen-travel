@@ -21,6 +21,10 @@ must('lib/server/portal-auth.ts','if(!BASE64URL.test(body)||!BASE64URL.test(sig)
 must('lib/server/portal-auth.ts','ver?:string','Session payload phải hỗ trợ security version đã ký');
 must('lib/server/portal-auth.ts','payload.ver=version','Security version phải nằm trong phần payload được HMAC');
 must('lib/server/portal-auth.ts',"setSessionCookie(response:NextResponse,cookieName:string,kind:PortalKind,id:string,version='')",'Cookie helper phải nhận security version tùy chọn');
+must('lib/server/portal-auth.ts',"const SESSION_KEY_CONTEXT='happygo:portal-session:v1'",'Fallback session key phải có context riêng');
+must('lib/server/portal-auth.ts',"const authSecret=process.env.AUTH_SECRET?.trim()",'Session phải ưu tiên AUTH_SECRET riêng');
+must('lib/server/portal-auth.ts',"createHmac('sha256',adminApiKey).update(SESSION_KEY_CONTEXT).digest()",'Fallback ADMIN_API_KEY phải được derive trước khi ký session');
+mustNot('lib/server/portal-auth.ts','process.env.AUTH_SECRET?.trim()||process.env.ADMIN_API_KEY?.trim()','Session không được dùng trực tiếp cùng một khóa cho AUTH và Admin API');
 const portalAuth=read('lib/server/portal-auth.ts');
 const envelopeIndex=portalAuth.indexOf('if(!token||token.length>MAX_SESSION_TOKEN_LENGTH)return null');
 const hmacIndex=portalAuth.indexOf("const expected=createHmac('sha256',secret()).update(body).digest('base64url')",portalAuth.indexOf('export function readSession'));
