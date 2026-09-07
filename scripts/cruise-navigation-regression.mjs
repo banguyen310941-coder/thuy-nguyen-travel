@@ -26,6 +26,7 @@ must('components/UnifiedCruisePublicDetail.tsx','initialRates={initialRates} kin
 must('components/ProductCommerce.ts','resolvePublicCommerceRuntime','Commerce chung phải ưu tiên snapshot production của trang public');
 must('components/BookingCart.tsx','persistRuntimeForCheckout','Giỏ phải mang snapshot production sang checkout');
 must('components/BookingCart.tsx',"RATES_KEY='tn_cms_daily_rates_v1'",'Giỏ phải đồng bộ rate production đã chọn cho phiếu tạm tính');
+must('components/BookingCart.tsx','Cart snapshot từ lịch giá production','Checkout phải nhận đúng giá production tại ngày cabin/vé đã chọn');
 must('app/product/[slug]/page.tsx',"redirect(`/du-thuyen/${encodeURIComponent(slug)}`)",'URL sản phẩm chung phải canonicalize du thuyền về /du-thuyen');
 must('app/sitemap.ts',"item.type==='Du thuyền'?'du-thuyen':'san-pham'",'Sitemap phải xuất URL du thuyền theo module /du-thuyen');
 
