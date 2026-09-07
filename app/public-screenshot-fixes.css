@@ -16,8 +16,11 @@
   .home-premium .mock-hero-content{position:relative!important;min-height:520px!important;padding-top:50px!important;padding-bottom:165px!important}
   .home-premium .mock-hero h1{max-width:690px!important;font-size:clamp(42px,3.55vw,54px)!important;line-height:1.03!important;letter-spacing:-1.9px!important}
   .home-premium .mock-hero-content>p:not(.mock-eyebrow){max-width:650px!important;font-size:15px!important;line-height:1.6!important}
-  .home-premium .home-hero-quicklinks{margin-top:14px!important}
+  /* Search tabs already provide these service choices; the duplicate quicklink
+     pills were colliding with the search panel in the production screenshot. */
+  .home-premium .home-hero-quicklinks{display:none!important}
   .home-premium .mock-hero-search{top:auto!important;bottom:24px!important;left:0!important;right:0!important}
+  .home-premium .mock-search-tabs{margin-left:12px!important;margin-bottom:8px!important}
   .home-premium .mock-search-form{border-radius:17px!important;box-shadow:0 16px 38px rgba(4,31,57,.20)!important}
   .home-premium .mock-search-field{min-height:62px!important;padding:8px 13px!important}
   .home-premium .mock-search-button{min-height:62px!important;flex-basis:138px!important}
