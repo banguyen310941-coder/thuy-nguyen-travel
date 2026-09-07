@@ -17,6 +17,17 @@ for(const path of ['components/UnifiedStayPublicDetail.tsx','components/UnifiedC
  contains(path,'<aside id="booking">','Trang chi tiết sản phẩm phải có form booking đích');
 }
 
+contains('components/BookingInquiry.tsx','unitId:selectedUnit?.id','Phiếu tạm tính phải giữ ID hạng phòng đã chọn');
+contains('components/BookingInquiry.tsx','productSlug','Phiếu tạm tính phải giữ slug sản phẩm để tìm đúng khách sạn');
+contains('components/BookingInquiry.tsx',"new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated'",'Ngày booking phải phát giá trị mới trực tiếp thay vì đọc URL cũ');
+contains('components/ProductRateCalendar.tsx','selectBookingUnit(unit)','Hạng đang xem trên lịch giá phải đồng bộ sang form booking');
+contains('components/ProductRateCalendar.tsx',"new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated'",'Lịch giá phải đồng bộ ngày ngay từ lần bấm đầu tiên');
+contains('components/BookingCart.tsx','findBookingUnit','Giỏ booking phải tìm hạng bằng bộ nhận dạng an toàn');
+contains('app/checkout/page.tsx','findBookingUnit','Checkout phải tính theo đúng hạng phòng đã khóa');
+excludes('components/BookingCart.tsx',"item.unit.includes(x.code||'')",'Giỏ không được fuzzy-match chuỗi rỗng sang hạng thấp đầu tiên');
+excludes('app/checkout/page.tsx',"i.unit?.includes(u.code||'')",'Checkout không được fuzzy-match chuỗi rỗng sang hạng thấp đầu tiên');
+contains('lib/booking-unit-selection.ts','if(selection.unitId)return list.find','Khi có unitId phải chỉ chấp nhận đúng ID, không fallback sang hạng khác');
+
 if(failures.length){
  console.error('\nDesktop booking regression FAILED:\n');
  for(const failure of failures)console.error(`- ${failure}`);
