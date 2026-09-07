@@ -96,7 +96,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
       const unavailable=Boolean(rate&&(rate.status!=='available'||Number(rate.quantity||0)<=0));
       const override=rate&&!unavailable?ratePriceForDate(rate,date):0;
       const base=unavailable?0:seasonalUnitPrice(unit,date,season);
-      const price=unavailable?0:rate?override:base;
+      const price=unavailable?0:override||base;
       const missing=ratesLoaded&&!unavailable&&!price;
       const loading=!ratesLoaded&&!price;
       const disabled=key<today||unavailable||missing||loading;
