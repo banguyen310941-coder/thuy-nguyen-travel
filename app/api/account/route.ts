@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {clearSessionCookie,hashPassword,readSession,setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
+import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_customer_auth';
 function normalizePhone(raw:string){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
@@ -26,11 +27,16 @@ export async function GET(req:NextRequest){
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu tài khoản quá lớn.'},{status:413});
  const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();
  try{
   if(action==='register'){
-   const name=String(body.name||'').trim(),phone=normalizePhone(String(body.phone||'')),email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
+   const name=String(body.name||'').trim().slice(0,120),phone=normalizePhone(String(body.phone||'')),email=String(body.email||'').trim().toLowerCase().slice(0,254),password=String(body.password||'');
    if(name.length<2||!/^0\d{9}$/.test(phone)||!emailOk(email)||password.length<8)return NextResponse.json({error:'Vui lòng nhập họ tên, SĐT hợp lệ, email và mật khẩu từ 8 ký tự.'},{status:400});
+   const ipAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'customer-register'),action:'customer.register.submit',scope:'customer-register-ip',maxHits:12,windowMinutes:60});
+   if(!ipAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu tạo tài khoản từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
+   const emailAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'customer-register-email',email),action:'customer.register.submit',scope:'customer-register-email',maxHits:3,windowMinutes:60});
+   if(!emailAllowed)return NextResponse.json({error:'Email này đang được gửi đăng ký quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
    const accountExists=await sql`select id from customer_accounts where lower(email)=${email} limit 1`;if(accountExists.length)return NextResponse.json({error:'Email này đã có tài khoản HappyGo.'},{status:409});
    const customerRows=await sql`select c.id,(select ca.id from customer_accounts ca where ca.customer_id=c.id limit 1) as account_id from customers c where c.phone=${phone} or lower(coalesce(c.email,''))=${email} order by case when c.phone=${phone} then 0 else 1 end limit 1`;
    let customerId='';
@@ -41,7 +47,10 @@ export async function POST(req:NextRequest){
    const response=NextResponse.json({ok:true,authenticated:true});setSessionCookie(response,COOKIE,'customer',accountId);return response;
   }
   if(action==='login'){
-   const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!emailOk(email)||!password)return NextResponse.json({error:'Email hoặc mật khẩu không hợp lệ.'},{status:400});const attemptKey=authAttemptKey(req,'customer',email);if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429});
+   const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');if(!emailOk(email)||!password)return NextResponse.json({error:'Email hoặc mật khẩu không hợp lệ.'},{status:400});const attemptKey=authAttemptKey(req,'customer',email);
+   const burstAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'customer-login'),action:'customer.login.submit',scope:'customer-login-ip',maxHits:40,windowMinutes:15});
+   if(!burstAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng nhập từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
+   if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429,headers:{'Retry-After':'900'}});
    const rows=await sql`select id,password_hash,status from customer_accounts where lower(email)=${email} limit 1`;const account=rows[0];if(!account||!verifyPassword(password,String(account.password_hash||''))){await recordLoginAttempt(sql,attemptKey,'customer',false);return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401})}await recordLoginAttempt(sql,attemptKey,'customer',true);if(String(account.status)!=='active')return NextResponse.json({error:'Tài khoản đang bị khóa.'},{status:403});await sql`update customer_accounts set last_login_at=now(),updated_at=now() where id=${String(account.id)}`;
    const response=NextResponse.json({ok:true,authenticated:true});setSessionCookie(response,COOKIE,'customer',String(account.id));return response;
   }
