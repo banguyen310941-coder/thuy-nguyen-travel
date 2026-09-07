@@ -4,149 +4,23 @@ import {db} from '@/lib/db';
 type Sql=ReturnType<typeof db>;
 type SourceStatus='available'|'soldout';
 type CalendarItem={date:string;status:SourceStatus;usd:number|null};
-type SourceDefinition={
- slug:string;
- label:string;
- bookingUrl:string;
- query:(date:string)=>string;
- primaryCode:string;
- soldoutCodes:string[];
-};
+type SourceDefinition={slug:string;label:string;bookingUrl:string;query:(date:string)=>string;primaryCode:string;soldoutCodes:string[]};
 
 const MONTHS:Record<string,number>={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
 const SOURCES:SourceDefinition[]=[
- {
-  slug:'ambassador-cruise-i',
-  label:'Ambassador Cruise I',
-  bookingUrl:'https://ambassadorcruise.com/booking-2d1n/',
-  query:date=>`https://ambassadorcruise.com/booking-2d1n/?cruise=20&d=${date}&n=1`,
-  primaryCode:'ACI-DLX',
-  soldoutCodes:['ACI-DLX','ACI-PRM','ACI-STE','ACI-CAP','ACI-PRES'],
- },
- {
-  slug:'ambassador-signature',
-  label:'Ambassador Signature',
-  bookingUrl:'https://ambassadorcruise.com/booking-2d1n/',
-  query:date=>`https://ambassadorcruise.com/booking-2d1n/?cruise=23&d=${date}&n=1`,
-  primaryCode:'AS-BAL',
-  soldoutCodes:['AS-BAL','AS-EXE','AS-BS','AS-CVS'],
- },
- {
-  slug:'ambassador-day-cruise',
-  label:'Ambassador Day Cruise',
-  bookingUrl:'https://ambassadorcruise.com/booking-day-dinner-cruise-step1/',
-  query:date=>`https://ambassadorcruise.com/booking-day-dinner-cruise-step1/?cruise=21&d=${date}&n=0`,
-  primaryCode:'ADC-DAY',
-  soldoutCodes:['ADC-DAY'],
- },
+ {slug:'ambassador-cruise-i',label:'Ambassador Cruise I',bookingUrl:'https://ambassadorcruise.com/booking-2d1n/',query:date=>`https://ambassadorcruise.com/booking-2d1n/?cruise=20&d=${date}&n=1`,primaryCode:'ACI-DLX',soldoutCodes:['ACI-DLX','ACI-PRM','ACI-STE','ACI-CAP','ACI-PRES']},
+ {slug:'ambassador-signature',label:'Ambassador Signature',bookingUrl:'https://ambassadorcruise.com/booking-2d1n/',query:date=>`https://ambassadorcruise.com/booking-2d1n/?cruise=23&d=${date}&n=1`,primaryCode:'AS-BAL',soldoutCodes:['AS-BAL','AS-EXE','AS-BS','AS-CVS']},
+ {slug:'ambassador-day-cruise',label:'Ambassador Day Cruise',bookingUrl:'https://ambassadorcruise.com/booking-day-dinner-cruise-step1/',query:date=>`https://ambassadorcruise.com/booking-day-dinner-cruise-step1/?cruise=21&d=${date}&n=0`,primaryCode:'ADC-DAY',soldoutCodes:['ADC-DAY']},
 ];
 
-export type AmbassadorSyncResult={
- ok:boolean;
- checkedAt:string;
- fxRate:number;
- inserted:number;
- updated:number;
- skipped:number;
- sources:Array<{slug:string;label:string;calendar:number;written:number;message:string}>;
-};
-
+export type AmbassadorSyncResult={ok:boolean;checkedAt:string;fxRate:number;inserted:number;updated:number;skipped:number;sources:Array<{slug:string;label:string;calendar:number;written:number;message:string}>};
 function isoDate(value:Date){return value.toISOString().slice(0,10)}
 function addDays(value:Date,days:number){const next=new Date(value);next.setUTCDate(next.getUTCDate()+days);return next}
-function textOf(html:string){
- return html
-  .replace(/<script[\s\S]*?<\/script>/gi,' ')
-  .replace(/<style[\s\S]*?<\/style>/gi,' ')
-  .replace(/<[^>]+>/g,' ')
-  .replace(/&nbsp;|&#160;/gi,' ')
-  .replace(/&amp;/gi,'&')
-  .replace(/&#0*39;|&apos;/gi,"'")
-  .replace(/&quot;/gi,'"')
-  .replace(/\s+/g,' ')
-  .trim();
-}
-function primaryCalendarText(html:string){
- const full=textOf(html),startToken='Payment Confirmation',startAt=full.indexOf(startToken),from=startAt>=0?full.slice(startAt+startToken.length):full;
- const stops=['Select Your Cabin','Select Your Ticket','This cruise has no availability on your choosen date','This cruise has no availability on your chosen date'];
- let end=from.length;
- for(const token of stops){const index=from.indexOf(token);if(index>=0&&index<end)end=index}
- return from.slice(0,end);
-}
-function dateFromParts(day:number,month:number,anchor:Date){
- let year=anchor.getUTCFullYear();
- const anchorMonth=anchor.getUTCMonth();
- if(anchorMonth>=10&&month<=1)year++;
- else if(anchorMonth<=1&&month>=10)year--;
- return isoDate(new Date(Date.UTC(year,month,day)));
-}
-export function parseAmbassadorCalendar(html:string,anchorDate:string){
- const anchor=new Date(`${anchorDate}T12:00:00Z`),text=primaryCalendarText(html),items=new Map<string,CalendarItem>();
- const pattern=/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?:(?:USD\s*([\d,]+))|(SOLD\s+OUT))\b/gi;
- for(const match of text.matchAll(pattern)){
-  const month=MONTHS[String(match[2]||'').toLowerCase()];if(month===undefined)continue;
-  const date=dateFromParts(Number(match[1]),month,anchor),sold=Boolean(match[4]),usd=sold?null:Number(String(match[3]||'').replace(/,/g,''));
-  if(!sold&&(!Number.isFinite(usd)||usd<=0))continue;
-  if(!items.has(date))items.set(date,{date,status:sold?'soldout':'available',usd:sold?null:usd});
- }
- return [...items.values()].sort((a,b)=>a.date.localeCompare(b.date));
-}
-
-async function sourceHtml(url:string){
- const response=await fetch(url,{cache:'no-store',headers:{'User-Agent':'HappyGoTravel/1.0 (+https://happygo-travel.vercel.app)'},signal:AbortSignal.timeout(15_000)});
- if(!response.ok)throw new Error(`HTTP_${response.status}`);
- const html=await response.text();
- if(html.length<500)throw new Error('SOURCE_RESPONSE_TOO_SHORT');
- return html;
-}
-function sourceLabel(source:SourceDefinition,item:CalendarItem,fxRate:number){
- return JSON.stringify({
-  source:'ambassador',
-  sourceCurrency:'USD',
-  sourcePrice:item.usd,
-  fxRate,
-  sourceCheckedAt:new Date().toISOString(),
-  sourceUrl:source.bookingUrl,
-  status:item.status,
-  minStay:1,
-  inventoryMode:'availability_flag',
-  note:item.status==='soldout'
-   ?`${source.label}: nguồn đặt chỗ chính thức công bố SOLD OUT cho ${item.date}.`
-   :`${source.label}: giá thấp nhất nguồn công bố ${item.usd} USD, quy đổi ${fxRate.toLocaleString('vi-VN')} VND/USD; cần xác nhận lại trước khi chốt booking.`,
- });
-}
-async function upsertRate(sql:Sql,productId:string,unitId:string,item:CalendarItem,source:SourceDefinition,fxRate:number){
- const existing=await sql`select id from rate_rules where unit_id=${unitId} and start_date=${item.date} and end_date=${item.date} and label like ${'%"source":"ambassador"%'} limit 1`;
- const price=item.status==='available'&&item.usd?Math.round(item.usd*fxRate):0,inventory=item.status==='available'?1:0,label=sourceLabel(source,item,fxRate);
- if(existing[0]?.id){
-  await sql`update rate_rules set product_id=${productId},retail_price_vnd=${price},net_price_vnd=null,inventory=${inventory},label=${label} where id=${String(existing[0].id)}`;
-  return'updated' as const;
- }
- const id=randomUUID();
- await sql`insert into rate_rules(id,product_id,unit_id,start_date,end_date,retail_price_vnd,net_price_vnd,inventory,label) values(${id},${productId},${unitId},${item.date},${item.date},${price},null,${inventory},${label})`;
- return'inserted' as const;
-}
-
-export async function syncAmbassadorRates(sql:Sql,{startDate,days,fxRate,actorId}:{startDate:string;days:number;fxRate:number;actorId:string}):Promise<AmbassadorSyncResult>{
- const start=new Date(`${startDate}T12:00:00Z`),end=addDays(start,Math.max(1,days)-1),result:AmbassadorSyncResult={ok:true,checkedAt:new Date().toISOString(),fxRate,inserted:0,updated:0,skipped:0,sources:[]};
- for(const source of SOURCES){
-  let calendar:CalendarItem[]=[];
-  try{
-   const anchors=[start,addDays(start,Math.min(6,Math.max(0,days-1)))];
-   const pages=await Promise.all([...new Set(anchors.map(value=>isoDate(value)))].map(async date=>parseAmbassadorCalendar(await sourceHtml(source.query(date)),date)));
-   const byDate=new Map<string,CalendarItem>();for(const page of pages)for(const item of page)byDate.set(item.date,item);
-   calendar=[...byDate.values()].filter(item=>item.date>=isoDate(start)&&item.date<=isoDate(end)).sort((a,b)=>a.date.localeCompare(b.date));
-   const product=(await sql`select id from products where slug=${source.slug} and type='Du thuyền' and partner_id is null limit 1`)[0];
-   if(!product){result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written:0,message:'Chưa có sản phẩm HappyGo'});result.skipped+=calendar.length;continue}
-   const productId=String(product.id),units=await sql`select id,code from product_units where product_id=${productId} and status<>'hidden'`,byCode=new Map(units.map((row:any)=>[String(row.code||''),String(row.id)]));
-   let written=0;
-   for(const item of calendar){
-    const codes=item.status==='soldout'?source.soldoutCodes:[source.primaryCode];
-    for(const code of codes){const unitId=byCode.get(code);if(!unitId){result.skipped++;continue}const action=await upsertRate(sql,productId,unitId,item,source,fxRate);result[action]++;written++}
-   }
-   await sql`update products set data=data || ${JSON.stringify({rateSource:'ambassador',rateFxVnd:fxRate,rateSourceCheckedAt:result.checkedAt})}::jsonb,updated_at=now() where id=${productId}`;
-   result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written,message:calendar.length?'Đã đọc nguồn chính thức':'Nguồn không trả lịch trong khoảng yêu cầu'});
-  }catch(error){result.ok=false;result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written:0,message:error instanceof Error?error.message:'Không đọc được nguồn'});}
- }
- await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actorId},'ambassador.sync','integration','ambassador',${JSON.stringify({startDate,days,fxRate,inserted:result.inserted,updated:result.updated,skipped:result.skipped,sources:result.sources})}::jsonb)`;
- return result;
-}
+function textOf(html:string){return html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/&#0*39;|&apos;/gi,"'").replace(/&quot;/gi,'"').replace(/\s+/g,' ').trim()}
+function primaryCalendarText(html:string){const full=textOf(html),startToken='Payment Confirmation',startAt=full.indexOf(startToken),from=startAt>=0?full.slice(startAt+startToken.length):full;const stops=['Select Your Cabin','Select Your Ticket','This cruise has no availability on your choosen date','This cruise has no availability on your chosen date'];let end=from.length;for(const token of stops){const index=from.indexOf(token);if(index>=0&&index<end)end=index}return from.slice(0,end)}
+function dateFromParts(day:number,month:number,anchor:Date){let year=anchor.getUTCFullYear();const anchorMonth=anchor.getUTCMonth();if(anchorMonth>=10&&month<=1)year++;else if(anchorMonth<=1&&month>=10)year--;return isoDate(new Date(Date.UTC(year,month,day)))}
+export function parseAmbassadorCalendar(html:string,anchorDate:string){const anchor=new Date(`${anchorDate}T12:00:00Z`),text=primaryCalendarText(html),items=new Map<string,CalendarItem>();const pattern=/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?:(?:USD\s*([\d,]+))|(SOLD\s+OUT))\b/gi;for(const match of text.matchAll(pattern)){const month=MONTHS[String(match[2]||'').toLowerCase()];if(month===undefined)continue;const date=dateFromParts(Number(match[1]),month,anchor),sold=Boolean(match[4]),usd:sold?null:Number(String(match[3]||'').replace(/,/g,''));if(!sold&&(usd===null||!Number.isFinite(usd)||usd<=0))continue;if(!items.has(date))items.set(date,{date,status:sold?'soldout':'available',usd:sold?null:usd})}return[...items.values()].sort((a,b)=>a.date.localeCompare(b.date))}
+async function sourceHtml(url:string){const response=await fetch(url,{cache:'no-store',headers:{'User-Agent':'HappyGoTravel/1.0 (+https://happygo-travel.vercel.app)'},signal:AbortSignal.timeout(15_000)});if(!response.ok)throw new Error(`HTTP_${response.status}`);const html=await response.text();if(html.length<500)throw new Error('SOURCE_RESPONSE_TOO_SHORT');return html}
+function sourceLabel(source:SourceDefinition,item:CalendarItem,fxRate:number){return JSON.stringify({source:'ambassador',sourceCurrency:'USD',sourcePrice:item.usd,fxRate,sourceCheckedAt:new Date().toISOString(),sourceUrl:source.bookingUrl,status:item.status,minStay:1,inventoryMode:'availability_flag',note:item.status==='soldout'?`${source.label}: nguồn đặt chỗ chính thức công bố SOLD OUT cho ${item.date}.`:`${source.label}: giá thấp nhất nguồn công bố ${item.usd} USD, quy đổi ${fxRate.toLocaleString('vi-VN')} VND/USD; cần xác nhận lại trước khi chốt booking.`})}
+async function upsertRate(sql:Sql,productId:string,unitId:string,item:CalendarItem,source:SourceDefinition,fxRate:number){const existing=await sql`select id from rate_rules where unit_id=${unitId} and start_date=${item.date} and end_date=${item.date} and label like ${'%"source":"ambassador"%'} limit 1`;const price=item.status==='available'&&item.usd?Math.round(item.usd*fxRate):0,inventory=item.status==='available'?1:0,label=sourceLabel(source,item,fxRate);if(existing[0]?.id){await sql`update rate_rules set product_id=${productId},retail_price_vnd=${price},net_price_vnd=null,inventory=${inventory},label=${label} where id=${String(existing[0].id)}`;return'updated' as const}const id=randomUUID();await sql`insert into rate_rules(id,product_id,unit_id,start_date,end_date,retail_price_vnd,net_price_vnd,inventory,label) values(${id},${productId},${unitId},${item.date},${item.date},${price},null,${inventory},${label})`;return'inserted' as const}
+export async function syncAmbassadorRates(sql:Sql,{startDate,days,fxRate,actorId}:{startDate:string;days:number;fxRate:number;actorId:string}):Promise<AmbassadorSyncResult>{const start=new Date(`${startDate}T12:00:00Z`),end=addDays(start,Math.max(1,days)-1),result:AmbassadorSyncResult={ok:true,checkedAt:new Date().toISOString(),fxRate,inserted:0,updated:0,skipped:0,sources:[]};for(const source of SOURCES){let calendar:CalendarItem[]=[];try{const anchors=[start,addDays(start,Math.min(6,Math.max(0,days-1)))];const pages=await Promise.all([...new Set(anchors.map(value=>isoDate(value)))].map(async date=>parseAmbassadorCalendar(await sourceHtml(source.query(date)),date)));const byDate=new Map<string,CalendarItem>();for(const page of pages)for(const item of page)byDate.set(item.date,item);calendar=[...byDate.values()].filter(item=>item.date>=isoDate(start)&&item.date<=isoDate(end)).sort((a,b)=>a.date.localeCompare(b.date));const product=(await sql`select id from products where slug=${source.slug} and type='Du thuyền' and partner_id is null limit 1`)[0];if(!product){result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written:0,message:'Chưa có sản phẩm HappyGo'});result.skipped+=calendar.length;continue}const productId=String(product.id),units=await sql`select id,code from product_units where product_id=${productId} and status<>'hidden'`,byCode=new Map(units.map((row:any)=>[String(row.code||''),String(row.id)]));let written=0;for(const item of calendar){const codes=item.status==='soldout'?source.soldoutCodes:[source.primaryCode];for(const code of codes){const unitId=byCode.get(code);if(!unitId){result.skipped++;continue}const action=await upsertRate(sql,productId,unitId,item,source,fxRate);result[action]++;written++}}await sql`update products set data=data || ${JSON.stringify({rateSource:'ambassador',rateFxVnd:fxRate,rateSourceCheckedAt:result.checkedAt})}::jsonb,updated_at=now() where id=${productId}`;result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written,message:calendar.length?'Đã đọc nguồn chính thức':'Nguồn không trả lịch trong khoảng yêu cầu'})}catch(error){result.ok=false;result.sources.push({slug:source.slug,label:source.label,calendar:calendar.length,written:0,message:error instanceof Error?error.message:'Không đọc được nguồn'})}}await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actorId},'ambassador.sync','integration','ambassador',${JSON.stringify({startDate,days,fxRate,inserted:result.inserted,updated:result.updated,skipped:result.skipped,sources:result.sources})}::jsonb)`;return result}
