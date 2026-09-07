@@ -1,7 +1,7 @@
 import {timingSafeEqual} from 'node:crypto';
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
-import {requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
@@ -17,7 +17,8 @@ export async function POST(req:NextRequest){
  if(!process.env.PAYMENT_WEBHOOK_SECRET?.trim())return NextResponse.json({error:'Payment webhook chưa được cấu hình.'},{status:503});
  if(!secretOk(req))return NextResponse.json({error:'Unauthorized'},{status:401});
  if(requestBodyTooLarge(req,32768))return NextResponse.json({error:'Payload payment webhook quá lớn.'},{status:413});
- const body=await req.json().catch(()=>({})),event=String(body.event||''),bookingId=String(body.booking_id||body.bookingId||''),provider=String(body.provider||'payment_gateway').trim().slice(0,100),providerRef=String(body.provider_reference||body.providerReference||'').trim().slice(0,200),amount=Math.round(Number(body.amount_vnd??body.amount)||0),paidAt=body.paid_at||body.paidAt?new Date(String(body.paid_at||body.paidAt)):new Date();
+ const parsed=await readBoundedJson(req,32768);if(parsed.tooLarge)return NextResponse.json({error:'Payload payment webhook quá lớn.'},{status:413});
+ const body=parsed.body,event=String(body.event||''),bookingId=String(body.booking_id||body.bookingId||''),provider=String(body.provider||'payment_gateway').trim().slice(0,100),providerRef=String(body.provider_reference||body.providerReference||'').trim().slice(0,200),amount=Math.round(Number(body.amount_vnd??body.amount)||0),paidAt=body.paid_at||body.paidAt?new Date(String(body.paid_at||body.paidAt)):new Date();
  if(event!=='payment_paid'||!uuid.test(bookingId)||amount<=0||providerRef.length<3||Number.isNaN(+paidAt))return NextResponse.json({error:'Payload payment_paid không hợp lệ.'},{status:400});
  const sql=db();
  try{
@@ -31,13 +32,7 @@ export async function POST(req:NextRequest){
    idempotent=!rows[0];
   }
   if(!payment)return NextResponse.json({error:'Không thể ghi nhận giao dịch.'},{status:500});
-
-  // A conflicting insert can lose a race after the initial lookup. Always verify
-  // the resolved persisted payment again before touching accounting. This closes
-  // the window where the same provider_reference could otherwise be reused with
-  // another booking or amount by two concurrent webhook deliveries.
   if(!samePayment(payment,bookingId,amount))return NextResponse.json({error:'provider_reference đã tồn tại với giao dịch khác.'},{status:409});
-
   const paymentId=String(payment.id),resolvedAmount=Number(payment.amount_vnd||0),resolvedPaidAt=new Date(String(payment.paid_at||paidAt.toISOString()));
   if(!resolvedAmount||Number.isNaN(+resolvedPaidAt))return NextResponse.json({error:'Giao dịch đã lưu không hợp lệ.'},{status:500});
   const receiptNo=voucher(paymentId,resolvedPaidAt);
