@@ -36,8 +36,12 @@ export async function POST(req:NextRequest){
  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
  const bookingCode=code(),sql=db(),session=readSession(req,'happygo_customer_auth','customer');
  try{
-  let customerId='';
-  if(session){const accountRows=await sql`select c.id,c.name,c.phone,c.email from customer_accounts ca join customers c on c.id=ca.customer_id where ca.id=${session.id} and ca.status='active' limit 1`;const account=accountRows[0];if(account){customerId=String(account.id);name=String(account.name||name);phone=normalizePhone(String(account.phone||phone));email=String(account.email||email).trim().toLowerCase()}}
+  let customerId='',accountId='';let accountLinked=false;
+  if(session){
+   const accountRows=await sql`select ca.id as account_id,c.id,c.name,c.phone,c.email from customer_accounts ca join customers c on c.id=ca.customer_id where ca.id=${session.id} and ca.status='active' limit 1`;
+   const account=accountRows[0];
+   if(account){accountLinked=true;accountId=String(account.account_id);customerId=String(account.id);name=String(account.name||name);phone=normalizePhone(String(account.phone||phone));email=String(account.email||email).trim().toLowerCase()}
+  }
   if(name.length<2||!/^0\d{9}$/.test(phone))return NextResponse.json({error:'Thông tin khách hàng chưa hợp lệ.'},{status:400});
 
   const ipKey=publicRateKey(req,'booking');
@@ -53,11 +57,28 @@ export async function POST(req:NextRequest){
    if(!customerId)throw new Error('CUSTOMER_RESOLUTION_FAILED');
   }
   const assignment=await resolveSalesAssignment(sql,customerId);
-  const created=await sql`with new_booking as (insert into bookings(code,customer_id,status,source,start_date,end_date,adults,children,rooms,customer_name_snapshot,phone_snapshot,email_snapshot,note,selling_total_vnd,sales_staff_id,sales_staff_name_snapshot,sales_assigned_at) values(${bookingCode},${customerId},'new',${String(body.source||'website')},${body.startDate||null},${body.endDate||null},${Math.max(1,Number(body.adults)||1)},${Math.max(0,Number(body.children)||0)},${Math.max(1,Number(body.rooms)||1)},${name},${phone},${email||null},${note},0,${assignment?.id||null},${assignment?.name||null},${assignment?new Date().toISOString():null}) returning id) insert into booking_items(booking_id,product_name_snapshot,quantity,selling_price_vnd,data_snapshot) select id,${product},1,0,${JSON.stringify({kind:String(body.kind||'Dịch vụ')})}::jsonb from new_booking returning booking_id`;
-  const bookingId=created[0]?.booking_id?String(created[0].booking_id):'';const affiliateReferralId=bookingId?await captureAffiliateReferral(sql,req,bookingId,phone):null;
+  const accountAction=accountLinked?'booking.account.linked':'booking.account.unverified';
+  const accountMeta=JSON.stringify({accountLinked,accountId:accountLinked?accountId:null});
+  const created=await sql`
+   with new_booking as (
+    insert into bookings(code,customer_id,status,source,start_date,end_date,adults,children,rooms,customer_name_snapshot,phone_snapshot,email_snapshot,note,selling_total_vnd,sales_staff_id,sales_staff_name_snapshot,sales_assigned_at)
+    values(${bookingCode},${customerId},'new',${String(body.source||'website')},${body.startDate||null},${body.endDate||null},${Math.max(1,Number(body.adults)||1)},${Math.max(0,Number(body.children)||0)},${Math.max(1,Number(body.rooms)||1)},${name},${phone},${email||null},${note},0,${assignment?.id||null},${assignment?.name||null},${assignment?new Date().toISOString():null})
+    returning id
+   ), new_item as (
+    insert into booking_items(booking_id,product_name_snapshot,quantity,selling_price_vnd,data_snapshot)
+    select id,${product},1,0,${JSON.stringify({kind:String(body.kind||'Dịch vụ')})}::jsonb from new_booking
+    returning booking_id
+   ), account_marker as (
+    insert into audit_logs(action,entity_type,entity_id,after_data)
+    select ${accountAction},'booking_account',id::text,${accountMeta}::jsonb from new_booking
+    returning entity_id
+   )
+   select new_item.booking_id from new_item,account_marker limit 1`;
+  const bookingId=created[0]?.booking_id?String(created[0].booking_id):'';if(!bookingId)throw new Error('BOOKING_CREATE_ATOMIC_FAILED');
+  const affiliateReferralId=await captureAffiliateReferral(sql,req,bookingId,phone);
   await sql`insert into crm_activities(customer_id,staff_id,type,content) values(${customerId},${assignment?.id||null},'website_booking',${`Booking ${bookingCode}: ${product}`})`;
   const admin=process.env.ADMIN_EMAIL||'info@happygo.vn';const detail=`<p><b>Mã booking:</b> ${esc(bookingCode)}</p><p><b>Dịch vụ:</b> ${esc(product)}</p><p><b>Khách:</b> ${esc(name)} · ${esc(phone)}${email?` · ${esc(email)}`:''}</p><p><b>Ngày:</b> ${esc(body.startDate||'')} ${body.endDate?`→ ${esc(body.endDate)}`:''}</p><p><b>Khách:</b> ${esc(body.adults||1)} người lớn · ${esc(body.children||0)} trẻ em · ${esc(body.rooms||1)} phòng/căn</p><p><b>Sale:</b> ${esc(assignment?.name||'Chưa phân')}</p><p><b>Ghi chú:</b> ${esc(note)}</p>`;
   await Promise.allSettled([email?sendEmail(email,`HappyGo Travel đã nhận yêu cầu ${bookingCode}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>HappyGo Travel đã nhận yêu cầu của bạn</h2>${detail}<p>Đội ngũ tư vấn sẽ liên hệ để xác nhận tình trạng và giá. Hotline: <b>0969 973 949</b>.</p></div>`):Promise.resolve(),sendEmail(admin,`[Booking mới] ${bookingCode} · ${name}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Booking mới từ website</h2>${detail}</div>`)]);
-  return NextResponse.json({ok:true,code:bookingCode,assignedSales:assignment?.name||null,accountLinked:Boolean(session),affiliateTracked:Boolean(affiliateReferralId)});
+  return NextResponse.json({ok:true,code:bookingCode,assignedSales:assignment?.name||null,accountLinked,affiliateTracked:Boolean(affiliateReferralId)});
  }catch(e){console.error('booking_create_failed',e);return NextResponse.json({error:'Không thể tạo booking. Vui lòng thử lại hoặc gọi hotline.'},{status:500})}
 }
