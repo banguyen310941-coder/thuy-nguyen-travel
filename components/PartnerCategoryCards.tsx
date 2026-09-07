@@ -10,7 +10,7 @@ type Kind='stay'|'cruise'|'tour';
 const stars=(v?:string)=>{const n=Math.max(0,Math.min(5,Number(v)||0));return n?'★'.repeat(n):''};
 const unitPrice=(p:PartnerPublicProduct)=>{const units=Array.isArray(p.units)?p.units.filter(u=>u.status!=='hidden'&&u.status!=='soldout'):[];const values=units.map(u=>Number(String(u.weekdayPrice||'').replace(/\D/g,''))).filter(Boolean);return values.length?`${new Intl.NumberFormat('vi-VN').format(Math.min(...values))}đ`:''};
 const tagsOf=(p:PartnerPublicProduct)=>Array.isArray(p.amenityTags)&&p.amenityTags.length?p.amenityTags:inferAmenityTags(p.type,p.amenities);
-const detailHref=(p:PartnerPublicProduct)=>`/san-pham/${encodeURIComponent(p.slug)}`;
+const detailHref=(p:PartnerPublicProduct)=>p.type==='Du thuyền'?`/du-thuyen/${encodeURIComponent(p.slug)}`:`/san-pham/${encodeURIComponent(p.slug)}`;
 const clickableCardStyle={position:'relative' as const};
 const cardHitStyle={position:'absolute' as const,inset:0,zIndex:1};
 const cardActionsStyle={position:'relative' as const,zIndex:2};
