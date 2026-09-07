@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {randomUUID} from 'node:crypto';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
@@ -33,7 +34,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'bookings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(!operations(actor))return NextResponse.json({error:'Chỉ Điều hành/Quản trị được cập nhật đơn NCC.'},{status:403});const body=await req.json().catch(()=>({}));const action=String(body.action||'');
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});if(requestBodyTooLarge(req,131_072))return NextResponse.json({error:'Dữ liệu Đơn NCC quá lớn.'},{status:413});const actor=await adminActor(req,'bookings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(!operations(actor))return NextResponse.json({error:'Chỉ Điều hành/Quản trị được cập nhật đơn NCC.'},{status:403});const parsed=await readBoundedJson(req,131_072);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu Đơn NCC quá lớn.'},{status:413});const body=parsed.body as any;const action=String(body.action||'');
  try{const orders=array(await latest(ORDERS_KEY));
   if(action==='save'){
    const bookingId=String(body.bookingId||''),editingId=String(body.id||''),serviceType=String(body.serviceType||'').trim().slice(0,200),serviceDate=String(body.serviceDate||''),supplierId=String(body.supplierId||''),supplierName=String(body.supplierName||'').trim().slice(0,300),supplierContact=String(body.supplierContact||'').trim().slice(0,200),bankName=String(body.bankName||'').trim().slice(0,200),accountNumber=String(body.accountNumber||'').trim().slice(0,100),accountName=String(body.accountName||'').trim().slice(0,200),amount=Math.round(Number(body.amount)||0),dueDate=String(body.dueDate||''),note=String(body.note||'').trim().slice(0,4000),send=Boolean(body.send);if(!validUuid(bookingId)||!serviceType||!serviceDate||!supplierName||amount<=0)return NextResponse.json({error:'Thông tin đơn NCC chưa đầy đủ.'},{status:400});const booking=(await db()`select id,code,status,customer_name_snapshot,start_date from bookings where id=${bookingId} limit 1`)[0];if(!booking)return NextResponse.json({error:'Không tìm thấy booking.'},{status:404});if(!editingId&&String(booking.status)!=='confirmed')return NextResponse.json({error:'Booking phải được xác nhận trước khi tạo đơn NCC.'},{status:409});const bookingOps=object(object(await latest(OPS_KEY))[bookingId]);if((!editingId||send)&&!bookingOps.handoffAccepted)return NextResponse.json({error:'Booking phải được Điều hành nhận bàn giao trước khi tạo hoặc gửi Đơn NCC.'},{status:409});if((!editingId||send)&&!String(bookingOps.operatorId||''))return NextResponse.json({error:'Booking chưa có Điều hành phụ trách.'},{status:409});const now=new Date().toISOString();
