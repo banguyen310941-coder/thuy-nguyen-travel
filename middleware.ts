@@ -7,7 +7,7 @@ const SIGNED_WEBHOOK_HEADERS:Record<string,string>={
  '/api/payments/webhook':'x-payment-webhook-secret',
  '/api/affiliate/booking-completed':'x-affiliate-webhook-secret',
 };
-const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate'];
+const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate','/api/reviews'];
 
 function hostSet(req:NextRequest){
  const values=[req.headers.get('x-forwarded-host'),req.headers.get('host'),req.nextUrl.host].filter(Boolean).flatMap(value=>String(value).split(','));
@@ -45,8 +45,8 @@ function passThrough(req:NextRequest){
  const response=NextResponse.next();
  if(isPrivateApi(req.nextUrl.pathname)){
   // Authenticated/account payloads can contain personal or operational data.
-  // Keep them out of browser, proxy and CDN caches even when a route forgets
-  // to set its own cache policy.
+  // Reviews are included because GET may expose the current account's eligibility,
+  // own review and booking code alongside the public review list.
   response.headers.set('Cache-Control','private, no-store, max-age=0, must-revalidate');
   response.headers.set('Pragma','no-cache');
  }
@@ -69,6 +69,7 @@ export const config={
   '/api/account/:path*',
   '/api/partner/:path*',
   '/api/affiliate/:path*',
+  '/api/reviews/:path*',
   '/api/bookings/:path*',
   '/api/payments/:path*',
  ],
