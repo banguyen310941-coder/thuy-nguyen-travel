@@ -2,7 +2,7 @@ import {randomBytes} from 'node:crypto';
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {hashPassword} from '@/lib/server/portal-auth';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const emailOk=(value:string)=>/^\S+@\S+\.\S+$/.test(value);
 const phoneOk=(value:string)=>/^[0-9+().\s-]{8,20}$/.test(value);
@@ -11,7 +11,8 @@ const codeOf=()=>`CTV${randomBytes(4).toString('hex').toUpperCase()}`;
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
- const body=await req.json().catch(()=>({}));
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
+ const body=parsed.body;
  const name=String(body.name||'').trim().slice(0,120);
  const email=String(body.email||'').trim().toLowerCase().slice(0,180);
  const phone=String(body.phone||'').trim().slice(0,30);
@@ -42,15 +43,12 @@ export async function POST(req:NextRequest){
      select id,${referralCode},${phone},${zalo||null},5,'pending' from new_staff
      returning id,user_id,referral_code,created_at`;
     saved=rows[0]||null;
-   }catch(error:any){
-    if(!String(error?.message||'').includes('affiliates_referral_code_key'))throw error;
-   }
+   }catch(error:any){if(!String(error?.message||'').includes('affiliates_referral_code_key'))throw error}
   }
   if(!saved)throw new Error('AFFILIATE_CODE_ALLOCATION_FAILED');
   return NextResponse.json({ok:true,application:{id:String(saved.id),referralCode:String(saved.referral_code),status:'pending',createdAt:String(saved.created_at)},message:'Đăng ký thành công. HappyGo sẽ duyệt tài khoản trước khi bạn có thể đăng nhập.'},{status:201});
  }catch(error:any){
-  console.error('affiliate_register_failed',error);
-  const text=String(error?.message||'');
+  console.error('affiliate_register_failed',error);const text=String(error?.message||'');
   if(text.includes('staff_email_key'))return NextResponse.json({error:'Email này đã được sử dụng trên hệ thống HappyGo.'},{status:409});
   return NextResponse.json({error:'Không thể tạo hồ sơ CTV lúc này.'},{status:500});
  }
