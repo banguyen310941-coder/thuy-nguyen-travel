@@ -57,6 +57,6 @@ export async function POST(req:NextRequest){
    select name,email from deduped order by updated_at desc limit ${limit}`;
  const siteBase=(process.env.NEXT_PUBLIC_SITE_URL||process.env.PUBLIC_SITE_URL||'https://happygo-travel.vercel.app').replace(/\/$/,'');
  let sent=0,failed=0;
- for(const row of rows){const recipient=String(row.email||'').trim();if(!recipient)continue;try{const unsubscribeUrl=`${siteBase}/huy-dang-ky?email=${encodeURIComponent(recipient)}`;await sendResend(recipient,subject,htmlBody({name:String(row.name||'Quý khách'),title,message,ctaLabel,ctaUrl,unsubscribeUrl}));sent++}catch(error){console.error('email_campaign_recipient_failed',{recipient,status:error instanceof Error?error.message:'unknown'});failed++}}
+ for(const row of rows){const recipient=String(row.email||'').trim();if(!recipient)continue;try{const unsubscribeUrl=`${siteBase}/huy-dang-ky?email=${encodeURIComponent(recipient)}`;await sendResend(recipient,subject,htmlBody({name:String(row.name||'Quý khách'),title,message,ctaLabel,ctaUrl,unsubscribeUrl}));sent++}catch(error){console.error('email_campaign_recipient_failed',error instanceof Error?error.message:'unknown');failed++}}
  return NextResponse.json({ok:true,total:rows.length,sent,failed});
 }
