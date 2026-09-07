@@ -1,7 +1,10 @@
 import {NextRequest,NextResponse} from 'next/server';
 
 const SAFE_METHODS=new Set(['GET','HEAD','OPTIONS']);
-const SIGNED_WEBHOOKS=new Set(['/api/payments/webhook','/api/affiliate/booking-completed']);
+const SIGNED_WEBHOOK_HEADERS:Record<string,string>={
+ '/api/payments/webhook':'x-payment-webhook-secret',
+ '/api/affiliate/booking-completed':'x-affiliate-webhook-secret',
+};
 const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate'];
 
 function hostSet(req:NextRequest){
@@ -15,6 +18,11 @@ function sameOrigin(req:NextRequest){
  const origin=req.headers.get('origin');
  if(!origin)return true;
  try{return hostSet(req).has(new URL(origin).host.toLowerCase())}catch{return false}
+}
+
+function signedWebhookCandidate(req:NextRequest){
+ const header=SIGNED_WEBHOOK_HEADERS[req.nextUrl.pathname];
+ return Boolean(header&&req.headers.get(header));
 }
 
 function normalizePublicUrl(req:NextRequest){
@@ -45,7 +53,10 @@ function passThrough(req:NextRequest){
 
 export function middleware(req:NextRequest){
  const publicRedirect=normalizePublicUrl(req);if(publicRedirect)return publicRedirect;
- if(SIGNED_WEBHOOKS.has(req.nextUrl.pathname)||SAFE_METHODS.has(req.method)||sameOrigin(req))return passThrough(req);
+ // External webhooks may bypass browser origin checks only when the expected
+ // credential header is present. Header validity is still verified in the route.
+ // Admin-session fallback on the affiliate completion route must remain same-origin.
+ if(signedWebhookCandidate(req)||SAFE_METHODS.has(req.method)||sameOrigin(req))return passThrough(req);
  return NextResponse.json({error:'Cross-site request blocked.'},{status:403,headers:{'Cache-Control':'no-store'}});
 }
 
