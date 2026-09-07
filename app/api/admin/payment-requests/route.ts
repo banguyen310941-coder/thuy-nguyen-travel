@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const reviewStatusSet=new Set(['changes_requested','rejected','approved']);
@@ -28,7 +29,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'payments');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});if(requestBodyTooLarge(req,32_768))return NextResponse.json({error:'Dữ liệu đề xuất chi quá lớn.'},{status:413});const actor=await adminActor(req,'payments');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const parsed=await readBoundedJson(req,32_768);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đề xuất chi quá lớn.'},{status:413});const body=parsed.body as any;const action=String(body.action||'');const sql=db();
  try{
   if(action==='create'){
    if(actor.role==='accounting')return NextResponse.json({error:'Kế toán không tạo đề xuất chi.'},{status:403});const bookingId=String(body.bookingId||''),amount=Math.round(Number(body.amount)||0),supplierId=String(body.supplierId||''),supplierName=String(body.supplierName||'').trim(),bankName=String(body.bankName||'').trim(),accountNumber=String(body.accountNumber||'').trim(),accountName=String(body.accountName||'').trim(),purpose=String(body.purpose||'').trim(),dueDate=String(body.dueDate||''),note=String(body.note||'').trim().slice(0,4000);if(!uuid.test(bookingId)||amount<=0||!supplierName||!accountNumber||!accountName||!purpose)return NextResponse.json({error:'Thông tin đề xuất chi chưa đầy đủ.'},{status:400});
