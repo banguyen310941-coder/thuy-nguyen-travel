@@ -1,13 +1,21 @@
+import {timingSafeEqual} from 'node:crypto';
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {hashPassword,setSessionCookie} from '@/lib/server/portal-auth';
+import {requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_admin_auth';
-function authorized(req:NextRequest){const expected=process.env.ADMIN_API_KEY?.trim()||'';return Boolean(expected)&&(req.headers.get('x-admin-key')||'')===expected}
+function authorized(req:NextRequest){
+  const expected=process.env.ADMIN_API_KEY?.trim()||'',actual=req.headers.get('x-admin-key')||'';
+  if(!expected||!actual)return false;
+  const a=Buffer.from(actual),b=Buffer.from(expected);
+  return a.length===b.length&&timingSafeEqual(a,b);
+}
 
 export async function POST(req:NextRequest){
   if(!authorized(req))return NextResponse.json({error:'Khóa nội bộ không đúng.'},{status:401});
   if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu kích hoạt quá lớn.'},{status:413});
   const body=await req.json().catch(()=>({}));const name=String(body.name||'Chủ tài khoản HappyGo').trim(),email=String(body.email||process.env.ADMIN_EMAIL||'').trim().toLowerCase(),password=String(body.password||'');
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email))return NextResponse.json({error:'Tên hoặc email quản trị chưa hợp lệ.'},{status:400});
   if(password.length<10)return NextResponse.json({error:'Mật khẩu quản trị cần tối thiểu 10 ký tự.'},{status:400});
