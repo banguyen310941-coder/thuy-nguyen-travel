@@ -18,9 +18,12 @@ type Unit={
   highWeekendPrice?:string;
   highSeasonRanges?:string;
   lowSeasonRanges?:string;
+  pricingBasis?:'room_night'|'unit_night'|'cabin_night'|'guest'|'package';
+  guestType?:'adult'|'child'|'all';
   status?:string;
 };
 type CalendarKind='stay'|'cruise'|'ticket';
+type PricingDatesDetail={checkin?:string;checkout?:string};
 const compact=(n:number)=>n>=1000000?`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:1}).format(n/1000000)}tr`:`${Math.round(n/1000)}k`;
 const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric'}).format(date);
 const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);return pricingDateKey(next)};
@@ -37,6 +40,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
 
   useEffect(()=>{if(!availableUnits.some(u=>u.id===unitId))setUnitId(availableUnits[0]?.id||'')},[availableUnits,unitId]);
   useEffect(()=>{setAllRates(initialRates);if(initialRates.length)setRatesLoaded(true)},[initialRates]);
+  useEffect(()=>{const syncUnit=(event:Event)=>{const detail=(event as CustomEvent<{id?:string;unitId?:string}>).detail||{};const nextId=detail.unitId||detail.id;if(nextId&&availableUnits.some(u=>u.id===nextId))setUnitId(nextId)};window.addEventListener('tn:select-unit',syncUnit as EventListener);return()=>window.removeEventListener('tn:select-unit',syncUnit as EventListener)},[availableUnits]);
 
   const loadProductionRates=useCallback(async()=>{
     try{
@@ -66,7 +70,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
     };
   },[loadProductionRates]);
 
-  useEffect(()=>{const read=()=>setSelected(new URLSearchParams(window.location.search).get('checkin')||'');read();window.addEventListener('popstate',read);window.addEventListener('tn-pricing-dates-updated',read);return()=>{window.removeEventListener('popstate',read);window.removeEventListener('tn-pricing-dates-updated',read)}},[]);
+  useEffect(()=>{const read=(event?:Event)=>{const detail=(event as CustomEvent<PricingDatesDetail>|undefined)?.detail;if(detail&&typeof detail==='object'&&'checkin'in detail){setSelected(String(detail.checkin||''));return}setSelected(new URLSearchParams(window.location.search).get('checkin')||'')};const handle=(event:Event)=>read(event);read();window.addEventListener('popstate',handle);window.addEventListener('tn-pricing-dates-updated',handle);return()=>{window.removeEventListener('popstate',handle);window.removeEventListener('tn-pricing-dates-updated',handle)}},[]);
 
   const unit=availableUnits.find(u=>u.id===unitId)||availableUnits[0];
   const rates=useMemo(()=>allRates.filter(r=>r.unitId===unitId),[allRates,unitId]);
@@ -76,7 +80,9 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
   while(cells.length%7)cells.push(null);
   const today=pricingDateKey(new Date());
   const rateFor=(key:string)=>{const matches=rates.filter(r=>r.start&&r.end&&key>=r.start&&key<=r.end);return matches.length?matches[matches.length-1]:null};
-  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',nextDateKey(date));router.replace(`${pathname}?${next.toString()}`,{scroll:false});setSelected(key);window.dispatchEvent(new Event('tn-pricing-dates-updated'));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
+  const selectBookingUnit=(selectedUnit:Unit)=>window.dispatchEvent(new CustomEvent('tn:select-unit',{detail:{id:selectedUnit.id,unitId:selectedUnit.id,code:selectedUnit.code,name:selectedUnit.name,pricingBasis:selectedUnit.pricingBasis,guestType:selectedUnit.guestType}}));
+  const changeUnit=(nextId:string)=>{setUnitId(nextId);const nextUnit=availableUnits.find(item=>item.id===nextId);if(nextUnit)selectBookingUnit(nextUnit)};
+  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const checkout=nextDateKey(date),next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',checkout);router.replace(`${pathname}?${next.toString()}`,{scroll:false});setSelected(key);if(unit)selectBookingUnit(unit);window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:key,checkout}}));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
 
   if(!unit)return null;
   const unitHeading=kind==='cruise'?'Cabin đang xem':kind==='ticket'?'Vé / gói đang xem':'Hạng đang xem';
@@ -85,7 +91,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
   const bookingNoun=kind==='stay'?'đặt phòng':'đặt dịch vụ';
 
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
-    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng {dateNoun}.</b> Giá production theo ngày được ưu tiên; ngày chưa có rate riêng sẽ dùng đúng bảng giá cấu hình của {itemNoun}.</p></div><label><span>{unitHeading}</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
+    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng {dateNoun}.</b> Giá production theo ngày được ưu tiên; ngày chưa có rate riêng sẽ dùng đúng bảng giá cấu hình của {itemNoun}.</p></div><label><span>{unitHeading}</span><select value={unit.id} onChange={e=>changeUnit(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
     <div className="prc-month"><button type="button" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>‹</button><b>{monthName(month)}</b><button type="button" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>›</button></div>
     <div className="prc-weekdays">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><span key={x}>{x}</span>)}</div>
     <div className="prc-grid">{cells.map((date,index)=>{
