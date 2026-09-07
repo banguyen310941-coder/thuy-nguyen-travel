@@ -18,19 +18,37 @@ must('lib/server/portal-auth.ts','if(!token||token.length>MAX_SESSION_TOKEN_LENG
 must('lib/server/portal-auth.ts','if(parts.length!==2)return null','Session phải đúng cấu trúc body.signature');
 must('lib/server/portal-auth.ts','body.length>MAX_SESSION_BODY_LENGTH||sig.length!==SESSION_SIGNATURE_LENGTH','Body/signature sai kích thước phải bị loại');
 must('lib/server/portal-auth.ts','if(!BASE64URL.test(body)||!BASE64URL.test(sig))return null','Session phải chỉ chứa base64url hợp lệ');
+must('lib/server/portal-auth.ts','ver?:string','Session payload phải hỗ trợ security version đã ký');
+must('lib/server/portal-auth.ts','payload.ver=version','Security version phải nằm trong phần payload được HMAC');
+must('lib/server/portal-auth.ts',"setSessionCookie(response:NextResponse,cookieName:string,kind:PortalKind,id:string,version='')",'Cookie helper phải nhận security version tùy chọn');
 const portalAuth=read('lib/server/portal-auth.ts');
 const envelopeIndex=portalAuth.indexOf('if(!token||token.length>MAX_SESSION_TOKEN_LENGTH)return null');
 const hmacIndex=portalAuth.indexOf("const expected=createHmac('sha256',secret()).update(body).digest('base64url')",portalAuth.indexOf('export function readSession'));
 if(envelopeIndex<0||hmacIndex<0||envelopeIndex>hmacIndex)failures.push('Session envelope phải được kiểm kích thước trước khi chạy HMAC');
+
+must('lib/server/admin-access.ts','floor(extract(epoch from updated_at)*1000)::bigint as session_version','Admin actor phải đọc version từ staff.updated_at');
+must('lib/server/admin-access.ts','if(session.ver!==currentVersion)return null','Session Admin mới phải bị thu hồi ngay khi staff version thay đổi');
+must('lib/server/admin-access.ts','updatedAtSeconds>session.iat','Session cũ chưa có version vẫn phải bị thu hồi nếu hồ sơ đổi sau lúc phát token');
 
 must('app/api/admin/auth/login/route.ts','requestBodyTooLarge(req,8192)','Admin login phải chặn body quá lớn');
 must('app/api/admin/auth/login/route.ts',"origin&&origin!==req.nextUrl.origin",'Admin login phải chặn browser cross-origin');
 must('app/api/admin/auth/login/route.ts',"publicRateKey(req,'admin-login')",'Admin login phải có limiter burst theo nguồn');
 must('app/api/admin/auth/login/route.ts','maxHits:30,windowMinutes:15','Admin login phải có ngưỡng burst');
 must('app/api/admin/auth/login/route.ts',"headers:{'Retry-After':'900'}",'Admin login 429 phải hướng dẫn thời gian retry');
+must('app/api/admin/auth/login/route.ts','as session_version from staff','Admin login phải lấy security version cùng bản ghi xác thực');
+must('app/api/admin/auth/login/route.ts',"setSessionCookie(response,COOKIE,'admin',String(row.id),String(row.session_version))",'Admin login phải ký security version vào cookie');
 
 must('app/api/admin/auth/bootstrap/route.ts','timingSafeEqual(a,b)','Bootstrap phải so sánh khóa nội bộ constant-time');
 must('app/api/admin/auth/bootstrap/route.ts','requestBodyTooLarge(req,8192)','Bootstrap phải chặn body quá lớn');
+must('app/api/admin/auth/bootstrap/route.ts','as session_version','Bootstrap phải lấy security version của owner vừa tạo');
+must('app/api/admin/auth/bootstrap/route.ts',"setSessionCookie(response,COOKIE,'admin',String(staff.id),String(staff.session_version))",'Bootstrap phải tạo versioned Admin session');
+
+must('app/api/admin/auth/me/route.ts',"import {adminActor} from '@/lib/server/admin-access'",'Admin /me phải đi qua revocation guard dùng chung');
+mustNot('app/api/admin/auth/me/route.ts',"readSession(req,'happygo_admin_auth','admin')",'Admin /me không được bypass revocation guard');
+must('app/api/admin/staff/route.ts',"import {adminActor} from '@/lib/server/admin-access'",'Quản lý nhân viên phải đi qua revocation guard');
+must('app/api/admin/staff/route.ts','updated_at=now()','Thay đổi staff phải bump security version');
+must('app/api/admin/staff/route.ts','readBoundedJson(req,16384)','Staff write phải dùng bounded JSON parser');
+mustNot('app/api/admin/staff/route.ts','await req.json()','Staff write không được buffer JSON không giới hạn');
 
 must('app/api/account/route.ts','Hồ sơ khách hàng với SĐT hoặc email này đã tồn tại','Đăng ký khách mới không được tự claim hồ sơ CRM cũ');
 mustNot('app/api/account/route.ts','update customers set name=${name},phone=${phone},email=${email}','Đăng ký public không được sửa thông tin hồ sơ khách cũ');
