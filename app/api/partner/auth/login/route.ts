@@ -19,13 +19,13 @@ export async function POST(req:NextRequest){
     const burstAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'partner-login'),action:'partner.login.submit',scope:'partner-login-ip',maxHits:30,windowMinutes:15});
     if(!burstAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng nhập từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
     if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429,headers:{'Retry-After':'900'}});
-    const rows=await sql`select p.id,p.name,p.email,p.phone,p.status,p.created_at,a.password_hash,a.contact_name,a.website,a.tax_code,a.address from partners p join partner_accounts a on a.partner_id=p.id where lower(p.email)=lower(${email}) limit 1`;
+    const rows=await sql`select p.id,p.name,p.email,p.phone,p.status,p.created_at,floor(extract(epoch from p.updated_at)*1000)::bigint as session_version,a.password_hash,a.contact_name,a.website,a.tax_code,a.address from partners p join partner_accounts a on a.partner_id=p.id where lower(p.email)=lower(${email}) limit 1`;
     const row=rows[0];
     if(!row||!verifyPassword(password,String(row.password_hash||''))){await recordLoginAttempt(sql,attemptKey,'partner',false);return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401})}
     await recordLoginAttempt(sql,attemptKey,'partner',true);
-    if(row.status==='blocked')return NextResponse.json({error:'Tài khoản đã bị khóa. Vui lòng liên hệ HappyGo để được hỗ trợ.'},{status:403});
+    if(!['pending','active'].includes(String(row.status)))return NextResponse.json({error:'Tài khoản đối tác không còn quyền truy cập. Vui lòng liên hệ HappyGo để được hỗ trợ.'},{status:403});
     await sql`update partner_accounts set last_login_at=now(),updated_at=now() where partner_id=${row.id}`;
     const response=NextResponse.json({ok:true,partner:{id:String(row.id),name:row.name,email:row.email,phone:row.phone,status:row.status,contact:row.contact_name||'',website:row.website||'',taxCode:row.tax_code||'',address:row.address||'',createdAt:row.created_at}});
-    setSessionCookie(response,COOKIE,'partner',String(row.id));return response;
+    setSessionCookie(response,COOKIE,'partner',String(row.id),String(row.session_version));return response;
   }catch(error){console.error('partner_login_failed',error);return NextResponse.json({error:'Không thể đăng nhập lúc này.'},{status:500})}
 }
