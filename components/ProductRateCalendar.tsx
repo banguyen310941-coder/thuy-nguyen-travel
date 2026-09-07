@@ -1,7 +1,6 @@
 'use client';
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {usePathname,useRouter} from 'next/navigation';
 import {configuredSeasonForDate,pricingDateKey,seasonalUnitPrice} from '@/lib/pricing-calendar';
 import {ratePriceForDate,type PublicRateRange} from '@/lib/public-rate-utils';
 
@@ -29,8 +28,6 @@ const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:
 const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);return pricingDateKey(next)};
 
 export function ProductRateCalendar({units,label='Lịch giá theo ngày',initialRates=[],kind='stay'}:{units:Unit[];label?:string;initialRates?:PublicRateRange[];kind?:CalendarKind}){
-  const router=useRouter();
-  const pathname=usePathname();
   const availableUnits=useMemo(()=>units.filter(u=>u.status!=='hidden'),[units]);
   const [unitId,setUnitId]=useState(availableUnits[0]?.id||'');
   const [month,setMonth]=useState(()=>{const now=new Date();return new Date(now.getFullYear(),now.getMonth(),1)});
@@ -82,7 +79,7 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
   const rateFor=(key:string)=>{const matches=rates.filter(r=>r.start&&r.end&&key>=r.start&&key<=r.end);return matches.length?matches[matches.length-1]:null};
   const selectBookingUnit=(selectedUnit:Unit)=>window.dispatchEvent(new CustomEvent('tn:select-unit',{detail:{id:selectedUnit.id,unitId:selectedUnit.id,code:selectedUnit.code,name:selectedUnit.name,pricingBasis:selectedUnit.pricingBasis,guestType:selectedUnit.guestType}}));
   const changeUnit=(nextId:string)=>{setUnitId(nextId);const nextUnit=availableUnits.find(item=>item.id===nextId);if(nextUnit)selectBookingUnit(nextUnit)};
-  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const checkout=nextDateKey(date),next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',checkout);router.replace(`${pathname}?${next.toString()}`,{scroll:false});setSelected(key);if(unit)selectBookingUnit(unit);window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:key,checkout}}));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
+  const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const checkout=nextDateKey(date),next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',checkout);window.history.replaceState(window.history.state,'',`${window.location.pathname}?${next.toString()}${window.location.hash}`);setSelected(key);if(unit)selectBookingUnit(unit);window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:key,checkout}}));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
 
   if(!unit)return null;
   const unitHeading=kind==='cruise'?'Cabin đang xem':kind==='ticket'?'Vé / gói đang xem':'Hạng đang xem';
