@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {randomUUID} from 'node:crypto';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
@@ -27,7 +28,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'bookings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({})),action=String(body.action||''),bookingId=String(body.bookingId||'');if(!uuid(bookingId))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});const b=await booking(actor,bookingId);if(!b)return NextResponse.json({error:'Không tìm thấy booking hoặc không có quyền.'},{status:404});
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'bookings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(requestBodyTooLarge(req,131_072))return NextResponse.json({error:'Dữ liệu Điều hành quá lớn.'},{status:413});const parsed=await readBoundedJson(req,131_072);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu Điều hành quá lớn.'},{status:413});const body=parsed.body,action=String(body.action||''),bookingId=String(body.bookingId||'');if(!uuid(bookingId))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});const b=await booking(actor,bookingId);if(!b)return NextResponse.json({error:'Không tìm thấy booking hoặc không có quyền.'},{status:404});
  try{const ops=object(await latest(OPS_KEY)),current=object(ops[bookingId]),logs=array(await latest(LOG_KEY)),now=new Date().toISOString();
   if(action==='assign'){
    if(!operations(actor))return NextResponse.json({error:'Không có quyền phân Điều hành.'},{status:403});const operatorId=String(body.operatorId||''),fromId=String(current.operatorId||''),fromName=String(current.operatorName||'');let toId='',toName='';if(operatorId){if(!uuid(operatorId))return NextResponse.json({error:'Nhân viên không hợp lệ.'},{status:400});const person=(await db()`select id,name from staff where id=${operatorId} and status='active' and (role in ('operations','admin') or department in ('operations','resa')) limit 1`)[0];if(!person)return NextResponse.json({error:'Không tìm thấy Điều hành đang hoạt động.'},{status:400});toId=String(person.id);toName=String(person.name)}const next={...ops,[bookingId]:{...current,operatorId:toId,operatorName:toName,operatorAssignedAt:toId?now:'',operatorAssignedBy:actor.name,updatedAt:now,updatedBy:actor.name}};await save(actor,OPS_KEY,next,'booking_ops.assign');const kind=!toId?'unassign':fromId?'reassign':'assign';await save(actor,LOG_KEY,[log(actor,bookingId,String(b.code),kind,fromId,fromName,toId,toName),...logs].slice(0,5000),'booking_ops.operator_log');return NextResponse.json({ok:true})
