@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {randomUUID} from 'node:crypto';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
@@ -27,7 +28,7 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'customers');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({})),action=String(body.action||'');
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req,'customers');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(requestBodyTooLarge(req,65_536))return NextResponse.json({error:'Dữ liệu phản hồi quá lớn.'},{status:413});const parsed=await readBoundedJson(req,65_536);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu phản hồi quá lớn.'},{status:413});const body=parsed.body,action=String(body.action||'');
  try{const items=array(await latest()),now=new Date().toISOString();
   if(action==='add'){
    const bookingId=String(body.bookingId||'');if(!uuid(bookingId))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});const booking=await bookingFor(actor,bookingId);if(!booking)return NextResponse.json({error:'Không tìm thấy booking hoặc không có quyền.'},{status:404});if(!ended(booking)||String(booking.status)==='cancelled')return NextResponse.json({error:'Chỉ ghi phản hồi cho booking đã kết thúc.'},{status:409});const rating=Math.max(1,Math.min(5,Math.round(Number(body.rating)||0))),kind=String(body.type||'normal');if(!['praise','normal','complaint'].includes(kind))return NextResponse.json({error:'Loại phản hồi không hợp lệ.'},{status:400});const content=text(body.content,6000),resolution=text(body.resolution,4000);if(!content)return NextResponse.json({error:'Cần nhập nội dung phản hồi.'},{status:400});let assignedToId='',assignedToName='',dueAt='';if(kind==='complaint'){assignedToId=String(body.assignedToId||'');if(!uuid(assignedToId))return NextResponse.json({error:'Khiếu nại cần người phụ trách.'},{status:400});const assignee=(await db()`select id,name from staff where id=${assignedToId} and status='active' limit 1`)[0];if(!assignee)return NextResponse.json({error:'Người phụ trách không còn hoạt động.'},{status:400});assignedToName=String(assignee.name);const due=new Date(String(body.dueAt||''));if(Number.isNaN(+due))return NextResponse.json({error:'Khiếu nại cần hạn xử lý hợp lệ.'},{status:400});dueAt=due.toISOString()}
