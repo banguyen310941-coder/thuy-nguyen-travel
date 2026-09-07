@@ -10,9 +10,11 @@ import {ProductRateCalendar} from '@/components/ProductRateCalendar';
 import {PublicServiceNav} from '@/components/PublicServiceNav';
 import {amenityOptions,inferAmenityTags} from '@/components/ProductAmenityModel';
 import {allSeasonalPriceCandidates} from '@/lib/pricing-calendar';
+import type {PublicRateRange} from '@/lib/public-rate-utils';
 
 type PricingBasis='room_night'|'unit_night'|'cabin_night'|'guest'|'package';
 type P={
+  id?:string;
   slug:string;
   type?:string;
   name:string;
@@ -41,7 +43,7 @@ type P={
 const lines=(v?:string)=>String(v||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
 const fmt=(n:number)=>new Intl.NumberFormat('vi-VN').format(n)+'đ';
 
-export function UnifiedCruisePublicDetail({product:p}:{product:P}){
+export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P;initialRates?:PublicRateRange[]}){
   const visibleUnits=(p.units||[]).filter((u:any)=>u?.status!=='hidden');
   const ticketMode=p.pricingBasis==='guest'||p.pricingBasis==='package'||(
     visibleUnits.length>0&&visibleUnits.every((u:any)=>u?.pricingBasis==='guest'||u?.pricingBasis==='package')
@@ -95,13 +97,13 @@ export function UnifiedCruisePublicDetail({product:p}:{product:P}){
 
     <section className="container pd-body"><main>
       <section id="overview" className="pd-block"><h2>Tổng quan</h2><p>{p.summary||'Thông tin đang được cập nhật.'}</p>{p.route?<div className="pd-highlight-grid"><div>🧭 <b>{p.route}</b></div>{p.duration?<div>🗓 <b>{p.duration}</b></div>:null}</div>:null}</section>
-      <ProductRateCalendar units={p.units||[]} label={calendarLabel} kind={ticketMode?'ticket':'cruise'}/>
+      <ProductRateCalendar units={p.units||[]} label={calendarLabel} initialRates={initialRates} kind={ticketMode?'ticket':'cruise'}/>
       <Suspense fallback={<section className="detail-block"><h2>{ticketMode?'Đang tải vé / gói...':'Đang tải cabin...'}</h2></section>}>
-        <PublishedUnits slug={p.slug} providedUnits={p.units||[]} label={unitLabel}/>
+        <PublishedUnits slug={p.slug} providedUnits={p.units||[]} label={unitLabel} initialRates={initialRates}/>
       </Suspense>
       <section id="amenities" className="pd-block"><h2>Tiện ích & dịch vụ</h2>{structured.length?<div className="pd-amenity-icon-grid">{structured.map(item=><div className="pd-amenity-icon-card" key={item.id}><span>{item.icon}</span><div><b>{item.label}</b>{details[item.id]?<small>{details[item.id]}</small>:null}</div></div>)}</div>:legacy.length?<div className="pd-highlight-grid">{legacy.map(item=><div key={item}>✦ <b>{item}</b></div>)}</div>:<p>Tiện ích được cập nhật theo từng hành trình.</p>}</section>
       <section id="policy" className="pd-block"><h2>Chính sách</h2><div className="pd-policy-grid">{!ticketMode&&(p.checkin||p.checkout)?<div><b>Nhận / trả cabin</b><p>{p.checkin||'14:00'} / {p.checkout||'12:00'}</p></div>:null}<div><b>Điều kiện hành trình</b><p className="cms-preline">{p.policies||(ticketMode?'Áp dụng theo hành trình, ngày khởi hành và gói dịch vụ.':'Áp dụng theo hành trình, cabin và gói giá.')}</p></div></div></section>
       <CustomerReviews slug={p.slug} productName={p.name}/>
-    </main><aside id="booking"><BookingInquiry product={p.name} kind="du thuyền" mode={ticketMode?'ticket':'cabin'}/></aside></section>
+    </main><aside id="booking"><BookingInquiry product={p.name} productId={p.id} productSlug={p.slug} kind="du thuyền" mode={ticketMode?'ticket':'cabin'}/></aside></section>
   </div>;
 }
