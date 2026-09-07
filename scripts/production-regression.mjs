@@ -113,18 +113,27 @@ contains('components/CmsTourDetail.tsx','fetch(\'/api/catalog/site-state\'','Tou
 contains('lib/public-tour-seo.ts','tn_cms_tours_v3','SEO Tour CMS phải đọc nguồn production');
 contains('app/sitemap.ts','listPublishedTourSeo','Sitemap phải chứa Tour CMS public');
 
-for(const path of ['components/GlobalSearchResults.tsx','components/GuideCmsList.tsx','components/GuideCategoryCmsList.tsx','components/HomeCmsSections.tsx']){
+for(const path of ['components/GlobalSearchResults.tsx','components/HomeCmsSections.tsx']){
  excludes(path,'/guide/read','Luồng public không được phát sinh route nội bộ /guide/read');
  excludes(path,'/cam-nang/doc?slug=','Luồng public mới không được dùng query bài Cẩm nang');
 }
 excludes('components/GlobalSearchResults.tsx','/tour-product?slug=','Tìm kiếm không được phát sinh route Tour kỹ thuật');
 excludes('components/GlobalSearchResults.tsx','/san-pham?slug=','Tìm kiếm không được phát sinh query sản phẩm cũ');
-contains('components/GlobalSearchResults.tsx','/cam-nang/bai-viet/${encodeURIComponent(item.slug)}','Tìm kiếm phải dùng URL bài CMS sạch');
-contains('components/GuideCmsList.tsx','/cam-nang/bai-viet/${encodeURIComponent(a.slug)}','Cẩm nang CMS phải dùng URL slug sạch');
+contains('components/GlobalSearchResults.tsx','/cam-nang/${encodeURIComponent(item.slug)}','Tìm kiếm phải dùng URL Cẩm nang canonical');
+excludes('components/GlobalSearchResults.tsx','/cam-nang/bai-viet/','Tìm kiếm không được dùng URL CMS cũ');
+contains('components/GlobalSearchResults.tsx','x.cover','Tìm kiếm chỉ được đưa bài CMS có ảnh đại diện ra public');
 contains('components/usePublicGuideArticles.ts','tn_cms_articles_v3','Cẩm nang CMS phải đọc nguồn production v3');
-contains('app/cam-nang/bai-viet/[slug]/page.tsx','getPublishedGuideSeo','Bài CMS phải có metadata/canonical phía server');
-contains('lib/public-guide-seo.ts','tn_cms_articles_v3','SEO bài CMS phải dùng nguồn production');
+contains('app/guide/page.tsx','UnifiedGuideGrid','Cẩm nang phải hòa bài CMS vào grid chung');
+excludes('app/guide/page.tsx','GuideCmsList','Cẩm nang không được tách khu bài quản trị');
+contains('app/guide/category/[slug]/page.tsx','UnifiedGuideGrid','Chuyên mục Cẩm nang phải hòa bài CMS vào grid chung');
+contains('app/guide/[slug]/page.tsx','getPublishedGuideSeo','URL /cam-nang/{slug} phải đọc được bài CMS phía server');
+contains('app/cam-nang/bai-viet/[slug]/page.tsx','permanentRedirect','URL CMS cũ phải redirect vĩnh viễn');
+contains('app/cam-nang/bai-viet/[slug]/page.tsx','/cam-nang/${encodeURIComponent(slug)}','URL CMS cũ phải về canonical Cẩm nang');
+contains('lib/public-guide-seo.ts','GUIDE_ARTICLE_STATE_KEY','SEO bài CMS phải dùng nguồn bài chuẩn');
 contains('app/sitemap.ts','listPublishedGuideSeo','Sitemap phải chứa bài CMS public');
+excludes('app/sitemap.ts','/cam-nang/bai-viet/','Sitemap không được xuất URL CMS cũ');
+contains('app/api/admin/cms-content/route.ts','guidePublishIssues','API Admin phải chặn bài SEO chưa đạt chuẩn');
+contains('components/AdminContentEditor.tsx','GUIDE_SEO_TEMPLATE','Editor bài mới phải dùng khung SEO chuẩn');
 excludes('app/guide/read/page.tsx','Thúy Nguyên Travel','Trang đọc bài tương thích không được còn thương hiệu cũ');
 
 if(failures.length){
