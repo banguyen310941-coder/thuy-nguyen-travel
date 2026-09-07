@@ -10,12 +10,12 @@ const mustNot=(source,needle,label)=>{if(source.includes(needle))failures.push(`
 must(route,'const signed=secretOk(req)','Webhook hoa hồng phải xác thực secret đúng một lần trước khi đọc body');
 must(route,"const actor=signed?null:await adminActor(req,'bookings')",'Webhook phải giữ Admin fallback có phân quyền bookings');
 must(route,'if(!signed&&!actor)return NextResponse.json','Request không có secret hợp lệ hoặc Admin session phải bị từ chối');
-must(route,'requestBodyTooLarge(req,32768)','Webhook phải giới hạn payload sau khi xác thực');
-must(route,'const body=await req.json().catch(()=>({}))','Webhook vẫn phải parse JSON an toàn sau auth');
+must(route,'requestBodyTooLarge(req,32768)','Webhook phải giới hạn payload sớm sau khi xác thực');
+must(route,'readBoundedJson(req,32768)','Webhook phải đo kích thước JSON thực tế, không chỉ tin Content-Length');
 const authIndex=route.indexOf('const signed=secretOk(req)');
 const sizeIndex=route.indexOf('requestBodyTooLarge(req,32768)');
-const bodyIndex=route.indexOf('const body=await req.json().catch(()=>({}))');
-if(authIndex<0||sizeIndex<0||bodyIndex<0||!(authIndex<sizeIndex&&sizeIndex<bodyIndex))failures.push('Thứ tự bắt buộc phải là authenticate → body-size guard → parse JSON');
+const bodyIndex=route.indexOf('readBoundedJson(req,32768)');
+if(authIndex<0||sizeIndex<0||bodyIndex<0||!(authIndex<sizeIndex&&sizeIndex<bodyIndex))failures.push('Thứ tự bắt buộc phải là authenticate → header body-size guard → bounded JSON parser');
 
 must(middleware,"'/api/affiliate/booking-completed':'x-affiliate-webhook-secret'",'Middleware phải biết credential header của affiliate webhook');
 must(middleware,"'/api/payments/webhook':'x-payment-webhook-secret'",'Payment webhook vẫn phải được nhận diện bằng credential header');
