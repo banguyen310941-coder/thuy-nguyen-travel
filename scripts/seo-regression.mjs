@@ -32,7 +32,8 @@ if(siteUrl.includes('process.env.VERCEL_URL'))fail('Canonical không được t�
 must(homePage,'rel="preload" as="image"','Trang chủ phải preload đúng ảnh hero quan trọng nhất');
 must(homePage,'fetchPriority="high"','Hero preload phải có ưu tiên tải cao');
 must(safeImage,'decoding="async"','Ảnh dùng chung phải decode bất đồng bộ');
-must(safeImage,'aria-hidden="true" loading="lazy" fetchPriority="low"','Probe ảnh nền ẩn không được tải eager/preload hàng loạt');
+must(safeImage,'new window.Image()','Ảnh nền phải probe lỗi bằng Image API thay vì render ảnh ẩn');
+if(safeImage.includes('aria-hidden="true"')||safeImage.includes("style={{display:'none'}}"))fail('SafeBackground không được render ảnh probe ẩn');
 
 const metadataPages={
  'app/stay/page.tsx':'/luu-tru',
