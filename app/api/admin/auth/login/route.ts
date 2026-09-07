@@ -18,10 +18,10 @@ export async function POST(req:NextRequest){
     const burstAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'admin-login'),action:'admin.login.submit',scope:'admin-login-ip',maxHits:30,windowMinutes:15});
     if(!burstAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng nhập từ thiết bị hoặc mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
     if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429,headers:{'Retry-After':'900'}});
-    const rows=await sql`select id,name,email,phone,password_hash,role,department,status,permissions,created_at from staff where lower(email)=lower(${email}) limit 1`;const row=rows[0];
+    const rows=await sql`select id,name,email,phone,password_hash,role,department,status,permissions,created_at,floor(extract(epoch from updated_at)*1000)::bigint as session_version from staff where lower(email)=lower(${email}) limit 1`;const row=rows[0];
     if(!row||row.status!=='active'||!verifyPassword(password,String(row.password_hash||''))){await recordLoginAttempt(sql,attemptKey,'admin',false);return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401})}
     await recordLoginAttempt(sql,attemptKey,'admin',true);
     if(row.role==='affiliate')return NextResponse.json({error:'Tài khoản CTV đăng nhập tại /affiliate.'},{status:403});
-    const response=NextResponse.json({ok:true,staff:shape(row)});setSessionCookie(response,COOKIE,'admin',String(row.id));return response;
+    const response=NextResponse.json({ok:true,staff:shape(row)});setSessionCookie(response,COOKIE,'admin',String(row.id),String(row.session_version));return response;
   }catch(error){console.error('admin_login_failed',error);return NextResponse.json({error:'Không thể đăng nhập quản trị lúc này.'},{status:500})}
 }
