@@ -2,18 +2,22 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {setSessionCookie,verifyPassword} from '@/lib/server/portal-auth';
 import {authAttemptKey,loginTemporarilyBlocked,recordLoginAttempt} from '@/lib/server/auth-attempts';
+import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const COOKIE='happygo_partner_auth';
 
 export async function POST(req:NextRequest){
   if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng nhập quá lớn.'},{status:413});
   const body=await req.json().catch(()=>({}));
   const email=String(body.email||'').trim().toLowerCase();
   const password=String(body.password||'');
   if(!email||!password)return NextResponse.json({error:'Vui lòng nhập email và mật khẩu.'},{status:400});
   const sql=db(),attemptKey=authAttemptKey(req,'partner',email);
   try{
-    if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429});
+    const burstAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'partner-login'),action:'partner.login.submit',scope:'partner-login-ip',maxHits:30,windowMinutes:15});
+    if(!burstAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng nhập từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'900'}});
+    if(await loginTemporarilyBlocked(sql,attemptKey))return NextResponse.json({error:'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau khoảng 15 phút.'},{status:429,headers:{'Retry-After':'900'}});
     const rows=await sql`select p.id,p.name,p.email,p.phone,p.status,p.created_at,a.password_hash,a.contact_name,a.website,a.tax_code,a.address from partners p join partner_accounts a on a.partner_id=p.id where lower(p.email)=lower(${email}) limit 1`;
     const row=rows[0];
     if(!row||!verifyPassword(password,String(row.password_hash||''))){await recordLoginAttempt(sql,attemptKey,'partner',false);return NextResponse.json({error:'Email hoặc mật khẩu không đúng.'},{status:401})}
