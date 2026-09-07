@@ -1,7 +1,9 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function productShape(row:any){const data=row.data&&typeof row.data==='object'?row.data:{};return {...data,id:String(row.id),partnerId:String(row.partner_id),partnerName:row.partner_name||'',slug:row.slug,type:row.type,name:row.name,status:row.status,summary:row.description||data.summary||'',retailPriceVnd:Number(row.retail_price_vnd||0),netPriceVnd:row.net_price_vnd==null?null:Number(row.net_price_vnd),promoPriceVnd:row.promo_price_vnd==null?null:Number(row.promo_price_vnd),updatedAt:row.updated_at,partnerPricing:Array.isArray(data.partnerPricing)?data.partnerPricing:[]}}
 
 export async function GET(req:NextRequest){
@@ -18,7 +20,8 @@ export async function GET(req:NextRequest){
 export async function PATCH(req:NextRequest){
   if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
   const actor=await adminActor(req,'partners');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
-  const body=await req.json().catch(()=>({}));const entity=String(body.entity||''),id=String(body.id||''),status=String(body.status||'');
+  if(requestBodyTooLarge(req,32_768))return NextResponse.json({error:'Dữ liệu đối tác quá lớn.'},{status:413});const parsed=await readBoundedJson(req,32_768);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đối tác quá lớn.'},{status:413});
+  const body=parsed.body;const entity=String(body.entity||''),id=String(body.id||''),status=String(body.status||'');if(!uuid.test(id))return NextResponse.json({error:'ID đối tác/sản phẩm không hợp lệ.'},{status:400});
   const sql=db();
   try{
     if(entity==='partner'){
