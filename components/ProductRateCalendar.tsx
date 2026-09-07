@@ -20,11 +20,12 @@ type Unit={
   lowSeasonRanges?:string;
   status?:string;
 };
+type CalendarKind='stay'|'cruise'|'ticket';
 const compact=(n:number)=>n>=1000000?`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:1}).format(n/1000000)}tr`:`${Math.round(n/1000)}k`;
 const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric'}).format(date);
 const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);return pricingDateKey(next)};
 
-export function ProductRateCalendar({units,label='Lịch giá theo ngày',initialRates=[]}:{units:Unit[];label?:string;initialRates?:PublicRateRange[]}){
+export function ProductRateCalendar({units,label='Lịch giá theo ngày',initialRates=[],kind='stay'}:{units:Unit[];label?:string;initialRates?:PublicRateRange[];kind?:CalendarKind}){
   const router=useRouter();
   const pathname=usePathname();
   const availableUnits=useMemo(()=>units.filter(u=>u.status!=='hidden'),[units]);
@@ -78,8 +79,13 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
   const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',nextDateKey(date));router.replace(`${pathname}?${next.toString()}`,{scroll:false});setSelected(key);window.dispatchEvent(new Event('tn-pricing-dates-updated'));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
 
   if(!unit)return null;
+  const unitHeading=kind==='cruise'?'Cabin đang xem':kind==='ticket'?'Vé / gói đang xem':'Hạng đang xem';
+  const dateNoun=kind==='stay'?'ngày lưu trú':'ngày khởi hành';
+  const itemNoun=kind==='cruise'?'cabin':kind==='ticket'?'vé / gói':'hạng phòng';
+  const bookingNoun=kind==='stay'?'đặt phòng':'đặt dịch vụ';
+
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
-    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng ngày lưu trú.</b> Giá production theo ngày được ưu tiên; ngày chưa có giá riêng sẽ tự lấy đúng bảng giá mùa của hạng phòng.</p></div><label><span>Hạng đang xem</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
+    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng {dateNoun}.</b> Giá production theo ngày được ưu tiên; ngày chưa có rate riêng sẽ dùng đúng bảng giá cấu hình của {itemNoun}.</p></div><label><span>{unitHeading}</span><select value={unit.id} onChange={e=>setUnitId(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
     <div className="prc-month"><button type="button" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>‹</button><b>{monthName(month)}</b><button type="button" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>›</button></div>
     <div className="prc-weekdays">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><span key={x}>{x}</span>)}</div>
     <div className="prc-grid">{cells.map((date,index)=>{
@@ -90,15 +96,15 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
       const unavailable=Boolean(rate&&(rate.status!=='available'||Number(rate.quantity||0)<=0));
       const override=rate&&!unavailable?ratePriceForDate(rate,date):0;
       const base=unavailable?0:seasonalUnitPrice(unit,date,season);
-      const price=unavailable?0:override||base;
+      const price=unavailable?0:rate?override:base;
       const missing=ratesLoaded&&!unavailable&&!price;
       const loading=!ratesLoaded&&!price;
       const disabled=key<today||unavailable||missing||loading;
       const className=[key<today?'past':'',unavailable?'soldout':'',missing?'unpriced':'',loading?'loading':'',key===selected?'selected':'',season==='high'?'high-season':'',season==='low'?'low-season':'',!disabled?'clickable':''].filter(Boolean).join(' ');
       const status=loading?'Đang tải':unavailable?'Hết':missing?'Liên hệ':compact(price);
       const seasonNote=rate?.note||(season==='high'?'Cao điểm':season==='low'?'Thấp điểm':'');
-      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải lịch giá':missing?'Hạng phòng chưa có giá bán cho ngày này':unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{seasonNote&&<em>{seasonNote}</em>}</button>;
+      return <button type="button" className={className} key={key} disabled={disabled} onClick={()=>chooseDate(date,price,unavailable)} title={loading?'Đang tải lịch giá':missing?`${itemNoun} chưa có giá bán cho ngày này`:unavailable?'Ngày này hiện không còn bán':`Chọn ngày ${key} · ${new Intl.NumberFormat('vi-VN').format(price)}đ`}><small>{date.getDate()}</small><b>{status}</b>{seasonNote&&<em>{seasonNote}</em>}</button>;
     })}</div>
-    <div className="prc-note"><span>Giá hiển thị là giá bán cho khách của hạng phòng đang chọn và tự đổi theo mùa đã cấu hình.</span><a href="#booking">Hoặc chọn ngày trong khung đặt phòng →</a></div>
+    <div className="prc-note"><span>Giá hiển thị là giá bán cho khách của {itemNoun} đang chọn và tự đổi theo cấu hình giá.</span><a href="#booking">Hoặc chọn ngày trong khung {bookingNoun} →</a></div>
   </section>;
 }
