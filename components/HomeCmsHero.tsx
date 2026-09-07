@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {SearchBar} from '@/components/SearchBar';
 
@@ -15,20 +16,21 @@ export type HomeCmsData={
 
 export const defaultHomeCms:HomeCmsData={
   eyebrow:'HAPPYGO TRAVEL',
-  title:'Du lịch trọn gói – Nghỉ dưỡng đẳng cấp',
-  subtitle:'Vé · Tour · Villa · Resort · Du thuyền – Hành trình hạnh phúc, kết nối yêu thương.',
-  noteTitle:'Hành trình của bạn',
-  noteText:'Bắt đầu từ một giấc mơ...',
+  title:'Khám phá Việt Nam theo cách của bạn',
+  subtitle:'Khách sạn · Villa & Resort · Du thuyền · Tour – chọn hành trình phù hợp, xem giá rõ ràng và được HappyGo hỗ trợ từ lúc tìm kiếm đến khi khởi hành.',
+  noteTitle:'Kỳ nghỉ của bạn',
+  noteText:'Bắt đầu bằng một điểm đến',
   heroImage:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1900&q=88',
-  servicesEnabled:true,servicesTitle:'Khám phá dịch vụ nổi bật',servicesSubtitle:'Lựa chọn trải nghiệm phù hợp với bạn',
-  destinationsEnabled:true,destinationsTitle:'Điểm đến phổ biến',
-  productsEnabled:true,productsTitle:'Sản phẩm nổi bật',
-  cruisesEnabled:true,cruisesTitle:'Du thuyền nổi bật',cruisesSubtitle:'Hạ Long & Lan Hạ',
-  toursEnabled:true,toursTitle:'Tour du lịch hot',
+  servicesEnabled:true,servicesTitle:'Chọn trải nghiệm dành cho bạn',servicesSubtitle:'Một nơi để tìm chuyến đi, chỗ nghỉ và hành trình trên vịnh',
+  destinationsEnabled:true,destinationsTitle:'Điểm đến được yêu thích',
+  productsEnabled:true,productsTitle:'Lưu trú nổi bật',
+  cruisesEnabled:true,cruisesTitle:'Du thuyền Hạ Long & Lan Hạ',cruisesSubtitle:'Những hải trình đáng nhớ trên vịnh di sản',
+  toursEnabled:true,toursTitle:'Tour được quan tâm',
   ctaEnabled:true,ctaEyebrow:'HAPPYGO TRAVEL',ctaTitle:'Hành trình hạnh phúc, kết nối yêu thương',ctaText:'Liên hệ HappyGo Travel để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'
 };
 
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';
+const quickLinks=[['🏨','Khách sạn','/khach-san'],['🏡','Villa & Resort','/villa-resort'],['🛳','Du thuyền','/du-thuyen'],['✈','Tour','/tour-du-lich']] as const;
 
 function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
  const next={...defaultHomeCms,...(value||{})};
@@ -60,6 +62,7 @@ export function HomeCmsHero({initialCms=defaultHomeCms}:{initialCms?:Partial<Hom
       <p className="mock-eyebrow">{data.eyebrow}</p>
       <h1>{data.title}</h1>
       <p>{data.subtitle}</p>
+      <div className="home-hero-quicklinks" aria-label="Dịch vụ nổi bật">{quickLinks.map(([icon,label,href])=><Link href={href} key={href}><span>{icon}</span>{label}</Link>)}</div>
       <div className="mock-hero-note"><span>✈</span><div>{data.noteTitle}<br/><b>{data.noteText}</b></div></div>
       <div className="mock-hero-search"><SearchBar /></div>
     </div>
