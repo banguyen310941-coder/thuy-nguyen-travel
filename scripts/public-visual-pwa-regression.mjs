@@ -50,5 +50,14 @@ must('components/HomeCmsSections.tsx','image:guideImage(p.image)','Fallback Cẩ
 mustNot('components/HomeCmsSections.tsx','setCmsArticles','Trang chủ không được giữ cache bài Cẩm nang riêng');
 mustNot('components/usePublicGuideArticles.ts','localStorage.getItem','Cẩm nang public không được ưu tiên cache browser');
 
+must('app/page.tsx','className="home-premium"','Trang chủ phải dùng premium storefront shell');
+must('components/Header.tsx','happygo-header-v2','Header public phải dùng visual system mới');
+must('components/HomeCmsHero.tsx','home-hero-quicklinks','Hero phải có lối vào nhanh các dịch vụ chính');
+must('components/HomeCmsSections.tsx','home-cruise-premium','Du thuyền phải có section premium riêng trên trang chủ');
+must('components/HomeCmsSections.tsx','home-trust-strip','Trang chủ phải có dải lý do chọn HappyGo');
+mustNot('components/HomeCmsSections.tsx','/cam-nang/bai-viet/','Homepage không được quay lại URL Cẩm nang legacy');
+must('app/layout.tsx',"import './home-premium.css';",'Layout public phải nạp visual system trang chủ mới');
+must('app/home-premium-addon.css',"@import './public-premium.css';",'Visual system mới phải áp dụng cả trang danh mục và chi tiết');
+
 if(failures.length){console.error('\nPublic visual/PWA regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public visual/PWA regression checks passed.');
