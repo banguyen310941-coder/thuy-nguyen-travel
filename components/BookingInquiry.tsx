@@ -1,7 +1,6 @@
 'use client';
 
 import {useEffect,useMemo,useState} from 'react';
-import {usePathname,useRouter} from 'next/navigation';
 import {useSiteSettings} from '@/components/useSiteSettings';
 import {addCartItem,type GuestType} from '@/components/BookingCart';
 import type {PricingBasis} from '@/components/ProductModel';
@@ -18,7 +17,7 @@ function saveLocalBooking(payload:any){try{const list=JSON.parse(localStorage.ge
 function nextDay(value:string){if(!value)return'';const d=new Date(`${value}T12:00:00`);d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 
 export function BookingInquiry({product,productId,productSlug,kind='dịch vụ',mode='auto'}:{product:string;productId?:string;productSlug?:string;kind?:string;mode?:BookingMode}){
- const router=useRouter(),pathname=usePathname(),settings=useSiteSettings();const zaloDigits=settings.zalo.replace(/\D/g,'');
+ const settings=useSiteSettings();const zaloDigits=settings.zalo.replace(/\D/g,'');
  const[state,setState]=useState<'idle'|'sending'|'saved'|'fallback'>('idle');const[code,setCode]=useState('');const[message,setMessage]=useState('');const[selectedUnit,setSelectedUnit]=useState<SelectedUnit|null>(null);
  const normalized=kind.toLowerCase();const isTour=normalized.includes('tour');const isCruise=normalized.includes('du thuyền')||normalized.includes('cruise');const isTicket=isCruise&&mode==='ticket';const isStay=!isTour&&!isCruise;const usesExactCalendar=isStay||isCruise;
  const selectedUnitText=bookingUnitLabel(selectedUnit?.code,selectedUnit?.name);
@@ -26,7 +25,7 @@ export function BookingInquiry({product,productId,productSlug,kind='dịch vụ'
  const[from,setFrom]=useState('');const[to,setTo]=useState('');
  useEffect(()=>{if(!usesExactCalendar)return;const read=(event?:Event)=>{const detail=(event as CustomEvent<PricingDatesDetail>|undefined)?.detail;if(detail&&typeof detail==='object'&&('checkin'in detail||'checkout'in detail)){setFrom(String(detail.checkin||''));setTo(isStay?String(detail.checkout||''):'');return}const query=new URLSearchParams(window.location.search);setFrom(query.get('checkin')||'');setTo(isStay?(query.get('checkout')||''):'')};const handle=(event:Event)=>read(event);read();window.addEventListener('popstate',handle);window.addEventListener('tn-pricing-dates-updated',handle);return()=>{window.removeEventListener('popstate',handle);window.removeEventListener('tn-pricing-dates-updated',handle)}},[usesExactCalendar,isStay]);
  useEffect(()=>{const select=(event:Event)=>{const detail=(event as CustomEvent<{id?:string;unitId?:string;code?:string;name?:string;pricingBasis?:PricingBasis;guestType?:GuestType}>).detail||{};const next={id:detail.unitId||detail.id,code:detail.code,name:detail.name,pricingBasis:detail.pricingBasis,guestType:detail.guestType};if(next.id||next.code||next.name)setSelectedUnit(next)};window.addEventListener('tn:select-unit',select as EventListener);try{const stored=JSON.parse(localStorage.getItem('tn_selected_unit')||'null');if(stored?.product===product){const next={id:stored.unitId||stored.id,code:stored.code,name:stored.unit||stored.name,pricingBasis:stored.pricingBasis,guestType:stored.guestType} as SelectedUnit;if(next.id||next.code||next.name)setSelectedUnit(next);localStorage.removeItem('tn_selected_unit')}}catch{}return()=>window.removeEventListener('tn:select-unit',select as EventListener)},[product]);
- const syncPricingDates=(nextFrom:string,nextTo='')=>{if(!usesExactCalendar)return;const query=new URLSearchParams(window.location.search);if(nextFrom)query.set('checkin',nextFrom);else query.delete('checkin');if(isStay&&nextTo)query.set('checkout',nextTo);else query.delete('checkout');router.replace(`${pathname}${query.toString()?`?${query.toString()}`:''}`,{scroll:false});window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:nextFrom,checkout:isStay?nextTo:''}}))};
+ const syncPricingDates=(nextFrom:string,nextTo='')=>{if(!usesExactCalendar)return;const query=new URLSearchParams(window.location.search);if(nextFrom)query.set('checkin',nextFrom);else query.delete('checkin');if(isStay&&nextTo)query.set('checkout',nextTo);else query.delete('checkout');const search=query.toString();window.history.replaceState(window.history.state,'',`${window.location.pathname}${search?`?${search}`:''}${window.location.hash}`);window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:nextFrom,checkout:isStay?nextTo:''}}))};
  const changeFrom=(value:string)=>{setFrom(value);if(isStay){const corrected=!to||to<=value?nextDay(value):to;setTo(corrected);syncPricingDates(value,corrected)}else if(isCruise)syncPricingDates(value)};
  const changeTo=(value:string)=>{setTo(value);if(isStay)syncPricingDates(from,value)};
  const clearUnit=()=>{setSelectedUnit(null);try{localStorage.removeItem('tn_selected_unit')}catch{}};
