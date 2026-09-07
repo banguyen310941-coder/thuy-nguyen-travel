@@ -49,6 +49,9 @@ must('app/api/bookings/route.ts',"const origin=req.headers.get('origin');if(orig
 must('app/api/bookings/route.ts','name.length>120||email.length>254||product.length>240||note.length>2000','Booking POST phải giới hạn kích thước dữ liệu đầu vào');
 must('app/api/bookings/route.ts',"return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400})",'Booking POST phải kiểm tra email trước khi lưu/gửi mail');
 must('app/api/bookings/route.ts',"'\"':'&quot;'",'HTML email booking phải escape dấu ngoặc kép đầy đủ');
+mustNot('app/api/bookings/route.ts','update customers set name=${name},email=${email||null}','Booking public không được ghi đè danh tính CRM chỉ vì trùng số điện thoại');
+must('app/api/bookings/route.ts',"on conflict(phone) where phone is not null and phone<>'' do nothing returning id",'Booking đồng thời cùng SĐT phải resolve customer bằng unique phone thay vì lỗi 500');
+must('app/api/bookings/route.ts',"throw new Error('CUSTOMER_RESOLUTION_FAILED')",'Booking phải fail đóng nếu không resolve được customer sau race');
 
 // Newsletter consent is isolated from customer-account marketing consent and all writes are same-origin.
 must('app/api/newsletter/route.ts',"function sameOrigin(req:NextRequest){const origin=req.headers.get('origin');return !origin||origin===req.nextUrl.origin}",'Newsletter phải có kiểm tra same-origin dùng chung');
