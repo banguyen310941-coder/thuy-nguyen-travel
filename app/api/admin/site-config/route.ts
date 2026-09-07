@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const allowed=new Set(['site','seo']);
 function parseValue(value:unknown){if(!value)return null;if(typeof value==='string'){try{return JSON.parse(value)}catch{return null}}return value}
@@ -14,7 +15,8 @@ export async function GET(req:NextRequest){
 
 export async function PUT(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,65_536))return NextResponse.json({error:'Dữ liệu cấu hình quá lớn.'},{status:413});
  const actor=await adminActor(req,'settings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
- const body=await req.json().catch(()=>({}));const type=String(body.type||'');if(!allowed.has(type)||!body.value||typeof body.value!=='object'||Array.isArray(body.value))return NextResponse.json({error:'Cấu hình không hợp lệ.'},{status:400});
+ const parsed=await readBoundedJson(req,65_536);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu cấu hình quá lớn.'},{status:413});const body=parsed.body as any;const type=String(body.type||'');if(!allowed.has(type)||!body.value||typeof body.value!=='object'||Array.isArray(body.value))return NextResponse.json({error:'Cấu hình không hợp lệ.'},{status:400});
  try{const sql=db();await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'site_config.save','site_config',${type},${JSON.stringify({value:body.value,updatedAt:new Date().toISOString(),updatedBy:actor.name})}::jsonb)`;return NextResponse.json({ok:true,type})}catch(error){console.error('site_config_put_failed',error);return NextResponse.json({error:'Không lưu được cấu hình production.'},{status:500})}
 }
