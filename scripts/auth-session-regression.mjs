@@ -11,6 +11,17 @@ must('lib/server/portal-auth.ts','iat:now','Token mới phải ghi thời điể
 must('lib/server/portal-auth.ts','payload.exp-payload.iat>maxAge+60','Server phải từ chối token vượt quá tuổi tối đa');
 must('lib/server/portal-auth.ts',"kind==='admin'&&payload.exp-now>maxAge+60",'Admin token legacy 30 ngày phải bị xoay vòng sau deploy');
 must('lib/server/portal-auth.ts','const maxAge=sessionMaxAge(kind)','Cookie phải dùng TTL theo loại portal');
+must('lib/server/portal-auth.ts','const MAX_SESSION_TOKEN_LENGTH=2048','Session cookie phải có trần kích thước tổng');
+must('lib/server/portal-auth.ts','const MAX_SESSION_BODY_LENGTH=1536','Session body phải có trần trước khi decode');
+must('lib/server/portal-auth.ts','const SESSION_SIGNATURE_LENGTH=43','Chữ ký HMAC base64url phải có độ dài cố định');
+must('lib/server/portal-auth.ts','if(!token||token.length>MAX_SESSION_TOKEN_LENGTH)return null','Token quá lớn phải bị loại trước xác thực');
+must('lib/server/portal-auth.ts','if(parts.length!==2)return null','Session phải đúng cấu trúc body.signature');
+must('lib/server/portal-auth.ts','body.length>MAX_SESSION_BODY_LENGTH||sig.length!==SESSION_SIGNATURE_LENGTH','Body/signature sai kích thước phải bị loại');
+must('lib/server/portal-auth.ts','if(!BASE64URL.test(body)||!BASE64URL.test(sig))return null','Session phải chỉ chứa base64url hợp lệ');
+const portalAuth=read('lib/server/portal-auth.ts');
+const envelopeIndex=portalAuth.indexOf('if(!token||token.length>MAX_SESSION_TOKEN_LENGTH)return null');
+const hmacIndex=portalAuth.indexOf("const expected=createHmac('sha256',secret()).update(body).digest('base64url')",portalAuth.indexOf('export function readSession'));
+if(envelopeIndex<0||hmacIndex<0||envelopeIndex>hmacIndex)failures.push('Session envelope phải được kiểm kích thước trước khi chạy HMAC');
 
 must('app/api/admin/auth/login/route.ts','requestBodyTooLarge(req,8192)','Admin login phải chặn body quá lớn');
 must('app/api/admin/auth/login/route.ts',"origin&&origin!==req.nextUrl.origin",'Admin login phải chặn browser cross-origin');
