@@ -65,6 +65,13 @@ function textOf(html:string){
   .replace(/\s+/g,' ')
   .trim();
 }
+function primaryCalendarText(html:string){
+ const full=textOf(html),startToken='Payment Confirmation',startAt=full.indexOf(startToken),from=startAt>=0?full.slice(startAt+startToken.length):full;
+ const stops=['Select Your Cabin','Select Your Ticket','This cruise has no availability on your choosen date','This cruise has no availability on your chosen date'];
+ let end=from.length;
+ for(const token of stops){const index=from.indexOf(token);if(index>=0&&index<end)end=index}
+ return from.slice(0,end);
+}
 function dateFromParts(day:number,month:number,anchor:Date){
  let year=anchor.getUTCFullYear();
  const anchorMonth=anchor.getUTCMonth();
@@ -73,16 +80,13 @@ function dateFromParts(day:number,month:number,anchor:Date){
  return isoDate(new Date(Date.UTC(year,month,day)));
 }
 export function parseAmbassadorCalendar(html:string,anchorDate:string){
- const anchor=new Date(`${anchorDate}T12:00:00Z`),text=textOf(html),items=new Map<string,CalendarItem>();
+ const anchor=new Date(`${anchorDate}T12:00:00Z`),text=primaryCalendarText(html),items=new Map<string,CalendarItem>();
  const pattern=/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?:(?:USD\s*([\d,]+))|(SOLD\s+OUT))\b/gi;
  for(const match of text.matchAll(pattern)){
   const month=MONTHS[String(match[2]||'').toLowerCase()];if(month===undefined)continue;
   const date=dateFromParts(Number(match[1]),month,anchor),sold=Boolean(match[4]),usd=sold?null:Number(String(match[3]||'').replace(/,/g,''));
   if(!sold&&(!Number.isFinite(usd)||usd<=0))continue;
-  const existing=items.get(date);
-  // The page can repeat a date in recommendation blocks. Prefer an explicit
-  // sellable price over SOLD OUT when the source itself exposes both states.
-  if(!existing||existing.status==='soldout'&&!sold)items.set(date,{date,status:sold?'soldout':'available',usd:sold?null:usd});
+  if(!items.has(date))items.set(date,{date,status:sold?'soldout':'available',usd:sold?null:usd});
  }
  return [...items.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
