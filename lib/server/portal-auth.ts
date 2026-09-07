@@ -11,11 +11,16 @@ const MAX_SESSION_BODY_LENGTH=1536;
 const SESSION_SIGNATURE_LENGTH=43;
 const BASE64URL=/^[A-Za-z0-9_-]+$/;
 const SESSION_VERSION=/^[A-Za-z0-9_-]{1,128}$/;
+const SESSION_KEY_CONTEXT='happygo:portal-session:v1';
 
 function secret(){
-  const value=process.env.AUTH_SECRET?.trim()||process.env.ADMIN_API_KEY?.trim();
-  if(!value)throw new Error('AUTH_SECRET_OR_ADMIN_API_KEY_REQUIRED');
-  return value;
+  const authSecret=process.env.AUTH_SECRET?.trim();
+  if(authSecret)return authSecret;
+  const adminApiKey=process.env.ADMIN_API_KEY?.trim();
+  if(!adminApiKey)throw new Error('AUTH_SECRET_OR_ADMIN_API_KEY_REQUIRED');
+  // Backward-compatible fallback: derive a dedicated session key instead of
+  // reusing the Admin integration key directly for HMAC signing.
+  return createHmac('sha256',adminApiKey).update(SESSION_KEY_CONTEXT).digest();
 }
 
 function b64(value:string){return Buffer.from(value).toString('base64url')}
