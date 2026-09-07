@@ -23,7 +23,7 @@ export async function POST(req:NextRequest){
   const sql=db();
   try{
     const owners=await sql`select id from staff where role='owner' limit 1`;if(owners.length)return NextResponse.json({error:'Chủ tài khoản production đã được kích hoạt.'},{status:409});
-    const rows=await sql`insert into staff(name,email,password_hash,role,department,status,permissions) values(${name},${email},${hashPassword(password)},'owner','management','active',${JSON.stringify(['*'])}::jsonb) returning id,name,email,phone,role,department,status,permissions,created_at`;
-    const staff=rows[0];const response=NextResponse.json({ok:true,staff:{id:String(staff.id),name:staff.name,email:staff.email,phone:staff.phone||'',role:staff.role,department:staff.department||'',status:staff.status,permissions:staff.permissions||['*'],createdAt:staff.created_at}});setSessionCookie(response,COOKIE,'admin',String(staff.id));return response;
+    const rows=await sql`insert into staff(name,email,password_hash,role,department,status,permissions) values(${name},${email},${hashPassword(password)},'owner','management','active',${JSON.stringify(['*'])}::jsonb) returning id,name,email,phone,role,department,status,permissions,created_at,floor(extract(epoch from updated_at)*1000)::bigint as session_version`;
+    const staff=rows[0];const response=NextResponse.json({ok:true,staff:{id:String(staff.id),name:staff.name,email:staff.email,phone:staff.phone||'',role:staff.role,department:staff.department||'',status:staff.status,permissions:staff.permissions||['*'],createdAt:staff.created_at}});setSessionCookie(response,COOKIE,'admin',String(staff.id),String(staff.session_version));return response;
   }catch(error:any){console.error('admin_bootstrap_failed',error);const duplicate=String(error?.message||'').includes('staff_email_key');return NextResponse.json({error:duplicate?'Email này đã tồn tại trong danh sách nhân viên.':'Không thể kích hoạt quản trị production.'},{status:duplicate?409:500})}
 }
