@@ -52,5 +52,19 @@ for(const prefix of ['partner','affiliate']){
  must(login,"headers:{'Retry-After':'900'}",`${prefix} login 429 phải trả Retry-After`);
 }
 
+// Partner email is not guaranteed unique in the legacy table, so registration must
+// serialize same-email requests and create partner + account in one SQL statement.
+must('app/api/partner/auth/register/route.ts','pg_advisory_xact_lock(hashtext(${email}::text))','Đăng ký đối tác phải khóa đồng thời theo email');
+must('app/api/partner/auth/register/route.ts','where not exists(select 1 from existing)','Đăng ký đối tác không được tạo bản ghi trùng sau khi giữ lock');
+must('app/api/partner/auth/register/route.ts','new_account as (','Partner và partner_accounts phải tạo trong cùng statement');
+must('app/api/partner/auth/register/route.ts','PARTNER_REGISTER_ATOMIC_FAILED','Đăng ký đối tác phải fail kín nếu account không tạo cùng partner');
+
+// Private account/admin/partner/affiliate responses must never be cached by browser,
+// proxy or CDN even if an individual route forgets to declare its own cache policy.
+must('middleware.ts',"const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate']",'Middleware phải nhận diện toàn bộ API private');
+must('middleware.ts',"response.headers.set('Cache-Control','private, no-store, max-age=0, must-revalidate')",'API private phải có Cache-Control no-store');
+must('middleware.ts',"response.headers.set('Pragma','no-cache')",'API private phải có header tương thích proxy cũ');
+must('middleware.ts','return passThrough(req)','Luồng hợp lệ phải đi qua helper gắn cache guard');
+
 if(failures.length){console.error('\nPublic abuse regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public abuse regression checks passed.');
