@@ -7,6 +7,7 @@ import {UnifiedStayPublicDetail} from '@/components/UnifiedStayPublicDetail';
 import {UnifiedCruisePublicDetail} from '@/components/UnifiedCruisePublicDetail';
 import {UnifiedTourPublicDetail} from '@/components/UnifiedTourPublicDetail';
 import type {PricingBasis} from '@/components/ProductModel';
+import {seedPublicCommerceRuntime} from '@/lib/public-commerce-runtime';
 import type {PublicRateRange} from '@/lib/public-rate-utils';
 
 type PublicGuestType='adult'|'child'|'all';
@@ -20,6 +21,7 @@ export function CmsProductDetail({slug:explicitSlug,initialProduct,initialRates=
  const[rates,setRates]=useState<PublicRateRange[]>(initialRates);
  useEffect(()=>setProduct(initialProduct===null?undefined:initialProduct),[initialProduct]);
  useEffect(()=>setRates(initialRates),[initialRates]);
+ useEffect(()=>{seedPublicCommerceRuntime(product,rates)},[product,rates]);
  useEffect(()=>{let alive=true;const slug=explicitSlug||new URLSearchParams(window.location.search).get('slug')||'';const set=(value:PublicProduct|null)=>{if(alive)setProduct(value)};const load=async()=>{try{const siteResponse=await fetch('/api/catalog/site-state',{cache:'no-store'});if(siteResponse.ok){const site=await siteResponse.json() as{state?:Record<string,unknown>};const state=site.state||{};const items=state.tn_cms_products_v3_units;const nextRates=state.tn_cms_daily_rates_v1;if(alive&&Array.isArray(nextRates))setRates(nextRates as PublicRateRange[]);if(Array.isArray(items)){const found=(items as PublicProduct[]).find(x=>x.slug===slug&&x.status==='published');if(found){set(found);return}}}const partnerResponse=await fetch('/api/catalog/partner-products',{cache:'no-store'});if(partnerResponse.ok){const data=await partnerResponse.json() as{products?:PartnerPublicProduct[]};const p=Array.isArray(data.products)?data.products.find(x=>x.slug===slug):undefined;if(p){set(empty(p,p.price||'Liên hệ'));return}}set(null)}catch{if(!initialProduct)set(null)}};void load();const refresh=()=>void load();window.addEventListener('tn-products-updated',refresh);window.addEventListener('tn-rates-updated',refresh);window.addEventListener('happygo-partner-products-updated',refresh);window.addEventListener('happygo-partner-rates-updated',refresh);return()=>{alive=false;window.removeEventListener('tn-products-updated',refresh);window.removeEventListener('tn-rates-updated',refresh);window.removeEventListener('happygo-partner-products-updated',refresh);window.removeEventListener('happygo-partner-rates-updated',refresh)}},[explicitSlug,initialProduct]);
  useEffect(()=>{if(!product)return;if(product.seoTitle)document.title=product.seoTitle;const desc=product.seoDescription||product.summary;if(desc){let meta=document.head.querySelector('meta[name="description"]') as HTMLMetaElement|null;if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta)}meta.content=desc}},[product]);
  if(product===undefined)return <div className="sub-section white"><div className="container"><div className="article-state">Đang tải sản phẩm...</div></div></div>;
