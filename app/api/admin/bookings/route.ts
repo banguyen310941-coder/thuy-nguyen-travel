@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 import {settleAffiliateBooking} from '@/lib/server/affiliate';
 
 const STATUSES=['new','contacting','confirmed','completed','cancelled'] as const;
@@ -57,8 +58,9 @@ export async function GET(req:NextRequest){
 
 export async function PATCH(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'DATABASE_URL chưa được cấu hình.'},{status:503});
+ if(requestBodyTooLarge(req,65_536))return NextResponse.json({error:'Dữ liệu booking quá lớn.'},{status:413});
  const actor=await adminActor(req,'bookings');if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
- const body=await req.json().catch(()=>({}));const id=String(body.id||'');if(!uuid.test(id))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});
+ const parsed=await readBoundedJson(req,65_536);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu booking quá lớn.'},{status:413});const body=parsed.body as any;const id=String(body.id||'');if(!uuid.test(id))return NextResponse.json({error:'Booking không hợp lệ.'},{status:400});
  const sql=db();
  try{
   const beforeRows=await sql`select * from bookings where id=${id} limit 1`;const before=beforeRows[0];if(!before)return NextResponse.json({error:'Không tìm thấy booking.'},{status:404});
