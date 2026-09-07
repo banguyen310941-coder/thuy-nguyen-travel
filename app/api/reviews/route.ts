@@ -27,6 +27,15 @@ async function completedBooking(sql:Sql,customerId:string,slug:string,productNam
   left join products p on p.id=bi.product_id
   where b.customer_id=${customerId}
     and b.status='completed'
+    and coalesce((
+      select al.action
+      from audit_logs al
+      where al.entity_type='booking_account'
+       and al.entity_id=b.id::text
+       and al.action in ('booking.account.linked','booking.account.unverified')
+      order by al.created_at desc,al.id desc
+      limit 1
+    ),'booking.account.legacy')<>'booking.account.unverified'
     and (
       lower(coalesce(p.slug,''))=lower(${slug})
       or lower(coalesce(bi.data_snapshot->>'slug',''))=lower(${slug})
