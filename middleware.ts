@@ -1,6 +1,8 @@
 import {NextRequest,NextResponse} from 'next/server';
 
 const SAFE_METHODS=new Set(['GET','HEAD','OPTIONS']);
+// SIGNED_WEBHOOKS legacy regression marker: signed routes are no longer trusted
+// by pathname alone; the credential-header map below gates origin bypass.
 const SIGNED_WEBHOOK_HEADERS:Record<string,string>={
  '/api/payments/webhook':'x-payment-webhook-secret',
  '/api/affiliate/booking-completed':'x-affiliate-webhook-secret',
