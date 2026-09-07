@@ -1,0 +1,76 @@
+/* Visual corrections from production screenshot review (2026-09-08).
+   Keep this small and loaded after public-polish.css so it only resolves the
+   remaining layout collisions instead of starting another competing theme. */
+
+@media (min-width:901px){
+  /* Compress the three-storey desktop header so the page starts faster. */
+  .happygo-header-v2 .mock-contactbar-inner{min-height:24px!important;padding:3px 0!important}
+  .happygo-header-v2 .mock-brand-row{min-height:58px!important;padding:5px 0!important}
+  .happygo-header-v2 .mock-nav{min-height:38px!important}
+  .happygo-header-v2 .mock-nav a{padding:9px 13px!important}
+
+  /* The search used to be positioned against the short text container, which
+     left a large dead zone at the bottom of the hero. Make the container fill
+     the hero and anchor the search to its visual bottom edge. */
+  .home-premium .mock-hero{min-height:520px!important;background-position:center 52%!important}
+  .home-premium .mock-hero-content{position:relative!important;min-height:520px!important;padding-top:50px!important;padding-bottom:165px!important}
+  .home-premium .mock-hero h1{max-width:690px!important;font-size:clamp(42px,3.55vw,54px)!important;line-height:1.03!important;letter-spacing:-1.9px!important}
+  .home-premium .mock-hero-content>p:not(.mock-eyebrow){max-width:650px!important;font-size:15px!important;line-height:1.6!important}
+  .home-premium .home-hero-quicklinks{margin-top:14px!important}
+  .home-premium .mock-hero-search{top:auto!important;bottom:24px!important;left:0!important;right:0!important}
+  .home-premium .mock-search-form{border-radius:17px!important;box-shadow:0 16px 38px rgba(4,31,57,.20)!important}
+  .home-premium .mock-search-field{min-height:62px!important;padding:8px 13px!important}
+  .home-premium .mock-search-button{min-height:62px!important;flex-basis:138px!important}
+  .home-premium .mock-search-benefits{margin-top:8px!important;gap:22px!important}
+
+  /* Reduce vertical dead space between major homepage sections. */
+  .home-premium .mock-section{padding:64px 0!important}
+  .home-premium .mock-services-section{padding-top:58px!important;padding-bottom:58px!important}
+
+  /* Cruise cards should read as one coherent row. The previous first-card
+     feature treatment forced a square crop and visibly cut the text baked into
+     the Ambassador cover image. */
+  .home-premium .home-cruise-premium{padding:64px 0!important}
+  .home-premium .home-cruise-premium .mock-section-heading{margin-bottom:24px!important}
+  .home-premium .home-cruise-premium .mock-tour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important;align-items:stretch!important}
+  .home-premium .home-cruise-premium .mock-tour-card,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child{grid-column:auto!important;display:flex!important;flex-direction:column!important;min-height:0!important}
+  .home-premium .home-cruise-premium .mock-tour-image,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child .mock-tour-image{height:auto!important;min-height:0!important;aspect-ratio:16/9!important;background-size:cover!important;background-position:center center!important;flex:0 0 auto!important}
+  .home-premium .home-cruise-premium .mock-tour-card:first-child .mock-tour-image{background-position:center 56%!important}
+  .home-premium .home-cruise-premium .mock-tour-card:nth-child(2) .mock-tour-image{background-position:center 54%!important}
+  .home-premium .home-cruise-premium .mock-tour-card>div:last-child,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child>div:last-child{display:block!important;flex:1 1 auto!important;padding:18px 18px 19px!important}
+  .home-premium .home-cruise-premium .mock-tour-card h3,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child h3{font-size:18px!important;line-height:1.32!important;margin:7px 0!important}
+  .home-premium .home-cruise-premium .mock-tour-card p{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important;margin:6px 0 12px!important;line-height:1.55!important}
+
+  /* Keep conversion actions available without occupying a tall strip on the
+     right side of the content. */
+  .floating-actions{right:18px!important;bottom:18px!important;gap:8px!important}
+  .floating-actions a{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;padding:0!important;border-radius:999px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:0!important}
+  .floating-actions .contact-label{display:none!important}
+  .floating-actions .zalo-word{font-size:11px!important}
+  .booking-cart-badge{right:18px!important;bottom:134px!important;width:50px!important;height:50px!important;min-width:50px!important;padding:0!important;border-radius:999px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:0!important}
+  .booking-cart-badge b{display:none!important}
+  .booking-cart-badge>span:first-child{margin:0!important;font-size:18px!important}
+}
+
+@media (max-width:1100px) and (min-width:901px){
+  .home-premium .mock-hero-content{padding-top:44px!important}
+  .home-premium .mock-search-field{padding-left:10px!important;padding-right:10px!important}
+  .home-premium .home-cruise-premium .mock-tour-grid{gap:14px!important}
+  .home-premium .home-cruise-premium .mock-tour-card>div:last-child{padding:16px!important}
+}
+
+@media (max-width:900px){
+  .home-premium .mock-section{padding-top:46px!important;padding-bottom:46px!important}
+  .home-premium .mock-services-section{padding-top:48px!important}
+  .home-premium .home-cruise-premium{padding-top:50px!important;padding-bottom:50px!important}
+  .home-premium .home-cruise-premium .mock-tour-card p{-webkit-line-clamp:unset!important;display:block!important}
+}
+
+@media (max-width:620px){
+  .home-premium .mock-section{padding-top:38px!important;padding-bottom:38px!important}
+  .home-premium .home-cruise-premium{padding-top:42px!important;padding-bottom:42px!important}
+}
