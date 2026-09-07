@@ -1,8 +1,13 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 function esc(v:unknown){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))}
+function httpUrl(value:unknown){
+ const text=String(value??'').trim().slice(0,2000);if(!text)return'';
+ try{const url=new URL(text);return url.protocol==='https:'||url.protocol==='http:'?url.toString():''}catch{return''}
+}
 function htmlBody(input:{name:string;title:string;message:string;ctaLabel?:string;ctaUrl?:string;unsubscribeUrl:string}){
  const message=esc(input.message.replace(/{{\s*name\s*}}/gi,input.name)).replace(/\n/g,'<br/>');
  const cta=input.ctaLabel&&input.ctaUrl?`<p style="margin:24px 0"><a href="${esc(input.ctaUrl)}" style="background:#0d47a1;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">${esc(input.ctaLabel)}</a></p>`:'';
@@ -14,18 +19,22 @@ async function sendResend(to:string,subject:string,html:string){
  const from=process.env.EMAIL_FROM||'HappyGo Travel <booking@happygo.vn>';
  const replyTo=process.env.EMAIL_REPLY_TO||'info@happygo.vn';
  const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],reply_to:replyTo,subject,html})});
- if(!r.ok)throw new Error(`RESEND_${r.status}_${await r.text()}`);
+ if(!r.ok)throw new Error(`RESEND_${r.status}`);
 }
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'DATABASE_URL chưa được cấu hình.'},{status:503});
  const actor=await adminActor(req,'email');
  if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});
  if(!process.env.RESEND_API_KEY)return NextResponse.json({error:'RESEND_API_KEY chưa được cấu hình.'},{status:503});
- const body=await req.json().catch(()=>({}));
- const status=String(body.customerStatus||'');
+ if(requestBodyTooLarge(req,131_072))return NextResponse.json({error:'Dữ liệu chiến dịch email quá lớn.'},{status:413});
+ const parsed=await readBoundedJson(req,131_072);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu chiến dịch email quá lớn.'},{status:413});
+ const body=parsed.body;
+ const status=String(body.customerStatus||'').trim().slice(0,50);
  const limit=Math.max(1,Math.min(200,Number(body.limit)||100));
- const subject=String(body.subject||'').trim(),title=String(body.title||subject).trim(),message=String(body.message||'').trim();
+ const subject=String(body.subject||'').trim().slice(0,250),title=String(body.title||subject).trim().slice(0,300),message=String(body.message||'').trim().slice(0,50_000);
+ const ctaLabel=String(body.ctaLabel||'').trim().slice(0,120),rawCtaUrl=String(body.ctaUrl||'').trim(),ctaUrl=httpUrl(rawCtaUrl);
  if(!subject||!message)return NextResponse.json({error:'Thiếu tiêu đề hoặc nội dung.'},{status:400});
+ if(rawCtaUrl&&!ctaUrl)return NextResponse.json({error:'Liên kết CTA phải là URL http/https hợp lệ.'},{status:400});
  const sql=db();
  const rows=status
   ?await sql`select name,email from customers where email is not null and email<>'' and marketing_consent=true and status=${status} order by updated_at desc limit ${limit}`
@@ -48,6 +57,6 @@ export async function POST(req:NextRequest){
    select name,email from deduped order by updated_at desc limit ${limit}`;
  const siteBase=(process.env.NEXT_PUBLIC_SITE_URL||process.env.PUBLIC_SITE_URL||'https://happygo-travel.vercel.app').replace(/\/$/,'');
  let sent=0,failed=0;
- for(const row of rows){const recipient=String(row.email||'').trim();if(!recipient)continue;try{const unsubscribeUrl=`${siteBase}/huy-dang-ky?email=${encodeURIComponent(recipient)}`;await sendResend(recipient,subject,htmlBody({name:String(row.name||'Quý khách'),title,message,ctaLabel:String(body.ctaLabel||''),ctaUrl:String(body.ctaUrl||''),unsubscribeUrl}));sent++}catch{failed++}}
+ for(const row of rows){const recipient=String(row.email||'').trim();if(!recipient)continue;try{const unsubscribeUrl=`${siteBase}/huy-dang-ky?email=${encodeURIComponent(recipient)}`;await sendResend(recipient,subject,htmlBody({name:String(row.name||'Quý khách'),title,message,ctaLabel,ctaUrl,unsubscribeUrl}));sent++}catch(error){console.error('email_campaign_recipient_failed',{recipient,status:error instanceof Error?error.message:'unknown'});failed++}}
  return NextResponse.json({ok:true,total:rows.length,sent,failed});
 }
