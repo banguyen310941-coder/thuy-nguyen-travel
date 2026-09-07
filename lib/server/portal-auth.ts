@@ -6,6 +6,10 @@ type SessionPayload={kind:PortalKind;id:string;exp:number;iat?:number};
 
 const HOUR=60*60;
 const DAY=24*HOUR;
+const MAX_SESSION_TOKEN_LENGTH=2048;
+const MAX_SESSION_BODY_LENGTH=1536;
+const SESSION_SIGNATURE_LENGTH=43;
+const BASE64URL=/^[A-Za-z0-9_-]+$/;
 
 function secret(){
   const value=process.env.AUTH_SECRET?.trim()||process.env.ADMIN_API_KEY?.trim();
@@ -46,8 +50,12 @@ export function createSession(kind:PortalKind,id:string,maxAgeSeconds=sessionMax
 
 export function readSession(req:NextRequest,cookieName:string,kind:PortalKind){
   const token=req.cookies.get(cookieName)?.value||'';
-  const [body,sig]=token.split('.');
-  if(!body||!sig)return null;
+  if(!token||token.length>MAX_SESSION_TOKEN_LENGTH)return null;
+  const parts=token.split('.');
+  if(parts.length!==2)return null;
+  const [body,sig]=parts;
+  if(!body||!sig||body.length>MAX_SESSION_BODY_LENGTH||sig.length!==SESSION_SIGNATURE_LENGTH)return null;
+  if(!BASE64URL.test(body)||!BASE64URL.test(sig))return null;
   const expected=createHmac('sha256',secret()).update(body).digest('base64url');
   const a=Buffer.from(sig),b=Buffer.from(expected);
   if(a.length!==b.length||!timingSafeEqual(a,b))return null;
