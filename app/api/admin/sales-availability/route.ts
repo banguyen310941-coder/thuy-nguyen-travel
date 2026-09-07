@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
@@ -8,6 +9,7 @@ export const runtime='nodejs';
 const ENTITY='sales_availability';
 const SHARED_ENTITY='admin_shared_state';
 const SHARED_KEY='happygo_crm_sales_availability_v1';
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function elevated(actor:AdminActor){return actor.role==='owner'||actor.role==='admin'||actor.permissions.includes('*')}
 function isSales(actor:AdminActor){return actor.role==='sales'||String(actor.department||'').toLowerCase()==='sales'}
 async function states(){
@@ -21,6 +23,6 @@ export async function GET(req:NextRequest){
 }
 
 export async function POST(req:NextRequest){
- if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(!isSales(actor)&&!elevated(actor))return NextResponse.json({error:'Chỉ Sale hoặc Quản trị viên được đổi trạng thái nhận khách.'},{status:403});const body=await req.json().catch(()=>({}));let staffId=String(body.staffId||actor.id);if(!elevated(actor))staffId=actor.id;
+ if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});if(!isSales(actor)&&!elevated(actor))return NextResponse.json({error:'Chỉ Sale hoặc Quản trị viên được đổi trạng thái nhận khách.'},{status:403});if(requestBodyTooLarge(req,32_768))return NextResponse.json({error:'Dữ liệu trạng thái Sale quá lớn.'},{status:413});const parsed=await readBoundedJson(req,32_768);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu trạng thái Sale quá lớn.'},{status:413});const body=parsed.body;let staffId=String(body.staffId||actor.id);if(!elevated(actor))staffId=actor.id;if(!uuid.test(staffId))return NextResponse.json({error:'Nhân viên Sale không hợp lệ.'},{status:400});
  try{const target=(await db()`select id,name,role,department from staff where id=${staffId} and status='active' limit 1`)[0];if(!target||!(String(target.role)==='sales'||String(target.department||'').toLowerCase()==='sales'))return NextResponse.json({error:'Nhân viên Sale không hợp lệ.'},{status:400});const receivingCustomers=Boolean(body.receivingCustomers),updatedAt=new Date().toISOString();await db()`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'sales_availability.update',${ENTITY},${staffId},${JSON.stringify({receivingCustomers,updatedAt,updatedBy:actor.name})}::jsonb)`;const current=await mirror(actor);return NextResponse.json({ok:true,...current,actorId:actor.id})}catch(error){console.error('sales_availability_post_failed',error);return NextResponse.json({error:'Không thể cập nhật trạng thái nhận khách.'},{status:500})}
 }
