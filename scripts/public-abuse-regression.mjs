@@ -33,5 +33,24 @@ must('app/api/newsletter/route.ts','maxHits:20,windowMinutes:15','Newsletter ph�
 must('app/api/newsletter/route.ts','maxHits:5,windowMinutes:15','Newsletter phải chặn lặp email nhanh');
 must('app/api/newsletter/route.ts',"source','public_unsubscribe'",'Luồng unsubscribe phải được giữ nguyên và không phụ thuộc limiter subscribe');
 
+must('app/api/account/route.ts','requestBodyTooLarge(req,8192)','Tài khoản khách phải chặn body quá lớn');
+must('app/api/account/route.ts',"publicRateKey(req,'customer-register')",'Đăng ký khách phải giới hạn theo nguồn');
+must('app/api/account/route.ts','maxHits:12,windowMinutes:60','Đăng ký khách phải có ngưỡng theo giờ');
+must('app/api/account/route.ts',"publicRateKey(req,'customer-register-email',email)",'Đăng ký khách phải giới hạn lặp theo email');
+must('app/api/account/route.ts',"publicRateKey(req,'customer-login')",'Đăng nhập khách phải chặn burst');
+must('app/api/account/route.ts','maxHits:40,windowMinutes:15','Đăng nhập khách phải có ngưỡng burst đủ rộng cho người thật');
+
+for(const prefix of ['partner','affiliate']){
+ const register=`app/api/${prefix}/auth/register/route.ts`,login=`app/api/${prefix}/auth/login/route.ts`;
+ must(register,'requestBodyTooLarge(req,8192)',`${prefix} register phải chặn body quá lớn`);
+ must(register,`publicRateKey(req,'${prefix}-register')`,`${prefix} register phải giới hạn theo nguồn`);
+ must(register,'maxHits:6,windowMinutes:60',`${prefix} register phải có ngưỡng theo giờ`);
+ must(register,`publicRateKey(req,'${prefix}-register-email',email)`,`${prefix} register phải giới hạn lặp theo email`);
+ must(login,'requestBodyTooLarge(req,8192)',`${prefix} login phải chặn body quá lớn`);
+ must(login,`publicRateKey(req,'${prefix}-login')`,`${prefix} login phải chặn burst theo nguồn`);
+ must(login,'maxHits:30,windowMinutes:15',`${prefix} login phải có ngưỡng burst`);
+ must(login,"headers:{'Retry-After':'900'}",`${prefix} login 429 phải trả Retry-After`);
+}
+
 if(failures.length){console.error('\nPublic abuse regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public abuse regression checks passed.');
