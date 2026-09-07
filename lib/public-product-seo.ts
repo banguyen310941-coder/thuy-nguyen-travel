@@ -19,6 +19,6 @@ export async function getPublishedProductSeo(slug:string):Promise<PublicProductS
 }
 
 export async function listPublishedProductSeo(){
- if(!hasDatabase())return[] as Array<Pick<PublicProductSeo,'slug'|'updatedAt'>>;
- try{const sql=db();const rows=await sql`select slug,updated_at from products where partner_id is null and status='published' order by updated_at desc`;return rows.map((row:any)=>({slug:String(row.slug),updatedAt:String(row.updated_at||'')}))}catch{return[] as Array<Pick<PublicProductSeo,'slug'|'updatedAt'>>}
+ if(!hasDatabase())return[] as Array<Pick<PublicProductSeo,'slug'|'type'|'updatedAt'>>;
+ try{const sql=db();const rows=await sql`select slug,type,updated_at from products where partner_id is null and status='published' order by updated_at desc`;return rows.map((row:any)=>({slug:String(row.slug),type:String(row.type),updatedAt:String(row.updated_at||'')}))}catch{return[] as Array<Pick<PublicProductSeo,'slug'|'type'|'updatedAt'>>}
 }
