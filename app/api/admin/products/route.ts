@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {randomUUID} from 'node:crypto';
 import {db,hasDatabase} from '@/lib/db';
 import {adminActor,type AdminActor} from '@/lib/server/admin-access';
+import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
@@ -20,7 +21,7 @@ function mapProduct(row:any,units:any[]){const data=row.data&&typeof row.data===
 
 export async function GET(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});try{const sql=db(),[products,units]=await Promise.all([sql`select * from products where partner_id is null order by updated_at desc,name`,sql`select * from product_units where product_id in(select id from products where partner_id is null) order by name,id`]);const items=products.filter((row:any)=>types.includes(String(row.type) as ProductType)&&canType(actor,String(row.type) as ProductType)).map((row:any)=>mapProduct(row,units));return NextResponse.json({ok:true,items,capabilities:{delete:elevated(actor)}},{headers:{'Cache-Control':'no-store, max-age=0'}})}catch(error){console.error('admin_products_get_failed',error);return NextResponse.json({error:'Không đọc được sản phẩm production.'},{status:500})}}
 
-export async function POST(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const body=await req.json().catch(()=>({})),action=String(body.action||'');try{const sql=db();
+export async function POST(req:NextRequest){if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});if(requestBodyTooLarge(req,4_194_304))return NextResponse.json({error:'Dữ liệu sản phẩm quá lớn.'},{status:413});const actor=await adminActor(req);if(!actor)return NextResponse.json({error:'Unauthorized'},{status:401});const parsed=await readBoundedJson(req,4_194_304);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu sản phẩm quá lớn.'},{status:413});const body=parsed.body as any,action=String(body.action||'');try{const sql=db();
  if(action==='save'){
   const product=body.product&&typeof body.product==='object'?body.product:{},type=String(product.type||'') as ProductType;if(!types.includes(type)||!canType(actor,type))return NextResponse.json({error:'Bạn không có quyền cập nhật loại sản phẩm này.'},{status:403});const name=String(product.name||'').trim().slice(0,300),slug=String(product.slug||'').trim().slice(0,300);if(name.length<2||!slug)return NextResponse.json({error:'Tên và đường dẫn sản phẩm chưa hợp lệ.'},{status:400});
   const requestedId=String(product.id||''),existingProduct=uuid.test(requestedId)?(await sql`select id from products where id=${requestedId} and partner_id is null limit 1`)[0]:null,id=existingProduct?String(existingProduct.id):randomUUID(),units=Array.isArray(product.units)?product.units.slice(0,500):[],retail=Math.max(parseMoney(product.price),...units.map((unit:any)=>parseMoney(unit.weekdayPrice)),0),now=new Date().toISOString(),productData={...stripUnits(product),id,source:'admin',updatedAt:now};
