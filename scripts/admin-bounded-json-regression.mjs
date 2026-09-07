@@ -12,6 +12,10 @@ const routes=[
  ['app/api/admin/site-config/route.ts','65_536','req','Cấu hình website'],
  ['app/api/admin/homepage/route.ts','4_194_304','req','Trang chủ'],
  ['app/api/admin/rates/route.ts','65_536','req','Lịch giá'],
+ ['app/api/admin/bookings/route.ts','65_536','req','Booking'],
+ ['app/api/admin/accounting/route.ts','65_536','req','Kế toán'],
+ ['app/api/admin/marketing-budget/route.ts','131_072','req','Ngân sách Marketing'],
+ ['app/api/admin/supplier-orders/route.ts','131_072','req','Đơn nhà cung cấp'],
  ['app/api/admin/shared-data/route.ts','MAX_BODY_SIZE','request','Dữ liệu dùng chung'],
 ];
 
