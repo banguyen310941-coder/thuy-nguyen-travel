@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
-import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
+import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 export const dynamic='force-dynamic';
 
@@ -16,7 +16,8 @@ export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Hệ thống đăng ký ưu đãi chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
  if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
- const body=await req.json().catch(()=>({}));
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
+ const body=parsed.body;
  // Honeypot: automated form fillers commonly populate hidden website fields.
  if(String(body.website||'').trim())return NextResponse.json({ok:true,subscribed:true,idempotent:true});
  const email=normalizeEmail(body.email);
@@ -60,7 +61,8 @@ export async function DELETE(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Hệ thống đăng ký ưu đãi chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu hủy đăng ký quá lớn.'},{status:413});
  if(!sameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
- const body=await req.json().catch(()=>({}));const email=normalizeEmail(body.email);
+ const parsed=await readBoundedJson(req,8192);if(parsed.tooLarge)return NextResponse.json({error:'Dữ liệu hủy đăng ký quá lớn.'},{status:413});
+ const body=parsed.body;const email=normalizeEmail(body.email);
  if(!validEmail(email))return NextResponse.json({error:'Email chưa hợp lệ.'},{status:400});
  try{
   const sql=db(),unsubscribedAt=new Date().toISOString();
