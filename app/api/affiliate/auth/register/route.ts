@@ -2,6 +2,7 @@ import {randomBytes} from 'node:crypto';
 import {NextRequest,NextResponse} from 'next/server';
 import {db,hasDatabase} from '@/lib/db';
 import {hashPassword} from '@/lib/server/portal-auth';
+import {consumePublicRateLimit,publicRateKey,requestBodyTooLarge} from '@/lib/server/public-abuse';
 
 const emailOk=(value:string)=>/^\S+@\S+\.\S+$/.test(value);
 const phoneOk=(value:string)=>/^[0-9+().\s-]{8,20}$/.test(value);
@@ -9,6 +10,7 @@ const codeOf=()=>`CTV${randomBytes(4).toString('hex').toUpperCase()}`;
 
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
+ if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu đăng ký quá lớn.'},{status:413});
  const body=await req.json().catch(()=>({}));
  const name=String(body.name||'').trim().slice(0,120);
  const email=String(body.email||'').trim().toLowerCase().slice(0,180);
@@ -21,6 +23,10 @@ export async function POST(req:NextRequest){
  if(!accepted)return NextResponse.json({error:'Bạn cần đồng ý chính sách CTV trước khi đăng ký.'},{status:400});
  const sql=db();
  try{
+  const ipAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'affiliate-register'),action:'affiliate.register.submit',scope:'affiliate-register-ip',maxHits:6,windowMinutes:60});
+  if(!ipAllowed)return NextResponse.json({error:'Có quá nhiều yêu cầu đăng ký CTV từ mạng này. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
+  const emailAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'affiliate-register-email',email),action:'affiliate.register.submit',scope:'affiliate-register-email',maxHits:3,windowMinutes:60});
+  if(!emailAllowed)return NextResponse.json({error:'Email này đang được gửi đăng ký quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
   const exists=await sql`select id from staff where lower(email)=lower(${email}) limit 1`;
   if(exists.length)return NextResponse.json({error:'Email này đã được sử dụng trên hệ thống HappyGo.'},{status:409});
   let saved:any=null;
