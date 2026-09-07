@@ -23,7 +23,10 @@ must('app/api/admin/auth/bootstrap/route.ts','requestBodyTooLarge(req,8192)','Bo
 
 must('app/api/account/route.ts','Hồ sơ khách hàng với SĐT hoặc email này đã tồn tại','Đăng ký khách mới không được tự claim hồ sơ CRM cũ');
 mustNot('app/api/account/route.ts','update customers set name=${name},phone=${phone},email=${email}','Đăng ký public không được sửa thông tin hồ sơ khách cũ');
-must('app/api/account/route.ts',"source='customer_account' and not exists(select 1 from customer_accounts",'Đăng ký lỗi đồng thời phải dọn customer tạm chưa có account');
+must('app/api/account/route.ts','new_customer as (','Customer mới phải được tạo trong statement đăng ký atomic');
+must('app/api/account/route.ts','new_account as (','Customer account phải được tạo trong cùng statement với customer');
+must('app/api/account/route.ts',"throw new Error('CUSTOMER_ACCOUNT_ATOMIC_REGISTER_FAILED')",'Đăng ký phải fail kín nếu account không được tạo cùng customer');
+mustNot('app/api/account/route.ts','let provisionalCustomerId','Không được quay lại mô hình tạo customer rồi cleanup thủ công');
 must('app/api/account/route.ts',"text.includes('customers_phone_unique')",'Race đăng ký trùng SĐT phải trả conflict thay vì lỗi 500');
 must('app/api/account/route.ts',"text.includes('customer_accounts_email_key')",'Race đăng ký trùng email phải trả conflict thay vì lỗi 500');
 
