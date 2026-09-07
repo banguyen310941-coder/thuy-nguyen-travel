@@ -28,6 +28,9 @@ function assert(condition,message){if(!condition)throw new Error(message)}
 try{
   const adminResponse=await ready();
   assert(adminResponse.status===200,`/admin expected 200, got ${adminResponse.status}`);
+  const csp=adminResponse.headers.get('content-security-policy')||'';
+  assert(csp.includes("script-src-attr 'none'"),`Built response must block inline script attributes, got CSP: ${csp}`);
+  assert(csp.includes("script-src 'self' 'unsafe-inline'"),'Next hydration-compatible script-src must remain until nonce migration is implemented');
   const html=await adminResponse.text();
   const links=manifestLinks(html);
   assert(links.length===1,`/admin must render exactly one manifest link, got ${JSON.stringify(links)}`);
@@ -46,7 +49,7 @@ try{
   const publicJson=await publicManifest.json();
   assert(publicJson.start_url==='/'&&publicJson.scope==='/',`Public manifest route must stay scoped to /, got ${JSON.stringify({start_url:publicJson.start_url,scope:publicJson.scope})}`);
 
-  console.log('Built Admin PWA regression checks passed.');
+  console.log('Built Admin PWA/security regression checks passed.');
 }finally{
   server.kill('SIGTERM');
   await Promise.race([new Promise(resolve=>server.once('exit',resolve)),sleep(2000)]);
