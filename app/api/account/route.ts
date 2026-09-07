@@ -28,7 +28,7 @@ export async function GET(req:NextRequest){
 export async function POST(req:NextRequest){
  if(!hasDatabase())return NextResponse.json({error:'Database chưa sẵn sàng.'},{status:503});
  if(requestBodyTooLarge(req,8192))return NextResponse.json({error:'Dữ liệu tài khoản quá lớn.'},{status:413});
- const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();
+ const body=await req.json().catch(()=>({}));const action=String(body.action||'');const sql=db();let provisionalCustomerId='';
  try{
   if(action==='register'){
    const name=String(body.name||'').trim().slice(0,120),phone=normalizePhone(String(body.phone||'')),email=String(body.email||'').trim().toLowerCase().slice(0,254),password=String(body.password||'');
@@ -38,12 +38,10 @@ export async function POST(req:NextRequest){
    const emailAllowed=await consumePublicRateLimit(sql,{key:publicRateKey(req,'customer-register-email',email),action:'customer.register.submit',scope:'customer-register-email',maxHits:3,windowMinutes:60});
    if(!emailAllowed)return NextResponse.json({error:'Email này đang được gửi đăng ký quá nhanh. Vui lòng thử lại sau.'},{status:429,headers:{'Retry-After':'3600'}});
    const accountExists=await sql`select id from customer_accounts where lower(email)=${email} limit 1`;if(accountExists.length)return NextResponse.json({error:'Email này đã có tài khoản HappyGo.'},{status:409});
-   const customerRows=await sql`select c.id,(select ca.id from customer_accounts ca where ca.customer_id=c.id limit 1) as account_id from customers c where c.phone=${phone} or lower(coalesce(c.email,''))=${email} order by case when c.phone=${phone} then 0 else 1 end limit 1`;
-   let customerId='';
-   if(customerRows[0]){
-    if(customerRows[0].account_id)return NextResponse.json({error:'Hồ sơ khách hàng này đã có tài khoản đăng nhập.'},{status:409});customerId=String(customerRows[0].id);await sql`update customers set name=${name},phone=${phone},email=${email},updated_at=now() where id=${customerId}`;
-   }else{const inserted=await sql`insert into customers(name,phone,email,status,source) values(${name},${phone},${email},'lead','customer_account') returning id`;customerId=String(inserted[0].id)}
-   const passwordHash=hashPassword(password);const accounts=await sql`insert into customer_accounts(customer_id,email,password_hash,status,last_login_at,updated_at) values(${customerId},${email},${passwordHash},'active',now(),now()) returning id`;const accountId=String(accounts[0].id);
+   const existingCustomer=await sql`select c.id,(select ca.id from customer_accounts ca where ca.customer_id=c.id limit 1) as account_id from customers c where c.phone=${phone} or lower(coalesce(c.email,''))=${email} limit 1`;
+   if(existingCustomer.length)return NextResponse.json({error:'Hồ sơ khách hàng với SĐT hoặc email này đã tồn tại. Vui lòng đăng nhập hoặc liên hệ HappyGo để xác minh và liên kết tài khoản.'},{status:409});
+   const inserted=await sql`insert into customers(name,phone,email,status,source) values(${name},${phone},${email},'lead','customer_account') returning id`;provisionalCustomerId=String(inserted[0].id);
+   const passwordHash=hashPassword(password);const accounts=await sql`insert into customer_accounts(customer_id,email,password_hash,status,last_login_at,updated_at) values(${provisionalCustomerId},${email},${passwordHash},'active',now(),now()) returning id`;const accountId=String(accounts[0].id);provisionalCustomerId='';
    const response=NextResponse.json({ok:true,authenticated:true});setSessionCookie(response,COOKIE,'customer',accountId);return response;
   }
   if(action==='login'){
@@ -58,5 +56,10 @@ export async function POST(req:NextRequest){
    const response=NextResponse.json({ok:true,authenticated:false});clearSessionCookie(response,COOKIE);return response;
   }
   return NextResponse.json({error:'Hành động không hỗ trợ.'},{status:400});
- }catch(error){console.error('customer_account_post_failed',error);return NextResponse.json({error:'Không thể xử lý tài khoản khách hàng.'},{status:500})}
+ }catch(error){
+  if(provisionalCustomerId){try{await sql`delete from customers where id=${provisionalCustomerId} and source='customer_account' and not exists(select 1 from customer_accounts ca where ca.customer_id=customers.id) and not exists(select 1 from bookings b where b.customer_id=customers.id)`}catch(cleanupError){console.error('customer_account_register_cleanup_failed',cleanupError)}}
+  console.error('customer_account_post_failed',error);const text=error instanceof Error?error.message:String(error);
+  if(text.includes('customers_phone_unique')||text.includes('customer_accounts_email_key')||text.includes('customer_accounts_customer_id_key'))return NextResponse.json({error:'Hồ sơ hoặc email này vừa được đăng ký. Vui lòng đăng nhập hoặc liên hệ HappyGo nếu cần liên kết hồ sơ cũ.'},{status:409});
+  return NextResponse.json({error:'Không thể xử lý tài khoản khách hàng.'},{status:500})
+ }
 }
