@@ -49,6 +49,7 @@ import './contact-actions-fix.css';
 import './source-gallery-visible.css';
 import './service-stars.css';
 import './desktop-booking-cta.css';
+import './home-premium.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
