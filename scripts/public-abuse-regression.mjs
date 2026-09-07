@@ -63,6 +63,14 @@ for(const [path,needle,label] of [
  ['app/api/affiliate/booking-completed/route.ts','readBoundedJson(req,32768)','Affiliate webhook phải đo kích thước JSON thực tế'],
 ])must(path,needle,label);
 
+// Reviews combine public content with optional account-specific eligibility/mine data.
+must('app/api/reviews/route.ts','requestBodyTooLarge(req,8192)','Review POST phải chặn body quá lớn');
+must('app/api/reviews/route.ts','readBoundedJson(req,8192)','Review POST phải đo kích thước JSON thực tế');
+must('app/api/reviews/route.ts',"publicRateKey(req,'review-submit',`${actor.accountId}|${slug}`)",'Review POST phải giới hạn theo tài khoản+sản phẩm+nguồn');
+must('app/api/reviews/route.ts','maxHits:10,windowMinutes:15','Review POST phải chặn cập nhật quá nhanh');
+must('app/api/reviews/route.ts',"headers:{'Retry-After':'900'}",'Review 429 phải trả Retry-After');
+must('middleware.ts',"'/api/reviews/:path*'",'Reviews phải đi qua middleware để POST được same-origin guard');
+
 // Partner email is not guaranteed unique in the legacy table, so registration must
 // serialize same-email requests and create partner + account in one SQL statement.
 must('app/api/partner/auth/register/route.ts','pg_advisory_xact_lock(hashtext(${email}::text))','Đăng ký đối tác phải khóa đồng thời theo email');
@@ -70,9 +78,8 @@ must('app/api/partner/auth/register/route.ts','where not exists(select 1 from ex
 must('app/api/partner/auth/register/route.ts','new_account as (','Partner và partner_accounts phải tạo trong cùng statement');
 must('app/api/partner/auth/register/route.ts','PARTNER_REGISTER_ATOMIC_FAILED','Đăng ký đối tác phải fail kín nếu account không tạo cùng partner');
 
-// Private account/admin/partner/affiliate responses must never be cached by browser,
-// proxy or CDN even if an individual route forgets to declare its own cache policy.
-must('middleware.ts',"const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate']",'Middleware phải nhận diện toàn bộ API private');
+// Private/account-aware responses must never be cached by browser, proxy or CDN.
+must('middleware.ts',"const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate','/api/reviews']",'Middleware phải nhận diện toàn bộ API private/account-aware');
 must('middleware.ts',"response.headers.set('Cache-Control','private, no-store, max-age=0, must-revalidate')",'API private phải có Cache-Control no-store');
 must('middleware.ts',"response.headers.set('Pragma','no-cache')",'API private phải có header tương thích proxy cũ');
 must('middleware.ts','return passThrough(req)','Luồng hợp lệ phải đi qua helper gắn cache guard');
