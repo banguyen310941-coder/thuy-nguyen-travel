@@ -59,5 +59,16 @@ mustNot('components/HomeCmsSections.tsx','/cam-nang/bai-viet/','Homepage không 
 must('app/layout.tsx',"import './home-premium.css';",'Layout public phải nạp visual system trang chủ mới');
 must('app/home-premium-addon.css',"@import './public-premium.css';",'Visual system mới phải áp dụng cả trang danh mục và chi tiết');
 
+// Mobile screenshot guard: this final layer is intentionally loaded last so
+// old public CSS cannot restore the cramped horizontal cards shown on phones.
+must('app/layout.tsx',"import './mobile-public-polish.css';",'Layout phải nạp lớp hoàn thiện mobile');
+const layout=read('app/layout.tsx');
+if(layout.indexOf("import './mobile-public-polish.css';")<layout.indexOf("import './public-screenshot-fixes.css';"))failures.push('Mobile polish phải được nạp sau public-screenshot-fixes.css');
+must('app/mobile-public-polish.css','.home-premium .home-hero-quicklinks{display:none!important}','Mobile hero không được lặp hai hàng dịch vụ');
+must('app/mobile-public-polish.css','.home-premium .mock-product-card.property-card','Card lưu trú mobile phải ép về bố cục ảnh trên / nội dung dưới');
+must('app/mobile-public-polish.css','.home-premium .home-guide-card','Card Cẩm nang mobile phải dùng cùng nhịp dọc');
+must('app/mobile-public-polish.css','.destination-tile:first-child{grid-column:1/-1!important','Danh sách điểm đến mobile phải có tile dẫn đầu rõ ràng');
+must('app/mobile-public-polish.css','.floating-actions a{display:grid!important;place-items:center!important;width:46px!important','Nút liên hệ nổi mobile phải thu gọn');
+
 if(failures.length){console.error('\nPublic visual/PWA regression FAILED:\n');for(const failure of failures)console.error(`- ${failure}`);process.exit(1)}
 console.log('Public visual/PWA regression checks passed.');
