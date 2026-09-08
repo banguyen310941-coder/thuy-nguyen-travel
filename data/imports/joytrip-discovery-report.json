@@ -1,0 +1,17 @@
+{
+  "source": "https://joytripvn.com",
+  "generatedAt": "2026-09-08T09:40:16.133Z",
+  "sitemapDocuments": 3,
+  "categoryPages": 5,
+  "customTypes": [],
+  "candidates": 0,
+  "products": 0,
+  "byType": {},
+  "errors": [
+    {
+      "stage": "rest-types",
+      "url": "https://joytripvn.com/wp-json/wp/v2/types",
+      "message": "SyntaxError: Unexpected token '<', \"<!-- OnePa\"... is not valid JSON"
+    }
+  ]
+}
