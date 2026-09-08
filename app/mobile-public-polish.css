@@ -1,0 +1,204 @@
+/* Mobile storefront finishing layer (2026-09-08).
+   Loaded after every public theme file. Keep desktop untouched and make the
+   narrow layout image-first, readable and free from horizontal collisions. */
+
+@media (max-width:760px){
+  html,body{max-width:100%;overflow-x:hidden!important}
+  body{font-size:15px}
+  main{min-width:0;overflow-x:clip}
+  .container{width:calc(100% - 28px)!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important}
+
+  /* Compact mobile chrome. */
+  .site-header.happygo-header-v2{box-shadow:0 4px 18px rgba(14,42,67,.06)!important}
+  .happygo-header-v2 .mock-mobile-head{grid-template-columns:40px minmax(0,1fr) 40px!important;min-height:56px!important;padding:6px 0!important}
+  .happygo-header-v2 .mock-mobile-icon{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;border-radius:11px!important;font-size:17px!important;box-shadow:none!important}
+  .happygo-header-v2 .mock-mobile-logo{min-width:0!important;max-width:170px!important;overflow:hidden!important}
+  .happygo-header-v2 .mock-mobile-logo .happygo-logo{gap:5px!important;transform:scale(.92);transform-origin:center center}
+  .happygo-header-v2 .mock-mobile-logo .happygo-logo-mark{width:32px!important;height:32px!important;flex-basis:32px!important}
+  .happygo-header-v2 .mock-mobile-logo .happygo-word{font-size:14px!important;letter-spacing:-.55px!important}
+  .happygo-header-v2 .mock-mobile-logo .happygo-travel{font-size:5.5px!important;letter-spacing:2.3px!important}
+  .mobile-menu-panel{max-height:calc(100dvh - 76px)!important;overflow-y:auto!important}
+
+  /* Hero: one clear message + one search control, no duplicated service row. */
+  .home-premium .mock-hero{min-height:0!important;background-position:58% center!important;overflow:hidden!important}
+  .home-premium .mock-hero:after{height:70px!important}
+  .home-premium .mock-hero-overlay{background:linear-gradient(180deg,rgba(4,27,50,.74) 0%,rgba(4,27,50,.62) 55%,rgba(4,27,50,.78) 100%)!important}
+  .home-premium .mock-hero-content{min-height:0!important;padding-top:32px!important;padding-bottom:26px!important}
+  .home-premium .mock-eyebrow{font-size:9px!important;letter-spacing:2.2px!important}
+  .home-premium .mock-eyebrow:before{width:26px!important}
+  .home-premium .mock-hero h1{max-width:360px!important;margin:11px 0 12px!important;font-size:clamp(31px,8.7vw,36px)!important;line-height:1.06!important;letter-spacing:-1.25px!important;text-wrap:balance}
+  .home-premium .mock-hero-content>p:not(.mock-eyebrow){max-width:420px!important;font-size:14px!important;line-height:1.55!important;text-wrap:pretty}
+  .home-premium .home-hero-quicklinks{display:none!important}
+  .home-premium .mock-hero-search{position:relative!important;inset:auto!important;margin-top:20px!important;width:100%!important}
+  .home-premium .search-panel-v2{width:100%!important;max-width:none!important}
+  .home-premium .mock-search-tabs{width:calc(100% + 14px)!important;margin:0 -14px 8px 0!important;padding:0 14px 2px 0!important;gap:7px!important;overflow-x:auto!important;scroll-snap-type:x proximity;overscroll-behavior-inline:contain;scrollbar-width:none!important}
+  .home-premium .mock-search-tabs::-webkit-scrollbar{display:none!important}
+  .home-premium .mock-search-tabs button{flex:0 0 auto!important;min-height:36px!important;padding:7px 12px!important;border-radius:999px!important;font-size:10.5px!important;scroll-snap-align:start}
+  .home-premium .mock-search-form{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0!important;width:100%!important;padding:6px!important;border-radius:17px!important;overflow:visible!important;box-shadow:0 14px 34px rgba(3,25,48,.23)!important}
+  .home-premium .mock-search-field,
+  .home-premium .mock-search-field.mock-destination,
+  .home-premium .guest-picker{min-width:0!important;min-height:51px!important;height:auto!important;padding:7px 9px!important;gap:8px!important;border-right:0!important;border-bottom:1px solid #e8edf2!important;background:#fff!important}
+  .home-premium .mock-search-field.mock-destination{grid-column:1/-1!important}
+  .home-premium .mock-search-field>span{font-size:17px!important}
+  .home-premium .mock-search-field small{margin-bottom:2px!important;font-size:8.5px!important;line-height:1.2!important;letter-spacing:.55px!important}
+  .home-premium .mock-search-field input,
+  .home-premium .mock-search-field select,
+  .home-premium .guest-trigger{width:100%!important;max-width:100%!important;min-height:22px!important;padding:0!important;font-size:12.5px!important;line-height:1.3!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .home-premium .guest-picker{grid-column:1/-1!important}
+  .home-premium .guest-popover{left:0!important;right:0!important;width:auto!important;max-width:100%!important}
+  .home-premium .mock-search-button{grid-column:1/-1!important;min-height:48px!important;height:48px!important;margin:6px 0 0!important;border-radius:12px!important;font-size:13px!important}
+  .home-premium .mock-search-benefits{display:none!important}
+
+  /* Homepage rhythm and headings. */
+  .home-premium .mock-section{padding:34px 0!important}
+  .home-premium .mock-services-section{padding-top:34px!important;padding-bottom:30px!important}
+  .home-premium .mock-section-heading{display:flex!important;align-items:flex-start!important;gap:12px!important;margin-bottom:18px!important;min-width:0!important}
+  .home-premium .mock-section-heading>div{min-width:0!important;max-width:100%!important}
+  .home-premium .mock-section-heading h2{max-width:100%!important;margin:0!important;font-size:clamp(25px,7.5vw,31px)!important;line-height:1.12!important;letter-spacing:-.7px!important;white-space:normal!important;overflow:visible!important;overflow-wrap:break-word!important;text-wrap:balance}
+  .home-premium .mock-section-heading p{max-width:100%!important;margin-top:7px!important;font-size:12.5px!important;line-height:1.5!important}
+  .home-premium .mock-section-heading>a{display:none!important}
+  .home-premium .home-section-kicker{display:block!important;margin-bottom:7px!important;font-size:9.5px!important;line-height:1.4!important;letter-spacing:2px!important}
+  .home-premium .mock-pills{width:calc(100vw - 14px)!important;max-width:calc(100vw - 14px)!important;margin:12px -14px 0 0!important;padding-right:14px!important;flex-wrap:nowrap!important;overflow-x:auto!important;scrollbar-width:none!important}
+  .home-premium .mock-pills::-webkit-scrollbar{display:none!important}
+  .home-premium .mock-pills a{flex:0 0 auto!important;padding:8px 12px!important;font-size:10.5px!important;white-space:nowrap!important}
+
+  /* Service cards: compact 2-column entry grid. */
+  .home-premium .mock-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .home-premium .mock-service-card{min-height:0!important;padding:11px!important;border-radius:15px!important}
+  .home-premium .mock-service-card span{height:54px!important;flex-basis:54px!important;border-radius:11px!important;font-size:23px!important}
+  .home-premium .mock-service-card h3{min-height:0!important;margin:9px 0 3px!important;font-size:13px!important;line-height:1.25!important}
+  .home-premium .mock-service-card p{min-height:0!important;font-size:10px!important;line-height:1.4!important;-webkit-line-clamp:2!important}
+  .home-premium .mock-service-card:last-child:nth-child(odd){grid-column:1/-1!important}
+
+  /* Product cards: image first. Horizontal split cards were too cramped on phones. */
+  .home-premium .mock-product-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .home-premium .mock-product-card,
+  .home-premium .mock-product-card.property-card{display:flex!important;grid-template-columns:none!important;flex-direction:column!important;min-height:0!important;border-radius:18px!important;overflow:hidden!important}
+  .home-premium .mock-product-card>a:first-child{display:block!important;width:100%!important;height:auto!important;min-height:0!important}
+  .home-premium .mock-product-card .mock-product-image{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;border-radius:0!important;background-position:center!important}
+  .home-premium .mock-product-body{display:flex!important;padding:16px!important}
+  .home-premium .mock-product-body h3{margin:2px 0 7px!important;font-size:21px!important;line-height:1.18!important;letter-spacing:-.35px!important}
+  .home-premium .mock-product-body .property-location{margin-bottom:8px!important;font-size:12.5px!important}
+  .home-premium .mock-price-label{margin-top:12px!important;font-size:10px!important}
+  .home-premium .mock-price{font-size:22px!important;line-height:1.2!important}
+  .home-premium .mock-detail-btn{min-height:44px!important;margin-top:12px!important;border-radius:11px!important;font-size:12.5px!important}
+
+  /* Cruise, tour and guide cards: one consistent vertical pattern. */
+  .home-premium .mock-tour-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .home-premium .mock-tour-card,
+  .home-premium .mock-tour-card:first-child,
+  .home-premium .home-cruise-premium .mock-tour-card,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child,
+  .home-premium .home-guide-card{display:flex!important;grid-template-columns:none!important;grid-column:auto!important;flex-direction:column!important;min-height:0!important;border-radius:18px!important;overflow:hidden!important}
+  .home-premium .mock-tour-image,
+  .home-premium .mock-tour-card:first-child .mock-tour-image,
+  .home-premium .home-cruise-premium .mock-tour-image,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child .mock-tour-image,
+  .home-premium .home-guide-card .mock-tour-image{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;flex:0 0 auto!important;background-size:cover!important;background-position:center!important}
+  .home-premium .mock-tour-card>div:last-child,
+  .home-premium .mock-tour-card:first-child>div:last-child,
+  .home-premium .home-cruise-premium .mock-tour-card>div:last-child,
+  .home-premium .home-cruise-premium .mock-tour-card:first-child>div:last-child,
+  .home-premium .home-guide-card>div:last-child{display:block!important;padding:16px!important;min-width:0!important}
+  .home-premium .mock-tour-card small{font-size:10px!important;line-height:1.35!important;letter-spacing:1px!important}
+  .home-premium .mock-tour-card h3,
+  .home-premium .mock-tour-card:first-child h3{margin:6px 0 7px!important;font-size:21px!important;line-height:1.2!important;letter-spacing:-.3px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .home-premium .mock-tour-card p,
+  .home-premium .home-cruise-premium .mock-tour-card p,
+  .home-premium .home-guide-card p{display:-webkit-box!important;margin:0 0 10px!important;font-size:12.5px!important;line-height:1.55!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important}
+  .home-premium .mock-tour-card b{font-size:16px!important;line-height:1.3!important}
+  .home-premium .home-cruise-premium{padding-top:36px!important;padding-bottom:36px!important}
+  .home-premium .home-cruise-premium .mock-section-heading h2{font-size:clamp(27px,7.7vw,32px)!important;white-space:normal!important;word-break:normal!important}
+  .home-premium .home-guide-card h3{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important;font-size:21px!important}
+  .home-premium .home-guide-card p{-webkit-line-clamp:2!important}
+
+  /* Homepage destinations: editorial lead + clean two-column tiles. */
+  .home-premium .mock-destination-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:auto!important;gap:10px!important}
+  .home-premium .mock-destination-card,
+  .home-premium .mock-destination-card:nth-child(1),
+  .home-premium .mock-destination-card:nth-child(2){grid-column:auto!important;grid-row:auto!important;min-width:0!important;aspect-ratio:1/1!important;border-radius:16px!important}
+  .home-premium .mock-destination-card:first-child{grid-column:1/-1!important;aspect-ratio:16/9!important}
+  .home-premium .mock-destination-image>div{left:13px!important;right:13px!important;bottom:12px!important}
+  .home-premium .mock-destination-image h3,
+  .home-premium .mock-destination-card:nth-child(-n+2) .mock-destination-image h3{font-size:18px!important;line-height:1.15!important}
+  .home-premium .mock-destination-card:first-child .mock-destination-image h3{font-size:22px!important}
+  .home-premium .mock-destination-image p{display:-webkit-box!important;margin-top:4px!important;font-size:10.5px!important;line-height:1.35!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:1!important;overflow:hidden!important}
+
+  /* Standalone destination catalog. */
+  .destination-catalog{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .destination-tile{min-width:0!important;min-height:158px!important;border-radius:16px!important}
+  .destination-tile:first-child{grid-column:1/-1!important;min-height:205px!important}
+  .destination-tile-content{left:13px!important;right:13px!important;bottom:12px!important}
+  .destination-tile h3{margin-bottom:3px!important;font-size:16px!important;line-height:1.15!important}
+  .destination-tile:first-child h3{font-size:21px!important}
+  .destination-tile p{display:-webkit-box!important;margin:0!important;font-size:10.5px!important;line-height:1.35!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:1!important;overflow:hidden!important}
+  .destination-tile a{display:none!important}
+
+  /* General public catalogs: vertical cards instead of a narrow image/text split. */
+  .catalog-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .catalog-card,.catalog-card.cms-public-card{display:flex!important;grid-template-columns:none!important;flex-direction:column!important;border-radius:17px!important;overflow:hidden!important}
+  .catalog-image{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;background-position:center!important}
+  .catalog-body{padding:15px!important}
+  .catalog-body small{font-size:9.5px!important;line-height:1.35!important}
+  .catalog-body h3{margin:6px 0 7px!important;font-size:19px!important;line-height:1.2!important}
+  .catalog-body p{font-size:12px!important;line-height:1.5!important}
+  .catalog-actions{margin-top:10px!important;padding-top:10px!important}
+  .catalog-actions .main,.catalog-actions .secondary{min-height:40px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+  .catalog-actions .main{padding:9px 12px!important}
+
+  /* Cẩm nang feed itself stays image-first even if older CSS layers load. */
+  .guide-card-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .guide-pro-card{display:flex!important;flex-direction:column!important;border-radius:17px!important;overflow:hidden!important}
+  .guide-pro-image{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;background-position:center!important}
+  .guide-pro-meta{gap:6px!important;padding:10px 14px 0!important;overflow:hidden!important}
+  .guide-pro-meta small{font-size:9px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .guide-pro-body{padding:8px 14px 15px!important}
+  .guide-pro-body h3{display:-webkit-box!important;margin:0 0 7px!important;font-size:20px!important;line-height:1.25!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important}
+  .guide-pro-body p{font-size:12.5px!important;line-height:1.55!important;-webkit-line-clamp:3!important}
+  .guide-read{display:inline-flex!important;align-items:center!important;min-height:38px!important;font-size:11.5px!important}
+
+  /* Keep section toolbars usable without wrapping into tall blocks. */
+  .sub-toolbar{padding:12px 13px!important;border-radius:13px!important}
+  .sub-filter-row{width:100%!important;flex-wrap:nowrap!important;overflow-x:auto!important;scrollbar-width:none!important}
+  .sub-filter-row::-webkit-scrollbar{display:none!important}
+  .sub-chip{flex:0 0 auto!important;min-height:38px!important;padding:8px 12px!important}
+  .sub-heading h2{font-size:23px!important;line-height:1.18!important}
+
+  /* Floating conversion controls: useful but visually secondary. */
+  .floating-actions{right:max(10px,env(safe-area-inset-right))!important;bottom:max(10px,env(safe-area-inset-bottom))!important;gap:7px!important;z-index:70!important}
+  .floating-actions a{display:grid!important;place-items:center!important;width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:999px!important;border-width:3px!important;box-shadow:0 7px 20px rgba(13,45,75,.18)!important}
+  .floating-actions .contact-label{display:none!important}
+  .floating-actions .call-float>span:first-child{font-size:19px!important;line-height:1!important}
+  .floating-actions .zalo-word{font-size:13px!important;line-height:1!important}
+  .booking-cart-badge{right:max(10px,env(safe-area-inset-right))!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 106px)!important;width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:999px!important;display:grid!important;place-items:center!important;box-shadow:0 7px 20px rgba(13,45,75,.16)!important;z-index:70!important}
+  .booking-cart-badge b{display:none!important}
+  .booking-cart-badge>span:first-child{margin:0!important;font-size:17px!important;line-height:1!important}
+
+  /* Touch-friendly controls and safe wrapping. */
+  button,a,input,select{touch-action:manipulation}
+  h1,h2,h3,p{max-width:100%}
+}
+
+@media (max-width:430px){
+  .container{width:calc(100% - 24px)!important}
+  .home-premium .mock-hero-content{padding-top:28px!important;padding-bottom:22px!important}
+  .home-premium .mock-hero h1{max-width:330px!important;font-size:31px!important}
+  .home-premium .mock-hero-content>p:not(.mock-eyebrow){font-size:13.5px!important}
+  .home-premium .mock-search-tabs{width:calc(100% + 12px)!important;margin-right:-12px!important;padding-right:12px!important}
+  .home-premium .mock-search-form{grid-template-columns:1fr!important}
+  .home-premium .mock-search-field,
+  .home-premium .mock-search-field.mock-destination,
+  .home-premium .guest-picker{grid-column:1!important;min-height:49px!important}
+  .home-premium .mock-search-button{grid-column:1!important}
+  .home-premium .mock-section{padding:30px 0!important}
+  .home-premium .mock-section-heading h2{font-size:26px!important}
+  .home-premium .mock-product-body h3,
+  .home-premium .mock-tour-card h3,
+  .home-premium .home-guide-card h3{font-size:19px!important}
+  .home-premium .mock-price{font-size:20px!important}
+  .home-premium .mock-service-card h3{font-size:12.5px!important}
+  .destination-tile{min-height:145px!important}
+  .destination-tile:first-child{min-height:190px!important}
+  .floating-actions a,.booking-cart-badge{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}
+  .booking-cart-badge{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 102px)!important}
+}
