@@ -3,6 +3,7 @@ import {db,hasDatabase} from '@/lib/db';
 const KEYS=['tn_cms_tours_v3','tn_cms_articles_v3','tn_cms_homepage'] as const;
 type Key=(typeof KEYS)[number];
 export type PublicSiteState=Record<string,unknown>;
+export type PublicSiteStateOptions={includeRates?:boolean};
 
 const PRIVATE_FIELD_TOKENS=new Set(['net','cost','supplier','agency','wholesale','margin','profit','markup','partner','affiliate','commission','owner','host','contact','phone','mobile','token','secret','password','credential']);
 const PRIVATE_TEXT=/(giá\s*(gốc|net|hợp tác|(?:phòng\s*)?nguồn)|biên\s*lợi\s*nhuận|lợi\s*nhuận|markup|cộng\s+[\d.,]+\s*đ.{0,40}(phòng|p)\/?(đêm|đ)|bảng\s*(giá\s*)?nguồn|bảng\s*SẢN PHẨM|sourceprice|netrate)/i;
@@ -32,12 +33,12 @@ async function relationalProducts(sql:ReturnType<typeof db>){
 }
 async function relationalRates(sql:ReturnType<typeof db>){const rows=await sql`select r.id,r.product_id,r.unit_id,r.start_date,r.end_date,r.retail_price_vnd,r.inventory,r.label from rate_rules r join products p on p.id=r.product_id where p.partner_id is null and p.status='published' order by r.start_date,r.id`;return rows.map((row:any)=>{const extra=rateMeta(row.label),requested=String((extra as any).status||'').toLowerCase(),available=Number(row.inventory)>0&&!['hold','soldout','hidden','closed'].includes(requested),status=available?'available':requested==='hold'?'hold':'soldout';return{id:String(row.id),productId:String(row.product_id),unitId:String(row.unit_id||''),start:dateKey(row.start_date),end:dateKey(row.end_date),price:money(row.retail_price_vnd),oldPrice:'',quantity:available?'1':'0',minStay:String((extra as any).minStay||1),status,note:customerText((extra as any).note||'')}})}
 
-export async function getPublicSiteState():Promise<PublicSiteState>{
+export async function getPublicSiteState(options:PublicSiteStateOptions={}):Promise<PublicSiteState>{
  if(!hasDatabase())return{};
  try{
-  const sql=db();const[rows,productionProducts,productionRates]=await Promise.all([
+  const sql=db(),includeRates=options.includeRates!==false;const[rows,productionProducts,productionRates]=await Promise.all([
    sql`select distinct on (entity_id) entity_id,after_data,created_at from audit_logs where entity_type='admin_shared_state' and entity_id in('tn_cms_tours_v3','tn_cms_articles_v3','tn_cms_homepage') order by entity_id,created_at desc,id desc`,
-   relationalProducts(sql),relationalRates(sql)
+   relationalProducts(sql),includeRates?relationalRates(sql):Promise.resolve([])
   ]);
   const state:PublicSiteState={tn_cms_products_v3_units:productionProducts,tn_cms_daily_rates_v1:productionRates};
   for(const row of rows){const rawKey=String(row.entity_id);if(!KEYS.some(key=>key===rawKey))continue;const key=rawKey as Key,value=envelope(row.after_data);if(key==='tn_cms_tours_v3')state[key]=sanitizePublicValue(visibleList(value));else if(key==='tn_cms_articles_v3'){const now=Date.now();state[key]=sanitizePublicValue(Array.isArray(value)?value.filter((item:any)=>item?.status==='published'||(item?.status==='scheduled'&&item?.publishAt&&+new Date(item.publishAt)<=now)):[])}else state[key]=sanitizePublicValue(value)}

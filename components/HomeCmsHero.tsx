@@ -39,23 +39,23 @@ function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
  return next;
 }
 
-export function useHomeCms(initialCms:Partial<HomeCmsData>|null=defaultHomeCms){
+export function useHomeCms(initialCms:Partial<HomeCmsData>|null=defaultHomeCms,{refreshOnMount=true}:{refreshOnMount?:boolean}={}){
   const[data,setData]=useState<HomeCmsData>(()=>migrateHome(initialCms));
   useEffect(()=>setData(migrateHome(initialCms)),[initialCms]);
   useEffect(()=>{
     let alive=true;
     const loadRemote=async()=>{try{const response=await fetch('/api/catalog/site-state',{cache:'no-store'});if(!response.ok)return;const payload=await response.json() as{state?:Record<string,unknown>};const value=payload.state?.tn_cms_homepage;if(alive&&value&&typeof value==='object'&&!Array.isArray(value))setData(migrateHome(value as Partial<HomeCmsData>))}catch{}};
-    void loadRemote();
+    if(refreshOnMount)void loadRemote();
     const refresh=()=>void loadRemote();
     window.addEventListener('tn-homepage-updated',refresh);
-    if(API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData(migrateHome(v.value))}).catch(()=>{});}
+    if(refreshOnMount&&API_BASE){fetch(`${API_BASE.replace(/\/$/,'')}/api/site-settings/homepage`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v?.value)setData(migrateHome(v.value))}).catch(()=>{});}
     return()=>{alive=false;window.removeEventListener('tn-homepage-updated',refresh)};
-  },[]);
+  },[refreshOnMount]);
   return data;
 }
 
-export function HomeCmsHero({initialCms=defaultHomeCms}:{initialCms?:Partial<HomeCmsData>|null}){
-  const data=useHomeCms(initialCms);
+export function HomeCmsHero({initialCms=defaultHomeCms,refreshOnMount=true}:{initialCms?:Partial<HomeCmsData>|null;refreshOnMount?:boolean}){
+  const data=useHomeCms(initialCms,{refreshOnMount});
   return <section className="mock-hero" style={{backgroundImage:`url(${data.heroImage})`}}>
     <div className="mock-hero-overlay" />
     <div className="container mock-hero-content">

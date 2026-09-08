@@ -45,10 +45,23 @@ must('components/ProductVisuals.ts',"from '@/data/destination-visuals'",'Homepag
 for(const place of ['Phan Thiết','Hạ Long','Phú Quốc','Sa Pa','Nha Trang','Sầm Sơn'])must('data/destination-visuals.ts',`'${place}'`,'Bảng ảnh điểm đến phải đủ địa danh public');
 
 must('components/HomeCmsSections.tsx','usePublicGuideArticles','Trang chủ phải dùng cùng nguồn bài Cẩm nang');
-must('components/HomeCmsSections.tsx','const publicArticles=usePublicGuideArticles(initialArticles)','Trang chủ phải hydrate bài Cẩm nang từ cùng nguồn server');
+must('components/HomeCmsSections.tsx','const publicArticles=usePublicGuideArticles(initialArticles,{refreshOnMount})','Trang chủ phải hydrate bài Cẩm nang từ cùng nguồn server');
 must('components/HomeCmsSections.tsx','image:guideImage(p.image)','Fallback Cẩm nang trang chủ phải dùng cùng pipeline ảnh với trang Cẩm nang');
 mustNot('components/HomeCmsSections.tsx','setCmsArticles','Trang chủ không được giữ cache bài Cẩm nang riêng');
 mustNot('components/usePublicGuideArticles.ts','localStorage.getItem','Cẩm nang public không được ưu tiên cache browser');
+
+// Homepage performance guard: server data is already hydrated into the first render.
+// Do not serialize full article bodies/rates and then immediately download the same
+// site-state several more times from the browser.
+must('app/page.tsx','export const revalidate=60','Trang chủ phải dùng ISR ngắn thay vì refetch state ngay sau hydration');
+must('app/page.tsx','getPublicSiteState({includeRates:false})','Trang chủ không được tải toàn bộ lịch giá khi chỉ cần card bán hàng');
+must('lib/server/public-site-state.ts','includeRates?relationalRates(sql):Promise.resolve([])','Public state phải hỗ trợ bỏ truy vấn rate nặng cho trang chủ');
+must('app/page.tsx','slice(0,3).map(compactHomeArticle)','Trang chủ chỉ được serialize metadata của tối đa 3 bài Cẩm nang');
+mustNot('app/page.tsx','state.tn_cms_articles_v3 as PublicGuideArticle[]','Trang chủ không được truyền nguyên bài Cẩm nang đầy đủ vào client payload');
+must('app/page.tsx','refreshOnMount={false}','Trang chủ phải dùng snapshot server thay vì refetch ngay khi mount');
+must('components/HomeCmsHero.tsx','refreshOnMount=true','Hook homepage CMS phải cho phép tắt refetch lúc mount');
+must('components/usePublicGuideArticles.ts','refreshOnMount=true','Hook Cẩm nang phải cho phép tắt refetch lúc mount');
+must('components/HomeCmsSections.tsx','if(refreshOnMount)void loadRemote()','Section homepage chỉ tải lại site-state khi caller yêu cầu');
 
 must('app/page.tsx','className="home-premium"','Trang chủ phải dùng premium storefront shell');
 must('components/Header.tsx','happygo-header-v2','Header public phải dùng visual system mới');
