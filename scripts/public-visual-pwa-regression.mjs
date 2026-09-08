@@ -60,7 +60,7 @@ must('app/page.tsx','slice(0,3).map(compactHomeArticle)','Trang chủ chỉ đư
 mustNot('app/page.tsx','state.tn_cms_articles_v3 as PublicGuideArticle[]','Trang chủ không được truyền nguyên bài Cẩm nang đầy đủ vào client payload');
 must('app/page.tsx','refreshOnMount={false}','Trang chủ phải dùng snapshot server thay vì refetch ngay khi mount');
 must('components/HomeCmsHero.tsx','refreshOnMount=true','Hook homepage CMS phải cho phép tắt refetch lúc mount');
-must('components/usePublicGuideArticles.tsx','refreshOnMount=true','Hook Cẩm nang phải cho phép tắt refetch lúc mount');
+must('components/usePublicGuideArticles.ts','refreshOnMount=true','Hook Cẩm nang phải cho phép tắt refetch lúc mount');
 must('components/HomeCmsSections.tsx','if(refreshOnMount)void loadRemote()','Section homepage chỉ tải lại site-state khi caller yêu cầu');
 
 must('app/page.tsx','className="home-premium"','Trang chủ phải dùng premium storefront shell');
