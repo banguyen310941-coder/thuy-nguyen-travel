@@ -55,6 +55,7 @@ import './home-premium-addon.css';
 import './public-polish.css';
 import './public-screenshot-fixes.css';
 import './mobile-public-polish.css';
+import './mobile-public-audit-fixes.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
