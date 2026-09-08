@@ -1,0 +1,38 @@
+name: Discover JoyTrip Catalog
+
+on:
+  push:
+    branches: [import/joytrip-catalog-20260908]
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          ref: import/joytrip-catalog-20260908
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Discover JoyTrip products
+        run: node scripts/discover-joytrip-products.mjs
+
+      - name: Commit discovery dataset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/imports/joytrip-products.json data/imports/joytrip-discovery-report.json
+          if git diff --cached --quiet; then
+            echo "No catalog changes"
+            exit 0
+          fi
+          git commit -m "[joytrip-discovery] Refresh JoyTrip catalog dataset"
+          git push origin HEAD:import/joytrip-catalog-20260908
