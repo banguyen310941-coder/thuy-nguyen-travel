@@ -1,6 +1,7 @@
 'use client';
 
 import {amenityLines,amenityOptions,inferAmenityTags,unknownLegacyAmenities,type StructuredProductType} from '@/components/ProductAmenityModel';
+import {ProductLocationFields} from '@/components/ProductLocationFields';
 
 type Props={type:StructuredProductType;form:any;setField:(key:string,value:any)=>void;part:'core'|'details';source?:'admin'|'partner'};
 function F({label,children,wide=false,hint}:{label:string;children:React.ReactNode;wide?:boolean;hint?:string}){return <label className={wide?'pm-field wide':'pm-field'}><span>{label}</span>{children}{hint?<small>{hint}</small>:null}</label>}
@@ -28,6 +29,7 @@ export function ProductFlowFields({type,form,setField,part,source='admin'}:Props
     <F label="Mô tả ngắn" wide><textarea rows={4} value={String(form.summary||'')} onChange={e=>setField('summary',e.target.value)} placeholder="Tóm tắt điểm bán nổi bật để Sale và khách đọc nhanh..."/></F>
    </div>
   </section>
+  <ProductLocationFields form={form} setField={setField} kind={villa||hotel?'stay':'cruise'}/>
   <section className="pm-section product-flow-time"><h3>{villa||hotel?'Giờ nhận / trả phòng':'Giờ nhận / trả cabin'}</h3><div className="pm-grid"><F label="Check-in"><input type="time" value={String(form.checkin||'14:00')} onChange={e=>setField('checkin',e.target.value)}/></F><F label="Check-out"><input type="time" value={String(form.checkout||'12:00')} onChange={e=>setField('checkout',e.target.value)}/></F>{villa?<><F label="Phí phụ thu quá người" hint="Đơn vị nên ghi rõ /người/đêm">{moneyInput(form.extraPersonFee,v=>setField('extraPersonFee',v),'VD: 200.000đ/người/đêm')}</F><F label="Phụ thu nhận phòng sớm">{moneyInput(form.earlyCheckinFee,v=>setField('earlyCheckinFee',v),'VD: 300.000đ/giờ')}</F><F label="Phụ thu trả phòng muộn">{moneyInput(form.lateCheckoutFee,v=>setField('lateCheckoutFee',v),'VD: 300.000đ/giờ')}</F><F label="Điều kiện nhận sớm / trả muộn"><input value={String(form.earlyLatePolicy||'')} onChange={e=>setField('earlyLatePolicy',e.target.value)} placeholder="VD: Tùy tình trạng căn, cần báo trước"/></F></>:null}</div>{villa?<p className="pm-section-note strong">Mặc định Villa: nhận phòng 14:00 · trả phòng 12:00 hôm sau. Có thể sửa theo chính sách từng khu.</p>:null}</section>
  </>;
  return <>
