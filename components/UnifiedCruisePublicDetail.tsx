@@ -6,6 +6,7 @@ import {BookingInquiry} from '@/components/BookingInquiry';
 import {PublishedUnits} from '@/components/PublishedUnits';
 import {CustomerReviews} from '@/components/CustomerReviews';
 import {ProductGallery} from '@/components/ProductGallery';
+import {ProductLocationMap} from '@/components/ProductLocationMap';
 import {ProductRateCalendar} from '@/components/ProductRateCalendar';
 import {PublicServiceNav} from '@/components/PublicServiceNav';
 import {amenityOptions,inferAmenityTags} from '@/components/ProductAmenityModel';
@@ -20,6 +21,8 @@ type P={
   name:string;
   place:string;
   address:string;
+  latitude?:number|string|null;
+  longitude?:number|string|null;
   price:string;
   pricingBasis?:PricingBasis;
   summary:string;
@@ -28,6 +31,7 @@ type P={
   rating:string;
   category:string;
   boarding:string;
+  pickup?:string;
   duration:string;
   route?:string;
   amenities:string;
@@ -92,11 +96,12 @@ export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P
     </section>
 
     <nav className="pd-tabs"><div className="container">
-      <a href="#overview">Tổng quan</a><a href="#units">{unitTab}</a><a href="#rate-calendar">Lịch giá</a><a href="#amenities">Tiện ích</a><a href="#policy">Chính sách</a><a href="#reviews">Đánh giá</a>
+      <a href="#overview">Tổng quan</a><a href="#location">Vị trí</a><a href="#units">{unitTab}</a><a href="#rate-calendar">Lịch giá</a><a href="#amenities">Tiện ích</a><a href="#policy">Chính sách</a><a href="#reviews">Đánh giá</a>
     </div></nav>
 
     <section className="container pd-body"><main>
       <section id="overview" className="pd-block"><h2>Tổng quan</h2><p>{p.summary||'Thông tin đang được cập nhật.'}</p>{p.route?<div className="pd-highlight-grid"><div>🧭 <b>{p.route}</b></div>{p.duration?<div>🗓 <b>{p.duration}</b></div>:null}</div>:null}</section>
+      <ProductLocationMap name={p.name} product={p}/>
       <ProductRateCalendar units={p.units||[]} label={calendarLabel} initialRates={initialRates} kind={ticketMode?'ticket':'cruise'}/>
       <Suspense fallback={<section className="detail-block"><h2>{ticketMode?'Đang tải vé / gói...':'Đang tải cabin...'}</h2></section>}>
         <PublishedUnits slug={p.slug} providedUnits={p.units||[]} label={unitLabel} initialRates={initialRates}/>
