@@ -1,1 +1,31 @@
-placeholder
+/* Post-release mobile audit fixes (2026-09-08).
+   Keep this intentionally tiny: only repair interaction regressions discovered
+   after the mobile storefront polish shipped. */
+
+@media (max-width:760px){
+  /* /diem-den tiles are <article> elements whose only navigation control is the
+     inner link. The mobile polish had hidden that link for visual compactness,
+     which made the tiles non-actionable. Restore a compact CTA instead. */
+  .destination-tile a{
+    display:inline-flex!important;
+    align-items:center!important;
+    width:max-content!important;
+    max-width:100%!important;
+    margin-top:8px!important;
+    padding:5px 8px!important;
+    border:1px solid rgba(255,255,255,.5)!important;
+    border-radius:999px!important;
+    background:rgba(3,35,61,.28)!important;
+    color:#fff!important;
+    font-size:0!important;
+    line-height:1!important;
+    text-decoration:none!important;
+    white-space:nowrap!important;
+  }
+  .destination-tile a::after{
+    content:'Khám phá →';
+    font-size:9.5px!important;
+    font-weight:900!important;
+    line-height:1.2!important;
+  }
+}
