@@ -8,6 +8,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data: https:",
   "connect-src 'self' https:",
   "media-src 'self' blob: https:",
+  "frame-src 'self' https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "object-src 'none'",
