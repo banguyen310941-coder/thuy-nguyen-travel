@@ -32,6 +32,15 @@ excludes('components/BookingCart.tsx',"item.unit.includes(x.code||'')",'Giỏ kh
 excludes('app/checkout/page.tsx',"i.unit?.includes(u.code||'')",'Checkout không được fuzzy-match chuỗi rỗng sang hạng thấp đầu tiên');
 contains('lib/booking-unit-selection.ts','if(selection.unitId)return list.find','Khi có unitId phải chỉ chấp nhận đúng ID, không fallback sang hạng khác');
 
+contains('components/HomeCmsSections.tsx',"(x.type==='Khách sạn'||x.type==='Villa & Resort')",'Lưu trú nổi bật chỉ được lấy khách sạn, villa và resort');
+excludes('components/HomeCmsSections.tsx',"x.type!=='Du thuyền'&&!staticStaySlugs.has(x.slug)",'Lưu trú nổi bật không được dùng điều kiện loại trừ vì có thể lọt Tour');
+contains('components/HomeCmsSections.tsx','>Khách sạn</Link><Link href="/villa-resort">Resort</Link><Link href="/villa-resort">Villa</Link>','Thanh loại hình lưu trú nổi bật chỉ hiển thị Khách sạn, Resort, Villa');
+
+for(const needle of ['Chương trình tour','Ngày khởi hành & số khách','Dùng để xác nhận booking; chưa thu tiền ở bước này','✓ Giá theo lịch thật','Miễn phí gửi yêu cầu · chưa phát sinh thanh toán']){
+ contains('components/TourBookingInquiry.tsx',needle,'Form đặt Tour phải đồng nhất cấu trúc và thông điệp với form booking chuẩn');
+}
+contains('components/TourBookingInquiry.tsx','productSlug:p?.slug','Giỏ Tour phải giữ slug sản phẩm như các luồng booking khác');
+
 if(failures.length){
  console.error('\nDesktop booking regression FAILED:\n');
  for(const failure of failures)console.error(`- ${failure}`);
