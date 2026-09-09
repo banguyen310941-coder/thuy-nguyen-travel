@@ -59,6 +59,7 @@ import './mobile-public-audit-fixes.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
+import {PublicPriceNormalizer} from '@/components/PublicPriceNormalizer';
 import {db,hasDatabase} from '@/lib/db';
 import {getSiteUrl} from '@/lib/site-url';
 
@@ -94,5 +95,5 @@ export async function generateMetadata():Promise<Metadata>{
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
  const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,url:siteUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
- return <html lang="vi"><body id="top" data-ui-version="happygo-public-sanitized-20260906-prod"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><SiteChrome initialSettings={site}>{children}</SiteChrome></body></html>;
+ return <html lang="vi"><body id="top" data-ui-version="happygo-public-sanitized-20260906-prod"><script type="application/ld+json">{JSON.stringify(organization)}</script><MarketingAttributionCapture/><PwaRegister/><PublicPriceNormalizer/><SiteChrome initialSettings={site}>{children}</SiteChrome></body></html>;
 }
