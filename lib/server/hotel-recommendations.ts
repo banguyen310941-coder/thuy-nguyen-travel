@@ -34,6 +34,7 @@ export type HotelRecommendation={
 };
 
 type Candidate=HotelRecommendation&{normalizedPlace:string};
+type RecommendationContext={place:string;price:number|null;stars:number|null;referenceType:string};
 
 const PRICE_KEYS=['lowWeekdayPrice','lowWeekendPrice','weekdayPrice','weekendPrice','highWeekdayPrice','highWeekendPrice','holidayPrice'] as const;
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
@@ -42,6 +43,7 @@ const normalized=(value:unknown)=>text(value).toLowerCase().normalize('NFD').rep
 const number=(value:unknown)=>{const parsed=Number(String(value??'').trim().replace(',','.'));return Number.isFinite(parsed)?parsed:null};
 const coordinate=(value:unknown,min:number,max:number)=>{const parsed=number(value);return parsed!==null&&parsed>=min&&parsed<=max?parsed:null};
 const priceNumber=(value:unknown)=>{if(typeof value==='number')return Number.isFinite(value)&&value>0?Math.round(value):null;const raw=text(value);if(!raw||/liên\s*hệ/i.test(raw))return null;const digits=raw.replace(/[^0-9]/g,'');const parsed=digits?Number(digits):0;return Number.isFinite(parsed)&&parsed>0?parsed:null};
+const cleanPriceText=(value:unknown)=>text(value).replace(/^(?:từ\s*)+/iu,'').trim();
 const formattedPrice=(value:number|null)=>value&&value>0?`${new Intl.NumberFormat('vi-VN').format(value)}đ`:'Liên hệ';
 
 function haversineKm(lat1:number,lng1:number,lat2:number,lng2:number){
@@ -96,10 +98,10 @@ function distanceScore(distance:number|null){
  return 0;
 }
 
-function buildReasons(candidate:Candidate,context:{place:string;price:number|null;stars:number|null;latitude:number|null;longitude:number|null}){
+function buildReasons(candidate:Candidate,context:RecommendationContext){
  const reasons:string[]=[];
  if(candidate.distanceKm!==null){
-  if(candidate.distanceKm<1)reasons.push(`Cách khoảng ${Math.max(100,Math.round(candidate.distanceKm*1000/100)*100)} m`);
+  if(candidate.distanceKm<1)reasons.push(`Cách khoảng ${Math.max(100,Math.round(candidate.distanceKm*10)*100)} m`);
   else reasons.push(`Cách khoảng ${candidate.distanceKm.toFixed(candidate.distanceKm<10?1:0)} km`);
  }
  const placeMatch=placeSimilarity(candidate.normalizedPlace,normalized(context.place));
@@ -110,7 +112,7 @@ function buildReasons(candidate:Candidate,context:{place:string;price:number|nul
  return reasons.slice(0,3);
 }
 
-function scoreCandidate(candidate:Candidate,context:{place:string;price:number|null;stars:number|null;latitude:number|null;longitude:number|null;referenceType:string}){
+function scoreCandidate(candidate:Candidate,context:RecommendationContext){
  let score=10;
  score+=distanceScore(candidate.distanceKm);
  score+=placeSimilarity(candidate.normalizedPlace,normalized(context.place))*22;
@@ -119,6 +121,10 @@ function scoreCandidate(candidate:Candidate,context:{place:string;price:number|n
  if(candidate.rating)score+=candidate.rating*1.6;
  if(context.referenceType&&candidate.type===context.referenceType)score+=4;
  return Math.round(clamp(score,0,100));
+}
+
+function publicRecommendation(item:Candidate):HotelRecommendation{
+ return{id:item.id,slug:item.slug,name:item.name,type:item.type,place:item.place,address:item.address,price:item.price,priceVnd:item.priceVnd,cover:item.cover,rating:item.rating,serviceStars:item.serviceStars,latitude:item.latitude,longitude:item.longitude,distanceKm:item.distanceKm,matchScore:item.matchScore,reasons:item.reasons,source:item.source};
 }
 
 export async function getHotelRecommendations(input:HotelRecommendationInput={}):Promise<HotelRecommendation[]>{
@@ -150,7 +156,7 @@ export async function getHotelRecommendations(input:HotelRecommendationInput={})
    const latitude=coordinate((raw as any).latitude,-90,90),longitude=coordinate((raw as any).longitude,-180,180);
    const priceVnd=productPrice(row,unitsByProduct.get(String(row.id))||[]);
    const place=text(safe.place),address=text(safe.address),rating=ratingValue(safe.rating),serviceStars=starValue(safe.serviceStars);
-   return [{id:String(row.id),slug:text(row.slug),name:text(row.name),type:text(row.type),place,address,price:text(safe.price)||formattedPrice(priceVnd),priceVnd,cover:text(safe.cover),rating,serviceStars,latitude,longitude,distanceKm:null,matchScore:0,reasons:[],source:row.partner_id?'partner':'admin',normalizedPlace:normalized(`${place} ${address}`)} as Candidate];
+   return [{id:String(row.id),slug:text(row.slug),name:text(row.name),type:text(row.type),place,address,price:cleanPriceText(safe.price)||formattedPrice(priceVnd),priceVnd,cover:text(safe.cover),rating,serviceStars,latitude,longitude,distanceKm:null,matchScore:0,reasons:[],source:row.partner_id?'partner':'admin',normalizedPlace:normalized(`${place} ${address}`)} as Candidate];
   });
   const reference=input.slug?candidates.find(item=>item.slug===input.slug):undefined;
   const latitude=coordinate(input.latitude,-90,90)??reference?.latitude??null;
@@ -158,11 +164,10 @@ export async function getHotelRecommendations(input:HotelRecommendationInput={})
   const place=text(input.place)||reference?.place||reference?.address||'';
   const price=priceNumber(input.price)??reference?.priceVnd??null;
   const stars=starValue(input.serviceStars)??reference?.serviceStars??null;
-  const referenceType=reference?.type||'';
+  const context:RecommendationContext={place,price,stars,referenceType:reference?.type||''};
   const ranked=candidates.filter(item=>!reference||item.id!==reference.id).map(item=>{
    const distance=latitude!==null&&longitude!==null&&item.latitude!==null&&item.longitude!==null?haversineKm(latitude,longitude,item.latitude,item.longitude):null;
    const next={...item,distanceKm:distance===null?null:Math.round(distance*10)/10};
-   const context={place,price,stars,latitude,longitude,referenceType};
    next.matchScore=scoreCandidate(next,context);
    next.reasons=buildReasons(next,context);
    return next;
@@ -171,6 +176,6 @@ export async function getHotelRecommendations(input:HotelRecommendationInput={})
    if(place)return placeSimilarity(item.normalizedPlace,normalized(place))>.15;
    return true;
   }).sort((a,b)=>b.matchScore-a.matchScore||(a.distanceKm??9999)-(b.distanceKm??9999)||(b.rating??0)-(a.rating??0)||a.name.localeCompare(b.name,'vi'));
-  return ranked.slice(0,limit).map(({normalizedPlace:_,...item})=>item);
+  return ranked.slice(0,limit).map(publicRecommendation);
  }catch(error){console.error('hotel_recommendations_failed',error);return[]}
 }
