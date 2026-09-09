@@ -13,7 +13,7 @@ const checks=[
  ['current property is excluded',engine.includes("item.id!==reference.id")],
  ['endpoint accepts slug and location context',route.includes("params.get('slug')")&&route.includes("params.get('lat')")&&route.includes("params.get('lng')")&&route.includes("params.get('place')")],
  ['endpoint never caches customer location context',route.includes("'Cache-Control':'private, no-store, max-age=0'")],
- ['endpoint is API-only with no UI rendering',!route.includes('JSX')&&!route.includes('components/'))
+ ['endpoint is API-only with no UI rendering',!route.includes('JSX')&&!route.includes('components/')]
 ];
 
 const failed=checks.filter(([,ok])=>!ok);
