@@ -101,13 +101,13 @@ export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P
 
     <section className="container pd-body"><main>
       <section id="overview" className="pd-block"><h2>Tổng quan</h2><p>{p.summary||'Thông tin đang được cập nhật.'}</p>{p.route?<div className="pd-highlight-grid"><div>🧭 <b>{p.route}</b></div>{p.duration?<div>🗓 <b>{p.duration}</b></div>:null}</div>:null}</section>
-      <ProductLocationMap name={p.name} product={p}/>
       <ProductRateCalendar units={p.units||[]} label={calendarLabel} initialRates={initialRates} kind={ticketMode?'ticket':'cruise'}/>
       <Suspense fallback={<section className="detail-block"><h2>{ticketMode?'Đang tải vé / gói...':'Đang tải cabin...'}</h2></section>}>
         <PublishedUnits slug={p.slug} providedUnits={p.units||[]} label={unitLabel} initialRates={initialRates}/>
       </Suspense>
       <section id="amenities" className="pd-block"><h2>Tiện ích & dịch vụ</h2>{structured.length?<div className="pd-amenity-icon-grid">{structured.map(item=><div className="pd-amenity-icon-card" key={item.id}><span>{item.icon}</span><div><b>{item.label}</b>{details[item.id]?<small>{details[item.id]}</small>:null}</div></div>)}</div>:legacy.length?<div className="pd-highlight-grid">{legacy.map(item=><div key={item}>✦ <b>{item}</b></div>)}</div>:<p>Tiện ích được cập nhật theo từng hành trình.</p>}</section>
       <section id="policy" className="pd-block"><h2>Chính sách</h2><div className="pd-policy-grid">{!ticketMode&&(p.checkin||p.checkout)?<div><b>Nhận / trả cabin</b><p>{p.checkin||'14:00'} / {p.checkout||'12:00'}</p></div>:null}<div><b>Điều kiện hành trình</b><p className="cms-preline">{p.policies||(ticketMode?'Áp dụng theo hành trình, ngày khởi hành và gói dịch vụ.':'Áp dụng theo hành trình, cabin và gói giá.')}</p></div></div></section>
+      <ProductLocationMap name={p.name} product={p}/>
       <CustomerReviews slug={p.slug} productName={p.name}/>
     </main><aside id="booking"><BookingInquiry product={p.name} productId={p.id} productSlug={p.slug} kind="du thuyền" mode={ticketMode?'ticket':'cabin'}/></aside></section>
   </div>;
