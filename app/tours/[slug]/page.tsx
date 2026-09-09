@@ -6,6 +6,9 @@ import {CmsTourDetail} from '@/components/CmsTourDetail';
 import {getPublishedTourSeo} from '@/lib/public-tour-seo';
 import {getSiteUrl} from '@/lib/site-url';
 
+// Keep CMS/partner Tour metadata and JSON-LD fresh after gallery/content edits without requiring a redeploy.
+export const revalidate=60;
+
 const amount=(v?:string)=>{const n=String(v||'').replace(/\D/g,'');return n?Number(n):undefined};
 export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const base=getSiteUrl();const canonical=`${base}/tour-du-lich/${encodeURIComponent(slug)}`;const t=tours.find(x=>x.slug===slug);if(t)return{title:t.seoTitle||`${t.name} - ${t.duration}`,description:t.seoDescription||t.summary,alternates:{canonical},openGraph:{title:t.name,description:t.summary,url:canonical,images:[{url:t.image,alt:t.name}],type:'website'},twitter:{card:'summary_large_image',title:t.name,description:t.summary,images:[t.image]}};const cms=await getPublishedTourSeo(slug);if(!cms)return{title:'Tour không tồn tại | HappyGo Travel',robots:{index:false,follow:true},alternates:{canonical}};const title=cms.seoTitle||`${cms.name}${cms.duration?` - ${cms.duration}`:''}`;const description=cms.seoDescription||cms.summary;return{title,description,alternates:{canonical},robots:{index:true,follow:true},openGraph:{title:cms.name,description,url:canonical,type:'website',images:cms.cover?[{url:cms.cover,alt:cms.name}]:undefined},twitter:{card:'summary_large_image',title:cms.name,description,images:cms.cover?[cms.cover]:undefined}}}
