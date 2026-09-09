@@ -40,7 +40,7 @@ const PRICE_KEYS=['lowWeekdayPrice','lowWeekendPrice','weekdayPrice','weekendPri
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 const text=(value:unknown)=>String(value??'').trim();
 const normalized=(value:unknown)=>text(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
-const number=(value:unknown)=>{const parsed=Number(String(value??'').trim().replace(',','.'));return Number.isFinite(parsed)?parsed:null};
+const number=(value:unknown)=>{if(value===null||value===undefined)return null;const raw=String(value).trim();if(!raw)return null;const parsed=Number(raw.replace(',','.'));return Number.isFinite(parsed)?parsed:null};
 const coordinate=(value:unknown,min:number,max:number)=>{const parsed=number(value);return parsed!==null&&parsed>=min&&parsed<=max?parsed:null};
 const priceNumber=(value:unknown)=>{if(typeof value==='number')return Number.isFinite(value)&&value>0?Math.round(value):null;const raw=text(value);if(!raw||/liên\s*hệ/i.test(raw))return null;const digits=raw.replace(/[^0-9]/g,'');const parsed=digits?Number(digits):0;return Number.isFinite(parsed)&&parsed>0?parsed:null};
 const cleanPriceText=(value:unknown)=>text(value).replace(/^(?:từ\s*)+/iu,'').trim();
