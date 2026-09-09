@@ -18,7 +18,7 @@ export function PropertyCard({ stay }: { stay: Stay }) {
         <Link href={href}><h3>{stay.name}</h3></Link>
         <p className="property-location">{stay.location}</p>
         <div className="mock-price-label">Giá tham khảo</div>
-        <div className="mock-price">Từ {price}</div>
+        <div className="mock-price">{price}</div>
         <Link className="mock-detail-btn" href={href}>Xem chi tiết</Link>
       </div>
     </article>
