@@ -1,24 +1,11 @@
-/* Keep Tour booking reachable without forcing mobile visitors through the full itinerary. */
-.tour-mobile-booking-access{display:none}
-
-@media(max-width:960px){
- .tour-rich-page{padding-bottom:88px}
- .tour-rich-page .tour-content-layout>main{order:2}
- .tour-rich-page .tour-content-layout>.tour-booking-sticky{order:1;position:relative;top:auto;scroll-margin-top:84px}
-}
-
-@media(max-width:900px){
- .product-detail-v2{padding-bottom:88px}
- .product-detail-v2 .pd-body>main{order:2}
- .product-detail-v2 .pd-body>#booking{order:1;position:relative;top:auto;scroll-margin-top:84px}
-}
-
-@media(max-width:960px){
- .tour-mobile-booking-access{
-  display:flex;position:fixed;z-index:90;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));
-  min-height:58px;border:0;border-radius:16px;padding:9px 18px;align-items:center;justify-content:space-between;gap:14px;
-  background:#0d47a1;color:#fff;box-shadow:0 12px 34px rgba(0,0,0,.24);font:inherit;cursor:pointer
+/* Desktop-only scroll area for Tour booking sidebars. Mobile keeps its existing layout unchanged. */
+@media(min-width:901px){
+ .tour-rich-page .tour-booking-sticky,
+ .product-detail-v2 .pd-body>aside{
+  max-height:calc(100vh - 84px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
  }
- .tour-mobile-booking-access span{font-size:12px;font-weight:700;opacity:.86;text-transform:uppercase;letter-spacing:.04em}
- .tour-mobile-booking-access b{font-size:16px;font-weight:800}
 }
