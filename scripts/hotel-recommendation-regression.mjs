@@ -7,6 +7,7 @@ const checks=[
  ['engine keeps recommendation logic server-side',engine.includes("from '@/lib/db'")&&!engine.includes("from '@/components/")],
  ['default recommendation scope is hotels only',engine.includes("scope=input.scope==='stay'?'stay':'hotel'")&&engine.includes("scope==='hotel'&&String(row.type)!=='Khách sạn'")],
  ['nearby ranking uses geographic distance',engine.includes('haversineKm')&&engine.includes('distanceScore(candidate.distanceKm)')],
+ ['missing coordinates stay missing instead of becoming zero',engine.includes('if(value===null||value===undefined)return null')&&engine.includes('if(!raw)return null')],
  ['ranking falls back to place similarity',engine.includes('placeSimilarity')&&engine.includes('normalizedPlace')],
  ['ranking considers comparable price',engine.includes('priceSimilarity(candidate.priceVnd,context.price)')],
  ['ranking considers stars and rating',engine.includes('serviceStars')&&engine.includes('candidate.rating')],
