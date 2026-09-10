@@ -28,8 +28,15 @@ export function SafeImage({src,fallback,alt='',className,loading='lazy',fetchPri
 }
 
 export function SafeBackground({src,fallback,children,className,ariaLabel}:{src?:string;fallback?:string;children?:React.ReactNode;className?:string;ariaLabel?:string}){
- const backup=fallback||TRAVEL_FALLBACKS.default;
- return <div className={className} style={{position:'relative',overflow:'hidden',isolation:'isolate'}}><SafeImage src={src} fallback={backup} alt={ariaLabel||''} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',objectPosition:'center',zIndex:-1}}/>{children}</div>
+ const backup=fallback||TRAVEL_FALLBACKS.default;const normalized=normalizeVisualSrc(src,backup);const[current,setCurrent]=useState(normalized);
+ useEffect(()=>setCurrent(normalized),[normalized]);
+ useEffect(()=>{
+  if(current===backup||typeof window==='undefined')return;
+  let active=true;const probe=new window.Image();
+  probe.onerror=()=>{if(active)setCurrent(backup)};probe.src=current;
+  return()=>{active=false;probe.onload=null;probe.onerror=null};
+ },[current,backup]);
+ return <div className={className} style={{position:'relative',overflow:'hidden',isolation:'isolate'}}><SafeImage src={current} fallback={backup} alt={ariaLabel||''} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',objectPosition:'center',zIndex:-1}}/>{children}</div>
 }
 
 export function safeBackground(primary?:string,fallback=TRAVEL_FALLBACKS.default){return normalizeVisualSrc(primary,fallback)}
