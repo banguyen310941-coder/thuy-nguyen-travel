@@ -16,7 +16,7 @@ export type HomeCmsData={
 
 export const defaultHomeCms:HomeCmsData={
   eyebrow:'HAPPYGO TRAVEL',
-  title:'Khám phá Việt Nam theo cách của bạn',
+  title:'Đặt tour du lịch, khách sạn, villa & du thuyền toàn quốc',
   subtitle:'Khách sạn · Villa & Resort · Du thuyền · Tour – chọn hành trình phù hợp, xem giá rõ ràng và được HappyGo hỗ trợ từ lúc tìm kiếm đến khi khởi hành.',
   noteTitle:'Kỳ nghỉ của bạn',
   noteText:'Bắt đầu bằng một điểm đến',
@@ -36,6 +36,7 @@ function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
  const next={...defaultHomeCms,...(value||{})};
  if(/th[uú]y\s*nguy[eê]n/i.test(next.eyebrow||''))next.eyebrow='HAPPYGO TRAVEL';
  if(/th[uú]y\s*nguy[eê]n/i.test(next.ctaEyebrow||''))next.ctaEyebrow='HAPPYGO TRAVEL';
+ if(!String(next.title||'').trim()||next.title==='Khám phá Việt Nam theo cách của bạn')next.title=defaultHomeCms.title;
  return next;
 }
 

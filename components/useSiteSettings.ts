@@ -28,3 +28,4 @@ export function useSiteSettings(initialSettings:Partial<SiteSettings>|null=defau
 }
 
 export function formatPhone(v:string){const d=v.replace(/\D/g,'');return d.length===10?`${d.slice(0,4)} ${d.slice(4,7)} ${d.slice(7)}`:v}
+export function phoneHref(v:string){const d=v.replace(/\D/g,'');if(!d)return'';if(d.startsWith('0'))return`+84${d.slice(1)}`;if(d.startsWith('84'))return`+${d}`;return`+${d}`}
