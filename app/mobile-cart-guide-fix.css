@@ -1,0 +1,29 @@
+/* Mobile overlay fix: keep conversion controls from obscuring editorial content. */
+@media (max-width:760px){
+  /* An empty cart has no action for the customer and should not cover content. */
+  .booking-cart-badge.cart-empty{display:none!important}
+
+  /* When the cart actually contains a booking, keep a compact visible shortcut. */
+  .booking-cart-badge.cart-has-items{
+    right:max(12px,env(safe-area-inset-right))!important;
+    bottom:calc(150px + env(safe-area-inset-bottom))!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    border-radius:999px!important;
+  }
+
+  /* Do not truncate guide cards on phones. */
+  .home-premium .home-guide-card h3,
+  .home-premium .home-guide-card p,
+  .guide-pro-body h3,
+  .guide-pro-body p{
+    display:block!important;
+    -webkit-line-clamp:unset!important;
+    -webkit-box-orient:initial!important;
+    overflow:visible!important;
+    max-height:none!important;
+  }
+}
