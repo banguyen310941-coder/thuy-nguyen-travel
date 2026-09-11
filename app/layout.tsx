@@ -57,6 +57,7 @@ import './public-screenshot-fixes.css';
 import './mobile-public-polish.css';
 import './mobile-public-audit-fixes.css';
 import './tour-booking-access.css';
+import './mobile-cart-guide-fix.css';
 import {SiteChrome} from '@/components/SiteChrome';
 import {PwaRegister} from '@/components/PwaRegister';
 import {MarketingAttributionCapture} from '@/components/MarketingAttributionCapture';
