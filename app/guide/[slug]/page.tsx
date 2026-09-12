@@ -11,6 +11,8 @@ import {getPublishedGuideSeo} from '@/lib/public-guide-seo';
 import {getPublicSiteState} from '@/lib/server/public-site-state';
 import {getSiteUrl} from '@/lib/site-url';
 
+export const revalidate=60;
+
 export function generateStaticParams(){return guidePosts.map(post=>({slug:post.slug}))}
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
