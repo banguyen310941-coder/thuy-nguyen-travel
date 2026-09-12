@@ -22,7 +22,6 @@ const topCategories=guideCategories.filter(category=>['villa-resort','du-thuyen'
 
 export default async function GuidePage(){
  const base=getSiteUrl(),canonical=`${base}${path}`,state=await getPublicSiteState(),initialArticles=Array.isArray(state.tn_cms_articles_v3)?state.tn_cms_articles_v3 as PublicGuideArticle[]:[];
- const cms=initialArticles.filter(a=>a.slug&&a.title&&a.cover);
  const schema=[
   {'@context':'https://schema.org','@type':'Blog',name:'Cẩm nang du lịch HappyGo Travel',url:canonical,description:'Kinh nghiệm du lịch, điểm đến, tour, lưu trú và du thuyền',publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:base}},
   {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Trang chủ',item:base},{'@type':'ListItem',position:2,name:'Cẩm nang du lịch',item:canonical}]},
