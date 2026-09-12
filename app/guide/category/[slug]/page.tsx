@@ -12,8 +12,6 @@ import {getSiteUrl} from '@/lib/site-url';
 
 export const revalidate=60;
 
-function hay(item:{category?:string;title?:string;excerpt?:string;keywords?:string|string[]}){return `${item.category||''} ${item.title||''} ${item.excerpt||''} ${Array.isArray(item.keywords)?item.keywords.join(' '):item.keywords||''}`.toLowerCase()}
-function matches(item:{category?:string;title?:string;excerpt?:string;keywords?:string|string[]},terms:string[]){const text=hay(item);return terms.some(t=>text.includes(t.toLowerCase()))}
 const staticItems:GuideFeedItem[]=guidePosts.map(p=>({slug:p.slug,title:p.title,category:p.category,excerpt:p.excerpt,cover:guideImage(p.image),date:p.date,readTime:p.readTime,keywords:p.keywords.join(' ')}));
 const staticCountItems:GuideCountItem[]=guidePosts.map(p=>({slug:p.slug,title:p.title,category:p.category,excerpt:p.excerpt,keywords:p.keywords.join(' ')}));
 export function generateStaticParams(){return guideCategories.map(category=>({slug:category.slug}))}
