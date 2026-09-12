@@ -10,6 +10,8 @@ import {guideImage} from '@/lib/guideCloudinary';
 import {getSiteUrl} from '@/lib/site-url';
 import {getPublicSiteState} from '@/lib/server/public-site-state';
 
+export const revalidate=60;
+
 const path='/cam-nang';
 export function generateMetadata():Metadata{const canonical=`${getSiteUrl()}${path}`;return{title:'Cẩm nang du lịch | Kinh nghiệm & hướng dẫn',description:'Cẩm nang du lịch HappyGo Travel với kinh nghiệm thực tế về điểm đến, tour, villa & resort, khách sạn, du thuyền và cách chuẩn bị chuyến đi.',alternates:{canonical},openGraph:{title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm thực tế, hướng dẫn chọn dịch vụ và gợi ý hành trình cho chuyến đi thuận tiện hơn.',url:canonical,type:'website'},twitter:{card:'summary_large_image',title:'Cẩm nang du lịch | HappyGo Travel',description:'Kinh nghiệm điểm đến, lưu trú, tour và du thuyền từ HappyGo Travel.'}}}
 
