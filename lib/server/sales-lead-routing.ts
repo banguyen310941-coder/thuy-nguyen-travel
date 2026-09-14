@@ -3,7 +3,7 @@ export type SalesLeadKind='tour'|'stay'|'other';
 export const TOUR_LEAD_PERMISSION='receive_tour_leads';
 export const STAY_LEAD_PERMISSION='receive_stay_leads';
 
-type SaleLike={id?:unknown;permissions?:unknown};
+type SaleLike={id?:unknown;name?:unknown;permissions?:unknown};
 
 function permissionsOf(sale:SaleLike):string[]{
  return Array.isArray(sale.permissions)?sale.permissions.map(String):[];
