@@ -49,10 +49,13 @@ const fmt=(n:number)=>new Intl.NumberFormat('vi-VN').format(n)+'đ';
 
 export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P;initialRates?:PublicRateRange[]}){
   const visibleUnits=(p.units||[]).filter((u:any)=>u?.status!=='hidden');
+  const hasAdultGuest=visibleUnits.some((u:any)=>u?.pricingBasis==='guest'&&u?.guestType==='adult');
+  const hasChildGuest=visibleUnits.some((u:any)=>u?.pricingBasis==='guest'&&u?.guestType==='child');
+  const publicUnits=hasAdultGuest?visibleUnits.filter((u:any)=>u?.guestType!=='child'):visibleUnits;
   const ticketMode=p.pricingBasis==='guest'||p.pricingBasis==='package'||(
-    visibleUnits.length>0&&visibleUnits.every((u:any)=>u?.pricingBasis==='guest'||u?.pricingBasis==='package')
+    publicUnits.length>0&&publicUnits.every((u:any)=>u?.pricingBasis==='guest'||u?.pricingBasis==='package')
   );
-  const configuredPrices=visibleUnits.flatMap((u:any)=>allSeasonalPriceCandidates(u)).filter(Boolean);
+  const configuredPrices=publicUnits.flatMap((u:any)=>allSeasonalPriceCandidates(u)).filter(Boolean);
   const price=configuredPrices.length
     ?`Từ ${fmt(Math.min(...configuredPrices))}`
     :ticketMode?(p.price||'Liên hệ'):'Liên hệ giá cabin';
@@ -61,8 +64,8 @@ export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P
   const details=p.amenityDetails||{};
   const structured=amenityOptions('Du thuyền').filter(item=>tags.includes(item.id));
   const unitTab=ticketMode?'Vé / gói':'Cabin';
-  const unitLabel=ticketMode?'Vé / gói dịch vụ & giá':'Danh sách cabin & giá';
-  const calendarLabel=ticketMode?'Lịch giá vé / gói theo ngày':'Lịch giá cabin theo ngày';
+  const unitLabel=ticketMode?(hasChildGuest?'Hành trình / hạng & giá người lớn':'Vé / gói dịch vụ & giá'):'Danh sách cabin & giá';
+  const calendarLabel=ticketMode?(hasChildGuest?'Lịch giá người lớn theo ngày':'Lịch giá vé / gói theo ngày'):'Lịch giá cabin theo ngày';
 
   return <div className="product-detail-v2">
     <section className="pd-head"><div className="container">
@@ -87,9 +90,9 @@ export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P
         {structured.length?<div className="pd-amenity-icon-grid compact">{structured.slice(0,4).map(item=><div className="pd-amenity-icon-card" key={item.id}><span>{item.icon}</span><div><b>{item.label}</b>{details[item.id]?<small>{details[item.id]}</small>:null}</div></div>)}</div>:null}
       </div>
       <div className="pd-price-card">
-        <small>{ticketMode?'GIÁ VÉ / GÓI TỪ':'GIÁ CABIN TỪ'}</small>
+        <small>{ticketMode?(hasChildGuest?'GIÁ NGƯỜI LỚN TỪ':'GIÁ VÉ / GÓI TỪ'):'GIÁ CABIN TỪ'}</small>
         <strong>{price}</strong>
-        <p>{ticketMode?'Giá thay đổi theo ngày khởi hành, chương trình và số khách.':'Giá thay đổi theo cabin, ngày khởi hành và số khách.'}</p>
+        <p>{ticketMode?(hasChildGuest?'Giá hiển thị ngoài sản phẩm là giá người lớn. Giá trẻ em được tự cộng theo nhóm tuổi khi nhập số khách.':'Giá thay đổi theo ngày khởi hành, chương trình và số khách.'):'Giá thay đổi theo cabin, ngày khởi hành và số khách.'}</p>
         <a href="#rate-calendar">Xem lịch giá</a>
         <a href="#booking">{ticketMode?'Kiểm tra giá & chỗ':'Kiểm tra giá & cabin'}</a>
       </div>
@@ -109,6 +112,6 @@ export function UnifiedCruisePublicDetail({product:p,initialRates=[]}:{product:P
       <section id="policy" className="pd-block"><h2>Chính sách</h2><div className="pd-policy-grid">{!ticketMode&&(p.checkin||p.checkout)?<div><b>Nhận / trả cabin</b><p>{p.checkin||'14:00'} / {p.checkout||'12:00'}</p></div>:null}<div><b>Điều kiện hành trình</b><p className="cms-preline">{p.policies||(ticketMode?'Áp dụng theo hành trình, ngày khởi hành và gói dịch vụ.':'Áp dụng theo hành trình, cabin và gói giá.')}</p></div></div></section>
       <ProductLocationMap name={p.name} product={p}/>
       <CustomerReviews slug={p.slug} productName={p.name}/>
-    </main><aside id="booking"><BookingInquiry product={p.name} productId={p.id} productSlug={p.slug} kind="du thuyền" mode={ticketMode?'ticket':'cabin'}/></aside></section>
+    </main><aside id="booking"><BookingInquiry product={p.name} productId={p.id} productSlug={p.slug} kind="du thuyền" mode={ticketMode?'ticket':'cabin'} units={p.units||[]} initialRates={initialRates}/></aside></section>
   </div>;
 }
