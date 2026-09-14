@@ -13,8 +13,8 @@ async function availableSales(sql:any,leadKind:SalesLeadKind){
  const sales=await sql`select id,name,permissions from staff where status='active' and (role='sales' or department='sales') order by name,id`;if(!sales.length)return[];
  const rows=await sql`select distinct on (entity_id) entity_id,after_data from audit_logs where entity_type='sales_availability' order by entity_id,created_at desc,id desc`;
  const state=new Map(rows.map((row:any)=>[String(row.entity_id),row.after_data as any]));
- const available=sales.filter((sale:any)=>{const value:any=state.get(String(sale.id));return value?.receivingCustomers!==false});
- return filterSalesForLead(available,leadKind);
+ const routed=filterSalesForLead(sales,leadKind);
+ return routed.filter((sale:any)=>{const value:any=state.get(String(sale.id));return value?.receivingCustomers!==false});
 }
 async function resolveSalesAssignment(sql:any,customerId:string,leadKind:SalesLeadKind){
  await sql`insert into sales_rotation(id,enabled,assigned_count) values(1,false,0) on conflict(id) do nothing`;
