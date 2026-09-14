@@ -25,11 +25,6 @@ export function leadPermission(kind:SalesLeadKind):string|null{
 export function filterSalesForLead<T extends SaleLike>(sales:T[],kind:SalesLeadKind):T[]{
  const permission=leadPermission(kind);
  if(!permission)return sales;
- const hasRoutingConfig=sales.some(sale=>{
-  const permissions=permissionsOf(sale);
-  return permissions.includes(TOUR_LEAD_PERMISSION)||permissions.includes(STAY_LEAD_PERMISSION);
- });
- if(!hasRoutingConfig)return sales;
  return sales.filter(sale=>permissionsOf(sale).includes(permission));
 }
 
