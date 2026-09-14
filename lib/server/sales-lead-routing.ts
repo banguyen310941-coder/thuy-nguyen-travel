@@ -11,8 +11,8 @@ function permissionsOf(sale:SaleLike):string[]{
 
 export function salesLeadKind(value:unknown):SalesLeadKind{
  const text=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
- if(text.includes('tour'))return'tour';
- if(text.includes('villa')||text.includes('resort')||text.includes('khach san')||text.includes('hotel')||text.includes('luu tru')||text.includes('phong'))return'stay';
+ if(text==='tour'||text.includes('tour'))return'tour';
+ if(text==='stay'||text.includes('villa')||text.includes('resort')||text.includes('khach san')||text.includes('hotel')||text.includes('luu tru')||text.includes('phong'))return'stay';
  return'other';
 }
 
