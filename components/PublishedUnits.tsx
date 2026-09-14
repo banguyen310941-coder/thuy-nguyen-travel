@@ -74,14 +74,17 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,
  },[checkin,checkout]);
  const choose=(u:Unit)=>window.dispatchEvent(new CustomEvent('tn:select-unit',{detail:{id:u.id,unitId:u.id,code:u.code,name:u.name,pricingBasis:u.pricingBasis,guestType:u.guestType}}));
  const selectLabel=(u:Unit)=>u.pricingBasis==='guest'?'Chọn vé':u.pricingBasis==='package'?'Chọn gói':u.pricingBasis==='cabin_night'||/cabin/i.test(label)?'Chọn cabin':u.pricingBasis==='unit_night'||/(villa|căn)/i.test(label)?'Chọn căn':'Chọn phòng';
- if(!units.length)return null;
+ const hasAdultGuest=units.some(u=>u.pricingBasis==='guest'&&u.guestType==='adult');
+ const hasChildGuest=units.some(u=>u.pricingBasis==='guest'&&u.guestType==='child');
+ const displayUnits=hasAdultGuest?units.filter(u=>u.guestType!=='child'):units;
+ if(!displayUnits.length)return null;
  const today=pricingDateKey(new Date());
- const ticketCollection=units.every(u=>u.pricingBasis==='guest'||u.pricingBasis==='package');
+ const ticketCollection=displayUnits.every(u=>u.pricingBasis==='guest'||u.pricingBasis==='package');
  const cruiseCollection=/cabin/i.test(label);
  const dateNoun=ticketCollection||cruiseCollection?'ngày khởi hành':'ngày lưu trú';
  return <section className="detail-block live-units" id="units">
   <div className="live-units-head"><h2>{label}</h2><p>{checkin?`Giá dưới từng hạng được tính đúng theo ${dateNoun} khách chọn.`:`Giá bên dưới ưu tiên lịch production và tự dùng bảng giá cấu hình khi ngày chưa có rate riêng. Chọn ${dateNoun} để xem giá chính xác.`}</p></div>
-  <div className="live-unit-list">{units.map(u=>{
+  <div className="live-unit-list">{displayUnits.map(u=>{
    const stayBasis=u.pricingBasis!=='guest'&&u.pricingBasis!=='package';
    const photos=(u.images||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
    const calendarRates=ratesForUnit(allRates,u.id);
@@ -110,6 +113,7 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,
    const baseAvailable=u.status==='available'&&stayOk&&!sold;
    const unitSuffix=u.pricingBasis==='guest'?'/ khách':u.pricingBasis==='package'?'/ gói':u.pricingBasis==='unit_night'?'/ căn/đêm':u.pricingBasis==='cabin_night'?'/ cabin/đêm':'/ phòng/đêm';
    const hasPriceSource=calendarRates.length>0||configuredPrices.length>0;
+   const adultPriceOnly=ticketCollection&&hasChildGuest&&u.guestType==='adult';
    return <article key={`${u.id}_${rev}`}>
     <div className="live-unit-main">
      <div className="live-unit-info"><b>{u.name||'Chưa đặt tên'}</b><small>{u.code||'Chưa có mã'}{u.bedrooms?` · ${u.bedrooms} phòng ngủ`:''}{u.beds?` · ${u.beds}`:''}{u.capacity?` · ${u.capacity}`:' · Sức chứa liên hệ'}{u.area?` · ${u.area}`:''}{u.view?` · ${u.view}`:''}</small>{u.meal&&<span>{u.meal}</span>}{u.amenities&&<span>{u.amenities}</span>}{exactReady&&<span className="availability-note">Còn chỗ theo lịch ngày đã chọn</span>}</div>
@@ -117,13 +121,13 @@ export function PublishedUnits({slug,label='Căn / hạng phòng',providedUnits,
     </div>
     {effectiveDates.length?<div className={`selected-date-price ${exactReady?'exact':'missing'}`}>
      {oldPrice>max&&<del>{fmt(oldPrice)}</del>}
-     <small>{exactReady?'GIÁ XÁC NHẬN THEO NGÀY':'GIÁ NGÀY ĐÃ CHỌN'}</small>
+     <small>{adultPriceOnly?(exactReady?'GIÁ NGƯỜI LỚN THEO NGÀY':'GIÁ NGƯỜI LỚN NGÀY ĐÃ CHỌN'):(exactReady?'GIÁ XÁC NHẬN THEO NGÀY':'GIÁ NGÀY ĐÃ CHỌN')}</small>
      <b>{exactReady?(min===max?fmt(min):`${fmt(min)} – ${fmt(max)}`):sold?'Hết / tạm giữ':'Liên hệ giá'}</b>
      <em>{exactReady?`Giá bán ${unitSuffix}${stayBasis&&selectedDates.length>1?` · ${selectedDates.length} đêm`:''}`:'Ngày này chưa có giá bán được cấu hình.'}</em>
     </div>:<div className={`selected-date-price starting ${startingPrice?'exact':'missing'}`}>
-     <small>GIÁ BÁN TỪ</small>
+     <small>{adultPriceOnly?'GIÁ NGƯỜI LỚN TỪ':'GIÁ BÁN TỪ'}</small>
      <b>{startingPrice?fmt(startingPrice):'Liên hệ giá'}</b>
-     <em>{startingPrice?`${unitSuffix} · chọn ngày để xem giá chính xác`:'Hạng này chưa có bảng giá bán; HappyGo sẽ kiểm tra khi nhận yêu cầu.'}</em>
+     <em>{startingPrice?`${adultPriceOnly?'Giá người lớn ':''}${unitSuffix} · chọn ngày để xem giá chính xác`:'Hạng này chưa có bảng giá bán; HappyGo sẽ kiểm tra khi nhận yêu cầu.'}</em>
     </div>}
     <em className={`unit-public-status ${baseAvailable?'available':'soldout'}`}>{effectiveDates.length?(exactReady?'Có giá xác nhận':sold?'Hết / tạm giữ':'Chưa mở giá'):(hasPriceSource?'Có bảng giá':'Chưa mở giá')}</em>
     {baseAvailable?<a href="#booking" onClick={()=>choose(u)}>{exactReady?selectLabel(u):effectiveDates.length?'Yêu cầu giá':selectLabel(u)}</a>:<span className="unit-unavailable">Chưa thể đặt</span>}
