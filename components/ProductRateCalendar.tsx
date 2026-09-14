@@ -28,7 +28,7 @@ const monthName=(date:Date)=>new Intl.DateTimeFormat('vi-VN',{month:'long',year:
 const nextDateKey=(date:Date)=>{const next=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);return pricingDateKey(next)};
 
 export function ProductRateCalendar({units,label='Lịch giá theo ngày',initialRates=[],kind='stay'}:{units:Unit[];label?:string;initialRates?:PublicRateRange[];kind?:CalendarKind}){
-  const availableUnits=useMemo(()=>units.filter(u=>u.status!=='hidden'),[units]);
+  const availableUnits=useMemo(()=>{const visible=units.filter(u=>u.status!=='hidden');const hasAdultGuest=visible.some(u=>u.pricingBasis==='guest'&&u.guestType==='adult');return hasAdultGuest?visible.filter(u=>u.guestType!=='child'):visible},[units]);
   const [unitId,setUnitId]=useState(availableUnits[0]?.id||'');
   const [month,setMonth]=useState(()=>{const now=new Date();return new Date(now.getFullYear(),now.getMonth(),1)});
   const [allRates,setAllRates]=useState<PublicRateRange[]>(initialRates);
@@ -82,13 +82,14 @@ export function ProductRateCalendar({units,label='Lịch giá theo ngày',initia
   const chooseDate=(date:Date,price:number,unavailable:boolean)=>{const key=pricingDateKey(date);if(key<today||unavailable||!price)return;const checkout=nextDateKey(date),next=new URLSearchParams(window.location.search);next.set('checkin',key);next.set('checkout',checkout);window.history.replaceState(window.history.state,'',`${window.location.pathname}?${next.toString()}${window.location.hash}`);setSelected(key);if(unit)selectBookingUnit(unit);window.dispatchEvent(new CustomEvent<PricingDatesDetail>('tn-pricing-dates-updated',{detail:{checkin:key,checkout}}));setTimeout(()=>document.getElementById('units')?.scrollIntoView({behavior:'smooth',block:'start'}),50)};
 
   if(!unit)return null;
-  const unitHeading=kind==='cruise'?'Cabin đang xem':kind==='ticket'?'Vé / gói đang xem':'Hạng đang xem';
+  const hasChildGuest=units.some(u=>u.status!=='hidden'&&u.pricingBasis==='guest'&&u.guestType==='child');
+  const unitHeading=kind==='cruise'?'Cabin đang xem':kind==='ticket'?(hasChildGuest?'Hành trình / hạng người lớn':'Vé / gói đang xem'):'Hạng đang xem';
   const dateNoun=kind==='stay'?'ngày lưu trú':'ngày khởi hành';
   const itemNoun=kind==='cruise'?'cabin':kind==='ticket'?'vé / gói':'hạng phòng';
   const bookingNoun=kind==='stay'?'đặt phòng':'đặt dịch vụ';
 
   return <section id="rate-calendar" className="pd-block public-rate-calendar">
-    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>Giá bán được cập nhật theo từng {dateNoun}.</b> Giá production theo ngày được ưu tiên; ngày chưa có rate riêng sẽ dùng đúng bảng giá cấu hình của {itemNoun}.</p></div><label><span>{unitHeading}</span><select value={unit.id} onChange={e=>changeUnit(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
+    <div className="prc-head"><div><h2>📅 {label}</h2><p><b>{kind==='ticket'&&hasChildGuest?'Lịch dưới đây hiển thị giá người lớn theo từng ngày khởi hành.':`Giá bán được cập nhật theo từng ${dateNoun}.`}</b> Giá production theo ngày được ưu tiên; ngày chưa có rate riêng sẽ dùng đúng bảng giá cấu hình của {itemNoun}.</p></div><label><span>{unitHeading}</span><select value={unit.id} onChange={e=>changeUnit(e.target.value)}>{availableUnits.map(u=><option value={u.id} key={u.id}>{u.code?`${u.code} · `:''}{u.name}</option>)}</select></label></div>
     <div className="prc-month"><button type="button" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>‹</button><b>{monthName(month)}</b><button type="button" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>›</button></div>
     <div className="prc-weekdays">{['T2','T3','T4','T5','T6','T7','CN'].map(x=><span key={x}>{x}</span>)}</div>
     <div className="prc-grid">{cells.map((date,index)=>{
