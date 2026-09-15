@@ -29,3 +29,7 @@ export async function notifyCrmAssignment(sql:Sql,input:{staffId:string;customer
  const kind=input.leadKind==='tour'?'Tour':input.leadKind==='stay'?'Villa / Khách sạn':'khách mới';
  return sendPushToStaff(sql,[input.staffId],{title:'Khách CRM mới được giao',body:`${input.customerName} · ${kind}`,url:'/admin/?module=Khách%20hàng%20%2F%20CRM',tag:`crm-${input.staffId}-${Date.now()}`});
 }
+
+export async function notifyBookingAssignment(sql:Sql,input:{staffId:string;bookingCode:string;customerName:string}){
+ return sendPushToStaff(sql,[input.staffId],{title:'Booking mới được giao cho bạn',body:`${input.bookingCode} · ${input.customerName}`,url:'/admin/?module=Đơn%20đặt%20dịch%20vụ',tag:`booking-assignment-${input.bookingCode}-${input.staffId}`});
+}
