@@ -24,7 +24,8 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
  const categories=guideCategories.map(category=>({url:`${base}/cam-nang/danh-muc/${category.slug}`,changeFrequency:'weekly' as const,priority:.7}));
  const destinationSlugs=[...seoDestinations.map(item=>item.slug),'long-hai','vung-tau'];
  const destinations=destinationSlugs.map(slug=>({url:`${base}/diem-den/${slug}`,changeFrequency:'weekly' as const,priority:.85}));
+ const destinationServices=seoDestinations.flatMap(item=>item.services.filter(service=>service.href.startsWith(`/diem-den/${item.slug}/`)).map(service=>({url:`${base}${service.href}`,changeFrequency:'daily' as const,priority:.82})));
  const guides=guidePosts.filter(item=>!cmsGuideSlugs.has(item.slug)).map(x=>({url:`${base}/cam-nang/${encodeURIComponent(x.slug)}`,changeFrequency:'monthly' as const,priority:.78}));
  const legacyCruises=cruises.filter(item=>!productionCruiseSlugs.has(item.slug)).map(x=>detail('du-thuyen',x.slug));
- return [...staticPages,...destinations,...products,...stays.map(x=>detail('luu-tru',x.slug)),...tours.map(x=>detail('tour-du-lich',x.slug)),...cmsTours,...legacyCruises,...categories,...guides,...cmsGuides];
+ return [...staticPages,...destinations,...destinationServices,...products,...stays.map(x=>detail('luu-tru',x.slug)),...tours.map(x=>detail('tour-du-lich',x.slug)),...cmsTours,...legacyCruises,...categories,...guides,...cmsGuides];
 }
