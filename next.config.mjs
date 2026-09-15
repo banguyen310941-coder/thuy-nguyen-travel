@@ -61,6 +61,10 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      {source:'/diem-den/:slug/villa-resort',destination:'/villa-resort?q=:slug'},
+      {source:'/diem-den/:slug/khach-san',destination:'/khach-san?q=:slug'},
+      {source:'/diem-den/:slug/du-thuyen',destination:'/cruises?q=:slug'},
+      {source:'/diem-den/:slug/tour-du-lich',destination:'/tours?q=:slug'},
       {source:'/luu-tru/:slug',destination:'/stay/:slug'},
       {source:'/luu-tru',destination:'/stay'},
       {source:'/tour-du-lich/:slug',destination:'/tours/:slug'},
