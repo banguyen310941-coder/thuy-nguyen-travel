@@ -11,8 +11,8 @@ import {getSiteUrl} from '@/lib/site-url';
 export function generateStaticParams(){return seoDestinations.map(item=>({slug:item.slug}))}
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
- const {slug}=await params;const item=getSeoDestination(slug);if(!item)return{};const base=getSiteUrl();const canonical=`${base}/diem-den/${item.slug}`;
- return {title:item.title,description:item.description,keywords:item.keywords,alternates:{canonical},openGraph:{title:item.title,description:item.description,url:canonical,type:'website',locale:'vi_VN',siteName:'HappyGo Travel'},twitter:{card:'summary_large_image',title:item.title,description:item.description}};
+ const {slug}=await params;const item=getSeoDestination(slug);if(!item)return{};const base=getSiteUrl();const canonical=`${base}/diem-den/${item.slug}`;const seoTitle=`Du lịch ${item.name}: kinh nghiệm & dịch vụ | HappyGo`;
+ return {title:{absolute:seoTitle},description:item.description,keywords:item.keywords,alternates:{canonical},openGraph:{title:seoTitle,description:item.description,url:canonical,type:'website',locale:'vi_VN',siteName:'HappyGo Travel'},twitter:{card:'summary_large_image',title:seoTitle,description:item.description}};
 }
 
 function cleanServiceHref(href:string){
