@@ -15,8 +15,13 @@ const items=[
 function contextualHref(item:(typeof items)[number],destination?:string){
  const place=String(destination||'').trim();
  if(!place)return item.href;
+ const slug=destinationSlug(place);
+ if(slug&&item.id==='tour')return `/diem-den/${slug}/tour-du-lich`;
+ if(slug&&item.id==='villa')return `/diem-den/${slug}/villa-resort`;
+ if(slug&&item.id==='hotel')return `/diem-den/${slug}/khach-san`;
+ if(slug&&item.id==='cruise')return `/diem-den/${slug}/du-thuyen`;
  if(['tour','villa','hotel','cruise'].includes(item.id))return `${item.href}?q=${encodeURIComponent(place)}`;
- if(item.id==='destination'){const slug=destinationSlug(place);return slug?`/diem-den/${slug}`:item.href}
+ if(item.id==='destination')return slug?`/diem-den/${slug}`:item.href
  return item.href;
 }
 
