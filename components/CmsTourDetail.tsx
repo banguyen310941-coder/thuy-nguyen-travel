@@ -13,8 +13,8 @@ type Tour={id:string;name:string;slug:string;cover?:string;category:string;durat
 const lines=(v?:string)=>String(v||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
 const cached=(slug:string)=>{try{const items=JSON.parse(localStorage.getItem('tn_cms_tours_v3')||'[]') as Tour[];return items.find(x=>x.slug===slug&&x.status==='published')||null}catch{return null}};
 
-export function CmsTourDetail({slug:explicitSlug}:{slug?:string}={}){
- const [tour,setTour]=useState<Tour|null|undefined>(undefined);
+export function CmsTourDetail({slug:explicitSlug,initialTour}:{slug?:string;initialTour?:Tour|null}={}){
+ const [tour,setTour]=useState<Tour|null|undefined>(initialTour??undefined);
  useEffect(()=>{
   let alive=true;
   const slug=explicitSlug||new URLSearchParams(window.location.search).get('slug')||'';
@@ -33,15 +33,15 @@ export function CmsTourDetail({slug:explicitSlug}:{slug?:string}={}){
       if(found){apply(found);return}
      }
     }
-    if(!cache)apply(null);
-   }catch{if(!cache)apply(null)}
+    if(!cache&&!initialTour)apply(null);
+   }catch{if(!cache&&!initialTour)apply(null)}
   };
   void load();
   const refresh=()=>void load();
   window.addEventListener('tn-tours-updated',refresh);
   window.addEventListener('storage',refresh);
   return()=>{alive=false;window.removeEventListener('tn-tours-updated',refresh);window.removeEventListener('storage',refresh)};
- },[explicitSlug]);
+ },[explicitSlug,initialTour]);
  useEffect(()=>{
   if(!tour)return;
   if(tour.seoTitle)document.title=tour.seoTitle;
