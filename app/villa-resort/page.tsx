@@ -1,12 +1,13 @@
 import type {Metadata} from 'next';
 import {StayLandingPage} from '@/components/StayLandingPage';
 import {getSiteUrl} from '@/lib/site-url';
+import {destinationSlug,getSeoDestination} from '@/data/seo-destinations';
 
 const path='/villa-resort';
 type PageProps={searchParams:Promise<Record<string,string|string[]|undefined>>};
-export function generateMetadata():Metadata{
- const canonical=`${getSiteUrl()}${path}`;
- return{title:'Villa & Resort toàn quốc',description:'Tìm và đặt villa nguyên căn, resort nghỉ dưỡng toàn quốc cùng HappyGo Travel. Lọc theo điểm đến, ngày ở, số khách và tiện ích.',alternates:{canonical},openGraph:{title:'Villa & Resort | HappyGo Travel',description:'Khám phá villa nguyên căn và resort nghỉ dưỡng với thông tin rõ ràng, ảnh đúng sản phẩm và tư vấn nhanh.',url:canonical,type:'website'},twitter:{card:'summary_large_image',title:'Villa & Resort | HappyGo Travel',description:'Tìm Villa & Resort phù hợp cho gia đình, nhóm bạn và đoàn nghỉ dưỡng.'}};
+export async function generateMetadata({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}):Promise<Metadata>{
+ const query=await searchParams,raw=Array.isArray(query.q)?String(query.q[0]||''):String(query.q||''),destination=getSeoDestination(raw)?.name||raw,slug=destinationSlug(destination),canonical=slug?`${getSiteUrl()}/diem-den/${slug}/villa-resort`:`${getSiteUrl()}/villa-resort`,title=destination?`Villa & Resort tại ${destination}`:'Villa & Resort toàn quốc',description=destination?`Tìm và đặt villa nguyên căn, resort nghỉ dưỡng tại ${destination} cùng HappyGo Travel. Lọc theo ngày ở, số khách và nhu cầu chuyến đi.`:'Tìm và đặt villa nguyên căn, resort nghỉ dưỡng toàn quốc cùng HappyGo Travel. Lọc theo điểm đến, ngày ở, số khách và tiện ích.';
+ return{title,description,alternates:{canonical},openGraph:{title:`${title} | HappyGo Travel`,description,url:canonical,type:'website'},twitter:{card:'summary_large_image',title:`${title} | HappyGo Travel`,description}};
 }
 
 export default async function VillaResortPage({searchParams}:PageProps){return <StayLandingPage kind="villa" query={await searchParams}/>}
