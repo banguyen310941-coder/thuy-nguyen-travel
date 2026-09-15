@@ -28,9 +28,31 @@ export const PUBLIC_FALLBACK_PRODUCTS:PublicFallbackProduct[]=[
  product('villa-ha-long-bt9-39b','Villa & Resort','Villa Hạ Long BT9-39B','Hạ Long','6.500.000đ','Villa Hạ Long dành cho nhóm riêng, có không gian sinh hoạt và nghỉ dưỡng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350140/happygo_villa-ha-long-bt9-39b_cover_drive_filtered.jpg')
 ];
 
+
+export type PublicFallbackArticle={
+ id:string;title:string;slug:string;category:string;excerpt:string;cover:string;content:string;status:'published';date:string;readTime:string;keywords:string;
+};
+
+const article=(id:string,title:string,slug:string,category:string,excerpt:string,cover:string,date:string,readTime:string):PublicFallbackArticle=>({
+ id,title,slug,category,excerpt,cover,content:'',status:'published',date,readTime,keywords:''
+});
+
+// Snapshot from the last known-good production render on 14/09/2026.
+// These are CMS-era articles only. Deleted legacy guide posts are intentionally NOT included.
+export const PUBLIC_FALLBACK_ARTICLES:PublicFallbackArticle[]=[
+ article('fallback-guide-da-lat','Du lịch Đà Lạt 3 ngày 2 đêm: lịch trình tự túc dễ đi','du-lich-da-lat-3-ngay-2-dem-lich-trinh-tu-tuc','Đà Lạt','Gợi ý lịch trình Đà Lạt 3 ngày 2 đêm theo cụm điểm, kết hợp hồ Xuân Hương, Trại Mát, hồ Tuyền Lâm, ẩm thực, lưu trú và cách dự trù chi phí.','https://commons.wikimedia.org/wiki/Special:Redirect/file/Xuan%20Huong%20Lake%20in%20Da%20Lat%20%2828219543381%29.jpg?width=1600','13/09/2026','14 phút đọc'),
+ article('fallback-guide-suoi-khoang','Villa resort suối khoáng Việt Nam: 5 điểm nghỉ dưỡng đáng chọn','villa-resort-suoi-khoang-viet-nam-5-diem-nghi-duong','Villa & Resort','Khám phá 5 vùng villa resort suối khoáng tại Việt Nam phù hợp cặp đôi, gia đình và nhóm bạn, cùng tiêu chí chọn phòng, chi phí và lưu ý tắm khoáng.','https://commons.wikimedia.org/wiki/Special:Redirect/file/Serena%20Resort%20Kim%20Boi.jpg?width=1600','13/09/2026','14 phút đọc'),
+ article('fallback-guide-quy-nhon','Du lịch Quy Nhơn 3 ngày 2 đêm: lịch trình biển và ẩm thực','du-lich-quy-nhon-3-ngay-2-dem-lich-trinh-tu-tuc','Quy Nhơn','Gợi ý lịch trình Quy Nhơn 3 ngày 2 đêm tự túc với Kỳ Co, Eo Gió, Ghềnh Ráng, Tháp Đôi, món ngon, khu lưu trú, chi phí và các lưu ý cần kiểm tra.','https://commons.wikimedia.org/wiki/Special:Redirect/file/Ky-Co-Beach%2C-Quy-Nhon%2C-Vietnam-1300px.jpg?width=1600','10/09/2026','14 phút đọc'),
+ article('fallback-guide-tre-nho','Kinh nghiệm chọn villa cho gia đình có trẻ nhỏ an toàn','kinh-nghiem-chon-villa-cho-gia-dinh-co-tre-nho','Kinh nghiệm chọn villa','Hướng dẫn chọn villa cho gia đình có trẻ nhỏ theo độ tuổi, hồ bơi, phòng ngủ, bếp, vị trí và ngân sách, kèm checklist cần xác nhận trước khi đặt cọc.','https://commons.wikimedia.org/wiki/Special:Redirect/file/DGJ%200721%20-%20Pool%20at%20the%20Resort%2C%20Da%20Nang%2C%20Viet%20Nam%20%283382626443%29.jpg?width=1600','10/09/2026','13 phút đọc'),
+ article('fallback-guide-nui','Villa resort núi Việt Nam: 5 điểm đến nghỉ mát đáng chọn','villa-resort-nui-viet-nam-5-diem-den-nghi-duong','Villa & Resort','Khám phá 5 vùng villa resort núi Việt Nam phù hợp cho cặp đôi, gia đình và nhóm bạn, kèm tiêu chí chọn khu nghỉ dưỡng, ngân sách, thời tiết và lưu ý đặt phòng.','https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Da_Lat_-_Viet_Nam.jpg/1280px-Da_Lat_-_Viet_Nam.jpg','09/09/2026','12 phút đọc'),
+ article('fallback-guide-hue','Du lịch Huế 3 ngày 2 đêm: lịch trình ăn chơi và lưu trú','du-lich-hue-3-ngay-2-dem-lich-trinh-tu-tuc','Huế','Gợi ý lịch trình Huế 3 ngày 2 đêm dành cho cặp đôi, gia đình và nhóm bạn, gồm Đại Nội, Thiên Mụ, lăng vua, món ngon, lưu trú, chi phí và các lưu ý thực tế.','https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Meridian_Gate_%28Ng%E1%BB%8D_M%C3%B4n%29%2C_the_southern_entrance_to_the_Imperial_City%2C_as_viewed_from_the_flagpole_monument_side_%28K%E1%BB%B3_%C4%90%C3%A0i%29.jpg/1280px-Meridian_Gate_%28Ng%E1%BB%8D_M%C3%B4n%29%2C_the_southern_entrance_to_the_Imperial_City%2C_as_viewed_from_the_flagpole_monument_side_%28K%E1%BB%B3_%C4%90%C3%A0i%29.jpg','08/09/2026','14 phút đọc'),
+ article('fallback-guide-nhom-10-20','Kinh nghiệm chọn villa cho nhóm 10–20 người tránh phát sinh','kinh-nghiem-chon-villa-cho-nhom-10-20-nguoi','Kinh nghiệm chọn villa','Hướng dẫn chọn villa cho nhóm 10–20 người theo số phòng ngủ, cơ cấu đoàn, tiện ích và ngân sách, kèm checklist tránh phụ thu và sai sức chứa khi nhận căn.','https://statics.vinpearl.com/be-boi-villa-vinpearl-nam-hoi-an_1734063481.jpg','08/09/2026','12 phút đọc'),
+ article('fallback-guide-bien','Villa resort biển Việt Nam: 6 điểm đến đáng cân nhắc','villa-resort-bien-viet-nam-6-diem-den-nen-chon','Villa & Resort','Khám phá 6 điểm đến villa resort biển Việt Nam phù hợp cho gia đình, cặp đôi và nhóm bạn, cùng tiêu chí chọn khu nghỉ dưỡng, ngân sách và lưu ý đặt phòng.','https://commons.wikimedia.org/wiki/Special:Redirect/file/Phu%20Quoc%20Beach.jpg?width=1600','08/09/2026','14 phút đọc')
+];
+
 export const PUBLIC_FALLBACK_STATE:Record<string,unknown>={
  tn_cms_products_v3_units:PUBLIC_FALLBACK_PRODUCTS,
  tn_cms_daily_rates_v1:[],
  tn_cms_tours_v3:[],
- tn_cms_articles_v3:[]
+ tn_cms_articles_v3:PUBLIC_FALLBACK_ARTICLES
 };
