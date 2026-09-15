@@ -3,6 +3,7 @@ import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
 import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 import {settleAffiliateBooking} from '@/lib/server/affiliate';
+import {notifyBookingAssignment} from '@/lib/server/admin-push';
 
 const STATUSES=['new','contacting','confirmed','completed','cancelled'] as const;
 type BookingStatus=(typeof STATUSES)[number];
@@ -82,7 +83,7 @@ export async function PATCH(req:NextRequest){
    if(!staffId)await sql`update bookings set sales_staff_id=null,sales_staff_name_snapshot=null,sales_assigned_at=null,updated_at=now() where id=${id}`;
    else {const staff=await sql`select id,name from staff where id=${staffId} and status='active' limit 1`;if(!staff[0])return NextResponse.json({error:'Không tìm thấy nhân viên đang hoạt động.'},{status:400});await sql`update bookings set sales_staff_id=${staffId},sales_staff_name_snapshot=${String(staff[0].name)},sales_assigned_at=now(),updated_at=now() where id=${id}`}
   }
-  const afterRows=await sql`select * from bookings where id=${id} limit 1`;const after=afterRows[0];const affiliateCommission=String(after?.status)==='completed'?await settleAffiliateBooking(sql,id):0;
+  const afterRows=await sql`select * from bookings where id=${id} limit 1`;const after=afterRows[0];if(body.salesStaffId!==undefined&&String(body.salesStaffId||'')&&String(before.sales_staff_id||'')!==String(body.salesStaffId)){await notifyBookingAssignment(sql,{staffId:String(body.salesStaffId),bookingCode:String(after?.code||''),customerName:String(after?.customer_name_snapshot||'Khách')}).catch(error=>console.error('booking_assignment_push_failed',error))}const affiliateCommission=String(after?.status)==='completed'?await settleAffiliateBooking(sql,id):0;
   await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'booking.update','booking',${id},${JSON.stringify(before)}::jsonb,${JSON.stringify(after)}::jsonb)`;
   return NextResponse.json({ok:true,affiliateCommission});
  }catch(error){console.error('admin_booking_patch_failed',error);return NextResponse.json({error:'Không thể cập nhật booking production.'},{status:500})}

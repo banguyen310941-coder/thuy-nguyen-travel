@@ -25,7 +25,7 @@ function getAudioContext(){
 
 function tone(ctx:AudioContext,start:number,frequency:number,duration:number,peak:number){
  const osc=ctx.createOscillator(),gain=ctx.createGain();
- osc.type='sine';
+ osc.type='triangle';
  osc.frequency.setValueAtTime(frequency,start);
  gain.gain.setValueAtTime(.0001,start);
  gain.gain.exponentialRampToValueAtTime(peak,start+.012);
@@ -43,10 +43,12 @@ function playNotificationChime(){
  if(!ctx)return;
  const play=()=>{
   const start=ctx.currentTime+.015;
-  tone(ctx,start,880,.24,.045);
-  tone(ctx,start+.11,1174.66,.30,.035);
-  tone(ctx,start+.29,659.25,.32,.032);
-  try{if('vibrate'in navigator)navigator.vibrate?.([70,45,90])}catch{}
+  tone(ctx,start,880,.30,.12);
+  tone(ctx,start+.13,1046.5,.34,.11);
+  tone(ctx,start+.34,1318.5,.38,.10);
+  tone(ctx,start+.78,880,.26,.11);
+  tone(ctx,start+.92,1318.5,.40,.10);
+  try{if('vibrate'in navigator)navigator.vibrate?.([180,80,220,100,320])}catch{}
  };
  if(ctx.state==='suspended')void ctx.resume().then(play).catch(()=>{});else play();
 }

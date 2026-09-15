@@ -3,6 +3,7 @@ import {db,hasDatabase} from '@/lib/db';
 import {adminActor} from '@/lib/server/admin-access';
 import {readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 import {filterSalesForLead,salesLeadKind,type SalesLeadKind,TOUR_LEAD_PERMISSION,STAY_LEAD_PERMISSION} from '@/lib/server/sales-lead-routing';
+import {notifyCrmAssignment} from '@/lib/server/admin-push';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['lead','contacting','customer','inactive']);
@@ -59,6 +60,7 @@ export async function POST(req:NextRequest){
    else await assignRoundRobin(sql,String(customer.id),leadKind);
    await sql`insert into crm_activities(customer_id,staff_id,type,content) values(${String(customer.id)},${actor.id},'created',${`Tạo lead từ ${source}${leadKind==='tour'?' · Tour':leadKind==='stay'?' · Villa/Khách sạn':''}`})`;
    await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,after_data) values(${actor.id},'crm.customer.create','customer',${String(customer.id)},${JSON.stringify(customer)}::jsonb)`;
+   const assigned=await sql`select ca.staff_id::text,c.name from customer_assignments ca join customers c on c.id=ca.customer_id where ca.customer_id=${String(customer.id)} limit 1`;if(assigned[0]?.staff_id)await notifyCrmAssignment(sql,{staffId:String(assigned[0].staff_id),customerName:String(assigned[0].name||name),leadKind}).catch(error=>console.error('crm_push_assignment_failed',error));
    return NextResponse.json({ok:true,id:String(customer.id)});
   }
   if(action==='assign'){
@@ -66,7 +68,7 @@ export async function POST(req:NextRequest){
    const before=await sql`select * from customer_assignments where customer_id=${customerId} limit 1`;
    if(!staffId)await sql`delete from customer_assignments where customer_id=${customerId}`;
    else{if(!uuid.test(staffId))return NextResponse.json({error:'Nhân viên không hợp lệ.'},{status:400});const allSales=await sales(sql),staff=allSales.find((item:any)=>String(item.id)===staffId);if(!staff)return NextResponse.json({error:'Không tìm thấy Sale đang hoạt động.'},{status:400});const kindRow=(await sql`select coalesce((select bi.data_snapshot->>'leadKind' from bookings b join booking_items bi on bi.booking_id=b.id where b.customer_id=${customerId} order by b.created_at desc,bi.id limit 1),(select bi.data_snapshot->>'kind' from bookings b join booking_items bi on bi.booking_id=b.id where b.customer_id=${customerId} order by b.created_at desc,bi.id limit 1),'') as lead_kind`)[0],leadKind=salesLeadKind(kindRow?.lead_kind),eligible=filterSalesForLead(allSales,leadKind);if(!eligible.some((item:any)=>String(item.id)===staffId))return NextResponse.json({error:leadKind==='tour'?'Sale này chưa được bật quyền nhận khách Tour.':leadKind==='stay'?'Sale này chưa được bật quyền nhận khách Villa / Khách sạn.':'Sale này không thuộc nhóm nhận khách.'},{status:400});await sql`insert into customer_assignments(customer_id,staff_id,source,assigned_at) values(${customerId},${staffId},'manual',now()) on conflict(customer_id) do update set staff_id=excluded.staff_id,source='manual',assigned_at=now()`}
-   const after=staffId?await sql`select * from customer_assignments where customer_id=${customerId} limit 1`:[];await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'crm.assignment.update','customer',${customerId},${JSON.stringify(before[0]||null)}::jsonb,${JSON.stringify(after[0]||null)}::jsonb)`;return NextResponse.json({ok:true});
+   const after=staffId?await sql`select * from customer_assignments where customer_id=${customerId} limit 1`:[];await sql`insert into audit_logs(actor_staff_id,action,entity_type,entity_id,before_data,after_data) values(${actor.id},'crm.assignment.update','customer',${customerId},${JSON.stringify(before[0]||null)}::jsonb,${JSON.stringify(after[0]||null)}::jsonb)`;if(staffId){const customerRows=await sql`select name from customers where id=${customerId} limit 1`;await notifyCrmAssignment(sql,{staffId,customerName:String(customerRows[0]?.name||'Khách mới')}).catch(error=>console.error('crm_push_reassignment_failed',error))}return NextResponse.json({ok:true});
   }
   if(action==='toggleAuto'){
    if(!elevated(actor.role))return NextResponse.json({error:'Chỉ Quản trị được đổi chế độ chia khách.'},{status:403});await Promise.all([rotation(sql,1),rotation(sql,2),rotation(sql,3)]);await sql`update sales_rotation set enabled=${Boolean(body.enabled)},updated_at=now() where id in(1,2,3)`;return NextResponse.json({ok:true});
