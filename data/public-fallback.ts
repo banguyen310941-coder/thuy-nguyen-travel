@@ -1,10 +1,10 @@
 import {guidePosts} from './guides';
 export type PublicFallbackProduct={
- id:string;slug:string;type:string;name:string;status:'published';place:string;price:string;summary:string;cover:string;gallery:string;category:string;serviceStars?:number;units:unknown[];
+ id:string;slug:string;type:string;name:string;status:'published';place:string;price:string;summary:string;cover:string;gallery:string;category:string;rating:string;address:string;checkin:string;checkout:string;amenities:string;policies:string;childrenPolicy:string;extraCharge:string;duration:string;pickup:string;boarding:string;itinerary:string;content:string;serviceStars?:number;units:unknown[];
 };
 
 const product=(slug:string,type:string,name:string,place:string,price:string,summary:string,cover:string,serviceStars?:number):PublicFallbackProduct=>({
- id:`fallback-${slug}`,slug,type,name,status:'published',place,price,summary,cover,gallery:cover,category:type,serviceStars,units:[]
+ id:`fallback-${slug}`,slug,type,name,status:'published',place,price,summary,cover,gallery:cover,category:type,rating:'',address:'',checkin:'',checkout:'',amenities:'',policies:'',childrenPolicy:'',extraCharge:'',duration:'',pickup:'',boarding:'',itinerary:'',content:'',serviceStars,units:[]
 });
 
 // Emergency public snapshot. Keep this file PUBLIC-ONLY: no supplier, net price, source sheet or internal notes.
