@@ -4,6 +4,7 @@ import {readSession} from '@/lib/server/portal-auth';
 import {captureAffiliateReferral} from '@/lib/server/affiliate';
 import {consumePublicRateLimit,publicRateKey,readBoundedJson,requestBodyTooLarge} from '@/lib/server/public-abuse';
 import {filterSalesForLead,salesLeadKind,type SalesLeadKind} from '@/lib/server/sales-lead-routing';
+import {notifyNewBooking} from '@/lib/server/admin-push';
 
 function normalizePhone(raw:unknown){const digits=String(raw||'').replace(/\D/g,'');return digits.startsWith('84')&&digits.length===11?`0${digits.slice(2)}`:digits}
 function code(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `HG${y}${m}${day}-${Math.random().toString(36).slice(2,7).toUpperCase()}`}
@@ -85,7 +86,7 @@ export async function POST(req:NextRequest){
   const affiliateReferralId=await captureAffiliateReferral(sql,req,bookingId,phone);
   await sql`insert into crm_activities(customer_id,staff_id,type,content) values(${customerId},${assignment?.id||null},'website_booking',${`Booking ${bookingCode}: ${product}`})`;
   const admin=process.env.ADMIN_EMAIL||'info@happygo.vn';const detail=`<p><b>Mã booking:</b> ${esc(bookingCode)}</p><p><b>Dịch vụ:</b> ${esc(product)}</p><p><b>Khách:</b> ${esc(name)} · ${esc(phone)}${email?` · ${esc(email)}`:''}</p><p><b>Ngày:</b> ${esc(body.startDate||'')} ${body.endDate?`→ ${esc(body.endDate)}`:''}</p><p><b>Khách:</b> ${esc(body.adults||1)} người lớn · ${esc(body.children||0)} trẻ em · ${esc(body.rooms||1)} phòng/căn</p><p><b>Sale:</b> ${esc(assignment?.name||'Chưa phân')}</p><p><b>Ghi chú:</b> ${esc(note)}</p>`;
-  await Promise.allSettled([email?sendEmail(email,`HappyGo Travel đã nhận yêu cầu ${bookingCode}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>HappyGo Travel đã nhận yêu cầu của bạn</h2>${detail}<p>Đội ngũ tư vấn sẽ liên hệ để xác nhận tình trạng và giá. Hotline: <b>0969 973 949</b>.</p></div>`):Promise.resolve(),sendEmail(admin,`[Booking mới] ${bookingCode} · ${name}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Booking mới từ website</h2>${detail}</div>`)]);
+  await Promise.allSettled([email?sendEmail(email,`HappyGo Travel đã nhận yêu cầu ${bookingCode}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>HappyGo Travel đã nhận yêu cầu của bạn</h2>${detail}<p>Đội ngũ tư vấn sẽ liên hệ để xác nhận tình trạng và giá. Hotline: <b>0969 973 949</b>.</p></div>`):Promise.resolve(),sendEmail(admin,`[Booking mới] ${bookingCode} · ${name}`,`<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Booking mới từ website</h2>${detail}</div>`),notifyNewBooking(sql,{bookingCode,customerName:name,product,assignedSalesId:assignment?.id||null})]);
   return NextResponse.json({ok:true,code:bookingCode,assignedSales:assignment?.name||null,accountLinked,affiliateTracked:Boolean(affiliateReferralId)});
  }catch(e){console.error('booking_create_failed',e);return NextResponse.json({error:'Không thể tạo booking. Vui lòng thử lại hoặc gọi hotline.'},{status:500})}
 }
