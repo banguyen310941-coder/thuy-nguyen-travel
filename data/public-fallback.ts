@@ -1,3 +1,4 @@
+import {guidePosts} from './guides';
 export type PublicFallbackProduct={
  id:string;slug:string;type:string;name:string;status:'published';place:string;price:string;summary:string;cover:string;gallery:string;category:string;serviceStars?:number;units:unknown[];
 };
@@ -28,9 +29,15 @@ export const PUBLIC_FALLBACK_PRODUCTS:PublicFallbackProduct[]=[
  product('villa-ha-long-bt9-39b','Villa & Resort','Villa Hạ Long BT9-39B','Hạ Long','6.500.000đ','Villa Hạ Long dành cho nhóm riêng, có không gian sinh hoạt và nghỉ dưỡng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350140/happygo_villa-ha-long-bt9-39b_cover_drive_filtered.jpg')
 ];
 
+export const PUBLIC_FALLBACK_ARTICLES=guidePosts.map((p,index)=>({
+ id:`fallback-guide-${index+1}`,title:p.title,slug:p.slug,category:p.category,excerpt:p.excerpt,cover:p.image,
+ content:p.content.flatMap(section=>[section.heading,...section.paragraphs]).join('\n\n'),
+ status:'published',date:p.date,readTime:p.readTime,keywords:p.keywords.join(' ')
+}));
+
 export const PUBLIC_FALLBACK_STATE:Record<string,unknown>={
  tn_cms_products_v3_units:PUBLIC_FALLBACK_PRODUCTS,
  tn_cms_daily_rates_v1:[],
  tn_cms_tours_v3:[],
- tn_cms_articles_v3:[]
+ tn_cms_articles_v3:PUBLIC_FALLBACK_ARTICLES
 };
