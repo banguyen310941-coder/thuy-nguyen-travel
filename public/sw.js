@@ -1,4 +1,4 @@
-const CACHE='happygo-shell-v7';
+const CACHE='happygo-shell-v8';
 const SHELL=['/','/admin','/admin/','/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -55,4 +55,23 @@ self.addEventListener('fetch',event=>{
     }
     return res;
   })));
+});
+
+
+self.addEventListener('push',event=>{
+  let data={};
+  try{data=event.data?event.data.json():{}}catch{data={body:event.data?event.data.text():''}}
+  const title=data.title||'HappyGo Travel';
+  const options={body:data.body||'Bạn có thông báo mới cần xử lý.',icon:'/icon.svg',badge:'/icon.svg',tag:data.tag||'happygo-admin-alert',renotify:true,requireInteraction:true,silent:false,vibrate:[180,80,220,100,320],data:{url:data.url||'/admin/'}};
+  event.waitUntil(self.registration.showNotification(title,options));
+});
+
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  const targetUrl=new URL(event.notification.data?.url||'/admin/',self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{
+    const target=windows.find(client=>new URL(client.url).origin===self.location.origin);
+    if(target){try{await target.navigate(targetUrl)}catch{}return target.focus()}
+    return self.clients.openWindow(targetUrl);
+  }));
 });
