@@ -8,6 +8,19 @@ const SIGNED_WEBHOOK_HEADERS:Record<string,string>={
  '/api/affiliate/booking-completed':'x-affiliate-webhook-secret',
 };
 const PRIVATE_API_PREFIXES=['/api/admin','/api/account','/api/partner','/api/affiliate','/api/reviews'];
+const DESTINATION_QUERY_SLUGS:Record<string,string>={
+ 'sam son':'sam-son','sầm sơn':'sam-son','sam-son':'sam-son',
+ 'ha long':'ha-long','hạ long':'ha-long','ha-long':'ha-long',
+ 'phan thiet':'phan-thiet','phan thiết':'phan-thiet','phan-thiet':'phan-thiet',
+ 'phu quoc':'phu-quoc','phú quốc':'phu-quoc','phu-quoc':'phu-quoc',
+ 'nha trang':'nha-trang','nha-trang':'nha-trang',
+ 'sa pa':'sa-pa','sapa':'sa-pa','sa-pa':'sa-pa',
+};
+const DESTINATION_SERVICE_PATHS:Record<string,string>={
+ '/villa-resort':'villa-resort','/khach-san':'khach-san','/du-thuyen':'du-thuyen','/tour-du-lich':'tour-du-lich',
+};
+function destinationQuerySlug(value:string){return DESTINATION_QUERY_SLUGS[String(value||'').trim().toLowerCase()]||''}
+
 
 function hostSet(req:NextRequest){
  const values=[req.headers.get('x-forwarded-host'),req.headers.get('host'),req.nextUrl.host].filter(Boolean).flatMap(value=>String(value).split(','));
@@ -28,12 +41,20 @@ function signedWebhookCandidate(req:NextRequest){
 }
 
 function normalizePublicUrl(req:NextRequest){
- if(req.method!=='GET'||req.nextUrl.pathname!=='/luu-tru')return null;
+ if(req.method!=='GET')return null;
+ const service=DESTINATION_SERVICE_PATHS[req.nextUrl.pathname];
+ if(service){
+  const slug=destinationQuerySlug(req.nextUrl.searchParams.get('q')||'');
+  if(!slug)return null;
+  const url=req.nextUrl.clone();url.pathname=`/diem-den/${slug}/${service}`;url.searchParams.delete('q');
+  return NextResponse.redirect(url,308);
+ }
+ if(req.nextUrl.pathname!=='/luu-tru')return null;
  const type=(req.nextUrl.searchParams.get('type')||'').toLowerCase();
  if(type!=='villa'&&type!=='hotel')return null;
- const url=req.nextUrl.clone();
- url.pathname=type==='villa'?'/villa-resort':'/khach-san';
- url.searchParams.delete('type');
+ const url=req.nextUrl.clone(),slug=destinationQuerySlug(url.searchParams.get('q')||''),target=type==='villa'?'villa-resort':'khach-san';
+ url.pathname=slug?`/diem-den/${slug}/${target}`:`/${target}`;
+ url.searchParams.delete('type');if(slug)url.searchParams.delete('q');
  return NextResponse.redirect(url,308);
 }
 
@@ -65,6 +86,10 @@ export function middleware(req:NextRequest){
 export const config={
  matcher:[
   '/luu-tru',
+  '/villa-resort',
+  '/khach-san',
+  '/du-thuyen',
+  '/tour-du-lich',
   '/api/admin/:path*',
   '/api/account/:path*',
   '/api/partner/:path*',
