@@ -61,17 +61,12 @@ const nextConfig = {
   },
   async rewrites() {
     return [
-      {source:'/diem-den/:slug/villa-resort',destination:'/villa-resort?q=:slug'},
-      {source:'/diem-den/:slug/khach-san',destination:'/khach-san?q=:slug'},
-      {source:'/diem-den/:slug/du-thuyen',destination:'/cruises?q=:slug'},
-      {source:'/diem-den/:slug/tour-du-lich',destination:'/tours?q=:slug'},
       {source:'/luu-tru/:slug',destination:'/stay/:slug'},
       {source:'/luu-tru',destination:'/stay'},
       {source:'/tour-du-lich/:slug',destination:'/tours/:slug'},
       {source:'/tour-du-lich',destination:'/tours'},
       {source:'/du-thuyen/:slug',destination:'/cruises/:slug'},
       {source:'/du-thuyen',destination:'/cruises'},
-      {source:'/diem-den',destination:'/destinations'},
       {source:'/cam-nang/danh-muc/:slug',destination:'/guide/category/:slug'},
       {source:'/cam-nang/doc',destination:'/guide/read'},
       {source:'/cam-nang/:slug',destination:'/guide/:slug'},
