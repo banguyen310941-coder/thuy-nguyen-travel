@@ -108,7 +108,8 @@ contains('app/product/[slug]/page.tsx',"if(type==='Villa & Resort')",'Schema bre
 contains('app/product/[slug]/page.tsx',"if(type==='Khách sạn')",'Schema breadcrumb sản phẩm phải phân biệt Khách sạn');
 
 contains('app/tours/[slug]/page.tsx','getPublishedTourSeo','Tour CMS phải có route slug public phía server');
-contains('app/tours/[slug]/page.tsx','<CmsTourDetail slug={slug}/>','Tour CMS phải render trên /tour-du-lich/{slug}');
+contains('app/tours/[slug]/page.tsx','<CmsTourDetail slug={slug}','Tour CMS phải render trên /tour-du-lich/{slug}');
+contains('app/tours/[slug]/page.tsx','initialTour={initialTour}','Tour CMS phải nhận dữ liệu server-side để bot thấy H1 và nội dung ngay trong HTML');
 contains('components/CmsTourDetail.tsx','fetch(\'/api/catalog/site-state\'','Tour CMS public phải đọc dữ liệu production');
 contains('lib/public-tour-seo.ts','tn_cms_tours_v3','SEO Tour CMS phải đọc nguồn production');
 contains('app/sitemap.ts','listPublishedTourSeo','Sitemap phải chứa Tour CMS public');
