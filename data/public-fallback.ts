@@ -1,10 +1,64 @@
 export type PublicFallbackProduct={
- id:string;slug:string;type:string;name:string;status:'published';place:string;price:string;summary:string;cover:string;gallery:string;category:string;rating:string;address:string;checkin:string;checkout:string;amenities:string;policies:string;childrenPolicy:string;extraCharge:string;duration:string;pickup:string;boarding:string;itinerary:string;content:string;serviceStars?:number;units:unknown[];
+ id:string;slug:string;type:string;name:string;status:'published';place:string;price:string;summary:string;cover:string;gallery:string;category:string;rating:string;address:string;checkin:string;checkout:string;amenities:string;policies:string;childrenPolicy:string;extraCharge:string;duration:string;pickup:string;boarding:string;itinerary:string;content:string;serviceStars?:number;pricingBasis?:'guest'|'package'|'unit';units:unknown[];
 };
 
 const product=(slug:string,type:string,name:string,place:string,price:string,summary:string,cover:string,serviceStars?:number):PublicFallbackProduct=>({
  id:`fallback-${slug}`,slug,type,name,status:'published',place,price,summary,cover,gallery:cover,category:type,rating:'',address:'',checkin:'',checkout:'',amenities:'',policies:'',childrenPolicy:'',extraCharge:'',duration:'',pickup:'',boarding:'',itinerary:'',content:'',serviceStars,units:[]
 });
+
+const guestUnit=(id:string,code:string,name:string,guestType:'adult'|'child',priceGroup:string,weekdayPrice:string,weekendPrice:string,ageLabel='')=>({
+ id,code,name,capacity:'1 khách',area:'',view:'',meal:'',weekdayPrice,weekendPrice,holidayPrice:'',lowWeekdayPrice:'',lowWeekendPrice:'',highWeekdayPrice:'',highWeekendPrice:'',extraAdult:'',extraChild:'',status:'available',amenities:'',images:'',pricingBasis:'guest',guestType,priceGroup,ageLabel
+});
+
+const dolphinUnits=[
+ guestUnit('fallback-dolphin-day-adult','DOLPHIN-DAY-ADULT','Day Cruise','adult','DOLPHIN-DAY','1.600.000đ','1.880.000đ'),
+ guestUnit('fallback-dolphin-day-c01','DOLPHIN-DAY-C01','Day Cruise · Trẻ 0–1 tuổi','child','DOLPHIN-DAY','370.000đ','370.000đ','0–1 tuổi'),
+ guestUnit('fallback-dolphin-day-c24','DOLPHIN-DAY-C24','Day Cruise · Trẻ 2–4 tuổi','child','DOLPHIN-DAY','1.120.000đ','1.370.000đ','2–4 tuổi'),
+ guestUnit('fallback-dolphin-day-c511','DOLPHIN-DAY-C511','Day Cruise · Trẻ 5–11 tuổi','child','DOLPHIN-DAY','1.420.000đ','1.690.000đ','5–11 tuổi'),
+ guestUnit('fallback-dolphin-din-adult','DOLPHIN-DIN-ADULT','Dinner Cruise','adult','DOLPHIN-DINNER','1.150.000đ','1.550.000đ'),
+ guestUnit('fallback-dolphin-din-c01','DOLPHIN-DIN-C01','Dinner Cruise · Trẻ 0–1 tuổi','child','DOLPHIN-DINNER','370.000đ','370.000đ','0–1 tuổi'),
+ guestUnit('fallback-dolphin-din-c24','DOLPHIN-DIN-C24','Dinner Cruise · Trẻ 2–4 tuổi','child','DOLPHIN-DINNER','620.000đ','970.000đ','2–4 tuổi'),
+ guestUnit('fallback-dolphin-din-c511','DOLPHIN-DIN-C511','Dinner Cruise · Trẻ 5–11 tuổi','child','DOLPHIN-DINNER','920.000đ','1.290.000đ','5–11 tuổi')
+];
+
+const seaOctopusUnits=[
+ guestUnit('fallback-sea-day-adult','SEA-DAY-ADULT','Day Cruise','adult','SEA-OCTOPUS-DAY','1.050.000đ','1.200.000đ'),
+ guestUnit('fallback-sea-day-c02','SEA-DAY-C02','Day Cruise · Trẻ 0–2 tuổi','child','SEA-OCTOPUS-DAY','150.000đ','150.000đ','0–2 tuổi'),
+ guestUnit('fallback-sea-day-c24','SEA-DAY-C24','Day Cruise · Trẻ 2–4 tuổi','child','SEA-OCTOPUS-DAY','400.000đ','400.000đ','2–4 tuổi'),
+ guestUnit('fallback-sea-day-c511','SEA-DAY-C511','Day Cruise · Trẻ 5–11 tuổi','child','SEA-OCTOPUS-DAY','900.000đ','900.000đ','5–11 tuổi'),
+ guestUnit('fallback-sea-din-adult','SEA-DIN-ADULT','Dinner Cruise','adult','SEA-OCTOPUS-DINNER','820.000đ','970.000đ'),
+ guestUnit('fallback-sea-din-c02','SEA-DIN-C02','Dinner Cruise · Trẻ 0–2 tuổi','child','SEA-OCTOPUS-DINNER','150.000đ','150.000đ','0–2 tuổi'),
+ guestUnit('fallback-sea-din-c24','SEA-DIN-C24','Dinner Cruise · Trẻ 2–4 tuổi','child','SEA-OCTOPUS-DINNER','400.000đ','400.000đ','2–4 tuổi'),
+ guestUnit('fallback-sea-din-c511','SEA-DIN-C511','Dinner Cruise · Trẻ 5–11 tuổi','child','SEA-OCTOPUS-DINNER','700.000đ','700.000đ','5–11 tuổi')
+];
+
+const money=(value:number)=>new Intl.NumberFormat('vi-VN').format(value)+'đ';
+const fallbackDateRates=()=>{
+ const out:Array<Record<string,string>>=[];
+ for(let cursor=new Date('2026-09-15T12:00:00Z');cursor<=new Date('2026-12-31T12:00:00Z');cursor=new Date(cursor.getTime()+86400000)){
+  const date=cursor.toISOString().slice(0,10),day=cursor.getUTCDay(),sat=day===6,sun=day===0,fri=day===5;
+  const rows:[string,string,number][]=[
+   ['fallback-dolphin-day-adult','fallback-dolphin-ha-long-cruise',sat||sun?1880000:1600000],
+   ['fallback-dolphin-day-c01','fallback-dolphin-ha-long-cruise',370000],
+   ['fallback-dolphin-day-c24','fallback-dolphin-ha-long-cruise',sat||sun?1370000:1120000],
+   ['fallback-dolphin-day-c511','fallback-dolphin-ha-long-cruise',sat||sun?1690000:1420000],
+   ['fallback-dolphin-din-adult','fallback-dolphin-ha-long-cruise',sat?1550000:1150000],
+   ['fallback-dolphin-din-c01','fallback-dolphin-ha-long-cruise',370000],
+   ['fallback-dolphin-din-c24','fallback-dolphin-ha-long-cruise',sat?970000:620000],
+   ['fallback-dolphin-din-c511','fallback-dolphin-ha-long-cruise',sat?1290000:920000],
+   ['fallback-sea-day-adult','fallback-sea-octopus-ha-long-cruise',sat||sun?1200000:1050000],
+   ['fallback-sea-day-c02','fallback-sea-octopus-ha-long-cruise',150000],
+   ['fallback-sea-day-c24','fallback-sea-octopus-ha-long-cruise',400000],
+   ['fallback-sea-day-c511','fallback-sea-octopus-ha-long-cruise',900000],
+   ['fallback-sea-din-adult','fallback-sea-octopus-ha-long-cruise',fri||sat?970000:820000],
+   ['fallback-sea-din-c02','fallback-sea-octopus-ha-long-cruise',150000],
+   ['fallback-sea-din-c24','fallback-sea-octopus-ha-long-cruise',400000],
+   ['fallback-sea-din-c511','fallback-sea-octopus-ha-long-cruise',700000]
+  ];
+  for(const [unitId,productId,price] of rows)out.push({id:`fallback-rate-${unitId}-${date}`,productId,unitId,start:date,end:date,price:money(price),quantity:'99',minStay:'1',status:'available',note:'Giá bán công khai đã cấu hình trước khi database tạm gián đoạn.'});
+ }
+ return out;
+};
 
 // Emergency public snapshot. Keep this file PUBLIC-ONLY: no supplier, net price, source sheet or internal notes.
 // Live database data always takes priority; this is used only when Neon is unavailable/quota-blocked.
@@ -19,13 +73,15 @@ export const PUBLIC_FALLBACK_PRODUCTS:PublicFallbackProduct[]=[
  product('lasong-hotel-villas-sam-son','Villa & Resort','LaSong Hotel & Villas Sầm Sơn','Sầm Sơn','1.200.000đ','Tổ hợp khách sạn và villa tại Sầm Sơn, phù hợp gia đình và nhóm nghỉ dưỡng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350304/happygo_lasong-hotel-villas-sam-son_cover_drive_filtered.jpg',5),
  product('marron-sam-son-hotel','Khách sạn','Marron Sầm Sơn Hotel','Sầm Sơn','700.000đ','Khách sạn tại Sầm Sơn với nhiều hạng phòng cho khách lẻ, gia đình và nhóm.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350339/happygo_marron-sam-son-hotel_cover_drive_filtered.jpg',3),
  product('anyla-sam-son','Khách sạn','Anyla Sầm Sơn','Sầm Sơn','700.000đ','Khách sạn nghỉ dưỡng tại Sầm Sơn với nhiều hạng phòng và tiện ích phù hợp gia đình.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350365/happygo_anyla-sam-son_cover_drive_filtered.jpg',5),
- product('luna-ha-long-cruise','Du thuyền','Luna Hạ Long Cruise','Hạ Long','1.080.000đ','Du thuyền Luna Hạ Long với lựa chọn ăn tối, đi ngày và nghỉ đêm theo hạng dịch vụ.','',5),
+ product('luna-ha-long-cruise','Du thuyền','Luna Hạ Long Cruise','Hạ Long','1.080.000đ','Du thuyền Luna Hạ Long với lựa chọn ăn tối, đi ngày và nghỉ đêm theo hạng dịch vụ.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350952/happygo_luna-ha-long-cruise_cover_drive_filtered.jpg',5),
  product('villa-ha-long-bt8-09-5pn','Villa & Resort','Villa Hạ Long BT8-09 5PN','Hạ Long','4.000.000đ','Villa Hạ Long 5 phòng ngủ dành cho gia đình và nhóm riêng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350121/happygo_villa-ha-long-bt8-09-5pn_cover_drive_filtered.jpg'),
  product('villa-ha-long-bt8-10-5pn','Villa & Resort','Villa Hạ Long BT8-10 5PN','Hạ Long','5.000.000đ','Villa Hạ Long 5 phòng ngủ dành cho gia đình và nhóm riêng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350134/happygo_villa-ha-long-bt8-10-5pn_cover_drive_filtered.jpg'),
  product('villa-ha-long-bt9-45-5pn','Villa & Resort','Villa Hạ Long BT9-45 5PN','Hạ Long','4.500.000đ','Villa Hạ Long 5 phòng ngủ với không gian riêng cho nhóm và gia đình.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350107/happygo_villa-ha-long-bt9-45-5pn_cover_drive_filtered.jpg'),
  product('villa-ha-long-bt6b-40-6pn','Villa & Resort','Villa Hạ Long BT6B-40 6PN','Hạ Long','5.000.000đ','Villa Hạ Long 6 phòng ngủ, phù hợp đoàn gia đình và nhóm đông.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350127/happygo_villa-ha-long-bt6b-40-6pn_cover_drive_filtered.jpg'),
  product('villa-ha-long-bt6b-36-5pn','Villa & Resort','Villa Hạ Long BT6B-36 5PN','Hạ Long','5.000.000đ','Villa Hạ Long 5 phòng ngủ, phù hợp nghỉ dưỡng nhóm riêng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350115/happygo_villa-ha-long-bt6b-36-5pn_cover_drive_filtered.jpg'),
- product('villa-ha-long-bt9-39b','Villa & Resort','Villa Hạ Long BT9-39B','Hạ Long','6.500.000đ','Villa Hạ Long dành cho nhóm riêng, có không gian sinh hoạt và nghỉ dưỡng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350140/happygo_villa-ha-long-bt9-39b_cover_drive_filtered.jpg')
+ product('villa-ha-long-bt9-39b','Villa & Resort','Villa Hạ Long BT9-39B','Hạ Long','6.500.000đ','Villa Hạ Long dành cho nhóm riêng, có không gian sinh hoạt và nghỉ dưỡng.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789350140/happygo_villa-ha-long-bt9-39b_cover_drive_filtered.jpg'),
+ {...product('dolphin-ha-long-cruise','Du thuyền','Dolphin Cruise Hạ Long','Hạ Long','1.150.000đ','Dolphin Cruise 5 sao tại Vịnh Hạ Long với Day Cruise 08:30–17:15 và Dinner Cruise 17:45–21:45.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789351371/happygo_dolphin-ha-long-cruise_cover_drive_filtered.jpg',5),pricingBasis:'guest',duration:'Day Cruise 08:30–17:15 / Dinner Cruise 17:45–21:45',boarding:'Cảng Sun, Hạ Long, Quảng Ninh',childrenPolicy:'Giá trẻ em được tự động tính theo nhóm tuổi sau khi khách chọn hành trình và ngày đi.',units:dolphinUnits},
+ {...product('sea-octopus-ha-long-cruise','Du thuyền','Sea Octopus Hạ Long','Hạ Long','820.000đ','Sea Octopus 5 sao tại Vịnh Hạ Long với Day Cruise 09:00–16:00 và Dinner Cruise 17:30–21:30.','https://res.cloudinary.com/ncctxz7z/image/upload/v1789352603/happygo_sea-octopus-ha-long-cruise_cover_drive_filtered.jpg',5),pricingBasis:'guest',duration:'Day Cruise 09:00–16:00 / Dinner Cruise 17:30–21:30',boarding:'Cảng Sun, Hạ Long, Quảng Ninh',childrenPolicy:'Giá trẻ em được tự động tính theo nhóm tuổi sau khi khách chọn hành trình và ngày đi.',units:seaOctopusUnits}
 ];
 
 
@@ -52,7 +108,7 @@ export const PUBLIC_FALLBACK_ARTICLES:PublicFallbackArticle[]=[
 
 export const PUBLIC_FALLBACK_STATE:Record<string,unknown>={
  tn_cms_products_v3_units:PUBLIC_FALLBACK_PRODUCTS,
- tn_cms_daily_rates_v1:[],
+ tn_cms_daily_rates_v1:fallbackDateRates(),
  tn_cms_tours_v3:[],
  tn_cms_articles_v3:PUBLIC_FALLBACK_ARTICLES
 };
