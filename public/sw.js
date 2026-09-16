@@ -1,4 +1,4 @@
-const CACHE='happygo-shell-v8';
+const CACHE='happygo-shell-v9';
 const SHELL=['/','/admin','/admin/','/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -18,6 +18,13 @@ self.addEventListener('fetch',event=>{
   // Manifests define app identity/start_url. Never serve a stale cached manifest,
   // otherwise an Admin icon can keep opening the public homepage after a fix.
   if(url.pathname.endsWith('/manifest.webmanifest')||url.pathname==='/manifest.webmanifest'){
+    event.respondWith(fetch(req));
+    return;
+  }
+
+  // Next.js build assets are immutable by filename and must come from the network.
+  // Do not let an old iPhone PWA cache hydrate a new HTML shell with stale chunks.
+  if(url.pathname.startsWith('/_next/')){
     event.respondWith(fetch(req));
     return;
   }
