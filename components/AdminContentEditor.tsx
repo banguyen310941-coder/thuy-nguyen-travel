@@ -10,7 +10,8 @@ type ApiResult={ok?:boolean;items?:Article[];item?:Article;error?:string};
 const blank:Article={id:'',title:'',slug:'',category:'Cẩm nang du lịch',excerpt:'',cover:'',content:GUIDE_SEO_TEMPLATE,seoTitle:'',seoDescription:'',status:'draft',publishAt:'',date:'',factsVerified:false,imagesVerified:false,imageContext:'',sourceNotes:''};
 const key=GUIDE_ARTICLE_STATE_KEY;
 function slugify(v:string){return v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
-function textOnly(v:string){return v.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()}\nfunction escapeHtml(v:string){return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;')}
+function textOnly(v:string){return v.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()}
+function escapeHtml(v:string){return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;')}
 function mirror(items:Article[]){try{localStorage.setItem(key,JSON.stringify(items));window.dispatchEvent(new Event('tn-articles-updated'));window.dispatchEvent(new Event('storage'))}catch{}}
 async function request(body?:unknown){const response=await fetch(body?'/api/admin/cms-content':'/api/admin/cms-content?kind=articles',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'});const data=await response.json().catch(()=>({})) as ApiResult;if(!response.ok)throw new Error(response.status===401?'Phiên quản trị đã hết hạn.':response.status===403?'Tài khoản chưa có quyền quản lý nội dung.':data.error||'Không thể xử lý bài viết production.');return data}
 export function AdminContentEditor(){
