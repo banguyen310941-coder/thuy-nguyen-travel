@@ -4,10 +4,13 @@ import {useEffect} from 'react';
 export function PwaRegister(){
   useEffect(()=>{
     if(!('serviceWorker' in navigator))return;
-    const run=()=>navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{});
-    if(document.readyState==='complete')run();
+    let live=true;
+    const run=()=>navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(registration=>registration.update().catch(()=>{})).catch(()=>{});
+    if(document.readyState==='complete')void run();
     else window.addEventListener('load',run,{once:true});
-    return()=>window.removeEventListener('load',run);
+    const controller=()=>{if(live)window.dispatchEvent(new Event('happygo-sw-updated'))};
+    navigator.serviceWorker.addEventListener('controllerchange',controller);
+    return()=>{live=false;window.removeEventListener('load',run);navigator.serviceWorker.removeEventListener('controllerchange',controller)};
   },[]);
   return null;
 }
