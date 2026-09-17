@@ -1,0 +1,38 @@
+/* Product gallery lightbox must always show the entire original image.
+   Loaded last so older public/mobile polish layers cannot force object-fit: cover. */
+.pg-modal .pg-stage{
+  position:relative!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:12px!important;
+  background:#07131e!important;
+}
+.pg-modal .pg-stage>img,
+.pg-modal .pg-stage img{
+  position:static!important;
+  inset:auto!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  margin:auto!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+}
+/* Keep thumbnails and listing previews visually uniform; only the enlarged image uses contain. */
+.pg-modal .pg-thumbs img,
+.product-gallery>.pg-cell img,
+.live-unit-gallery>button>img{
+  object-fit:cover!important;
+  object-position:center center!important;
+}
+@media(max-width:700px){
+  .pg-modal-panel{height:100dvh!important;max-height:100dvh!important}
+  .pg-modal .pg-stage{padding:8px!important}
+}
