@@ -10,9 +10,9 @@ import {destinationSlug,getSeoDestination} from '@/data/seo-destinations';
 type StayKind='all'|'villa'|'hotel';
 
 const configs:Record<StayKind,{kicker:string;title:string;description:string;breadcrumb:string;path:string;schemaName:string;cta:string}>={
- all:{kicker:'LƯU TRÚ TOÀN QUỐC',title:'Villa, Resort & Khách sạn',description:'Tìm nơi lưu trú phù hợp theo điểm đến, sức chứa, tiện ích và ngân sách. Giá và tình trạng phòng/căn được kiểm tra theo ngày ở.',breadcrumb:'Lưu trú',path:'/luu-tru',schemaName:'Villa, Resort & Khách sạn toàn quốc',cta:'Tư vấn lưu trú'},
- villa:{kicker:'VILLA & RESORT TOÀN QUỐC',title:'Villa & Resort',description:'Khám phá villa nguyên căn và resort nghỉ dưỡng theo điểm đến, sức chứa, tiện ích và ngân sách. Xem đúng căn, đúng chính sách và kiểm tra lịch trước khi đặt.',breadcrumb:'Villa & Resort',path:'/villa-resort',schemaName:'Villa & Resort toàn quốc',cta:'Tư vấn Villa & Resort'},
- hotel:{kicker:'KHÁCH SẠN TOÀN QUỐC',title:'Khách sạn',description:'Tìm khách sạn theo điểm đến, hạng phòng, số khách và nhu cầu chuyến đi. Giá phòng và chính sách được hiển thị rõ để bạn dễ so sánh.',breadcrumb:'Khách sạn',path:'/khach-san',schemaName:'Khách sạn toàn quốc',cta:'Tư vấn khách sạn'},
+ all:{kicker:'LƯU TRÚ TOÀN QUỐC',title:'Villa, Khách sạn & Resort',description:'Tìm nơi lưu trú phù hợp theo điểm đến, sức chứa, tiện ích và ngân sách. Giá và tình trạng phòng/căn được kiểm tra theo ngày ở.',breadcrumb:'Lưu trú',path:'/luu-tru',schemaName:'Villa, Khách sạn & Resort toàn quốc',cta:'Tư vấn lưu trú'},
+ villa:{kicker:'VILLA TOÀN QUỐC',title:'Villa',description:'Khám phá villa nguyên căn theo điểm đến, sức chứa, tiện ích và ngân sách. Xem đúng căn, đúng chính sách và kiểm tra lịch trước khi đặt.',breadcrumb:'Villa',path:'/villa-resort',schemaName:'Villa toàn quốc',cta:'Tư vấn Villa'},
+ hotel:{kicker:'KHÁCH SẠN & RESORT TOÀN QUỐC',title:'Khách sạn & Resort',description:'Tìm khách sạn và resort theo điểm đến, hạng phòng, số khách và nhu cầu chuyến đi. Giá phòng và chính sách được hiển thị rõ để bạn dễ so sánh.',breadcrumb:'Khách sạn & Resort',path:'/khach-san',schemaName:'Khách sạn & Resort toàn quốc',cta:'Tư vấn Khách sạn & Resort'},
 };
 
 export async function StayLandingPage({kind='all',query={}}:{kind?:StayKind;query?:PublicCatalogQuery}){
