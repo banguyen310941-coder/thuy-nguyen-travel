@@ -5,8 +5,8 @@ type PublicSection='tour'|'villa'|'hotel'|'cruise'|'destination'|'guide'|'stay';
 
 const items=[
  {id:'tour',label:'Tour du lịch',href:'/tour-du-lich'},
- {id:'villa',label:'Villa & Resort',href:'/villa-resort'},
- {id:'hotel',label:'Khách sạn',href:'/khach-san'},
+ {id:'villa',label:'Villa',href:'/villa-resort'},
+ {id:'hotel',label:'Khách sạn & Resort',href:'/khach-san'},
  {id:'cruise',label:'Du thuyền',href:'/du-thuyen'},
  {id:'destination',label:'Điểm đến',href:'/diem-den'},
  {id:'guide',label:'Cẩm nang',href:'/cam-nang'},
