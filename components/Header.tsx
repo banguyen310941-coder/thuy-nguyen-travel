@@ -7,23 +7,20 @@ import type {SiteSettings} from '@/components/useSiteSettings';
 import {phoneHref} from '@/components/useSiteSettings';
 import {HappyGoLogo} from '@/components/HappyGoLogo';
 import {CustomerAccountBadge} from '@/components/CustomerAccount';
-import {productProvinces} from '@/data/product-provinces';
 import styles from '@/components/Header.module.css';
 
 type NavChild={label:string;href:string;meta?:string};
 type NavItem={label:string;href:string;children?:NavChild[]};
 
-const productChildren:NavChild[]=productProvinces.map(item=>({label:item.name,meta:item.menuMeta,href:`/san-pham/tinh-thanh/${item.slug}`}));
 const nav:NavItem[]=[
  {label:'Trang chủ',href:'/'},
- {label:'Sản phẩm',href:'/san-pham/tinh-thanh',children:productChildren},
- {label:'Khách sạn',href:'/khach-san',children:[
+ {label:'Khách sạn & Resort',href:'/khach-san',children:[
   {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/khach-san'},
   {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/khach-san'},
   {label:'Quy Nhơn',meta:'Gia Lai',href:'/khach-san?q=Quy%20Nh%C6%A1n'},
   {label:'Vĩnh Phúc',href:'/khach-san?q=V%C4%A9nh%20Ph%C3%BAc'},
  ]},
- {label:'Villa & Resort',href:'/villa-resort',children:[
+ {label:'Villa',href:'/villa-resort',children:[
   {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/villa-resort'},
   {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/villa-resort'},
   {label:'Hội An',meta:'Đà Nẵng',href:'/villa-resort?q=H%E1%BB%99i%20An'},
@@ -67,6 +64,6 @@ export function Header({settings}:{settings:SiteSettings}){
    <Link className="mock-mobile-icon" href="/tai-khoan" aria-label="Tài khoản khách hàng">👤</Link>
   </div>
   <div className="container mock-brand-row"><Link className="mock-logo happygo-link" href="/"><HappyGoLogo/></Link><div className="mock-brand-tools"><Link href="/tim-kiem" className="mock-search-mini">⌕ Tìm điểm đến, khách sạn, tour...</Link><CustomerAccountBadge/></div></div>
-  <div className="mock-nav-wrap"><nav className={`container mock-nav ${styles.desktopNav}`}>{nav.map(item=>item.children?.length?<div key={item.label} className={styles.navGroup}><Link href={item.href} aria-current={active(pathname,item.href)?'page':undefined}>{item.label}<span className={styles.chevron}>⌄</span></Link><div className={styles.dropdown}><div className={styles.dropdownHead}><b>{item.label==='Sản phẩm'?'Sản phẩm theo tỉnh/thành':`${item.label} theo điểm đến`}</b><Link href={item.href}>Xem tất cả →</Link></div>{item.children.map(child=><Link key={child.href} href={child.href} className={styles.destinationLink}><span><b>{child.label}</b>{child.meta&&<small>{child.meta}</small>}</span><em>›</em></Link>)}</div></div>:<Link key={item.label} href={item.href} aria-current={active(pathname,item.href)?'page':undefined}>{item.label}</Link>)}</nav></div>
+  <div className="mock-nav-wrap"><nav className={`container mock-nav ${styles.desktopNav}`}>{nav.map(item=>item.children?.length?<div key={item.label} className={styles.navGroup}><Link href={item.href} aria-current={active(pathname,item.href)?'page':undefined}>{item.label}<span className={styles.chevron}>⌄</span></Link><div className={styles.dropdown}><div className={styles.dropdownHead}><b>{item.label} theo điểm đến</b><Link href={item.href}>Xem tất cả →</Link></div>{item.children.map(child=><Link key={child.href} href={child.href} className={styles.destinationLink}><span><b>{child.label}</b>{child.meta&&<small>{child.meta}</small>}</span><em>›</em></Link>)}</div></div>:<Link key={item.label} href={item.href} aria-current={active(pathname,item.href)?'page':undefined}>{item.label}</Link>)}</nav></div>
  </header>
 }
