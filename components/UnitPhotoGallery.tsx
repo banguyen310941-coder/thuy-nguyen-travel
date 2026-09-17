@@ -3,6 +3,8 @@
 import {useEffect,useMemo,useState} from 'react';
 import {SafeImage,travelFallback} from '@/components/SafeImage';
 
+const FULL_IMAGE_STYLE={width:'auto',height:'auto',maxWidth:'100%',maxHeight:'100%',objectFit:'contain',objectPosition:'center'} as const;
+
 export function UnitPhotoGallery({title,images,kind}:{title:string;images:string[];kind?:string}){
  const fallback=travelFallback(kind||'hotel');
  const photos=useMemo(()=>{const unique:string[]=[];for(const raw of images){const src=String(raw||'').trim();if(src&&!unique.includes(src))unique.push(src)}return unique},[images]);
@@ -20,7 +22,7 @@ export function UnitPhotoGallery({title,images,kind}:{title:string;images:string
   {open&&<div className="pg-modal" role="dialog" aria-modal="true" aria-label={`Album ảnh ${title}`} onMouseDown={e=>{if(e.target===e.currentTarget)close()}}>
    <div className="pg-modal-panel">
     <header><div><b>{title}</b><span>{active+1} / {photos.length} ảnh</span></div><button type="button" onClick={close} aria-label="Đóng album">✕</button></header>
-    <div className="pg-stage"><button type="button" className="pg-arrow left" onClick={()=>move(-1)} aria-label="Ảnh trước">‹</button><SafeImage src={photos[active]} fallback={fallback} alt={`${title} - ảnh ${active+1}`}/><button type="button" className="pg-arrow right" onClick={()=>move(1)} aria-label="Ảnh sau">›</button></div>
+    <div className="pg-stage"><button type="button" className="pg-arrow left" onClick={()=>move(-1)} aria-label="Ảnh trước">‹</button><SafeImage className="pg-full-image" style={FULL_IMAGE_STYLE} src={photos[active]} fallback={fallback} alt={`${title} - ảnh ${active+1}`}/><button type="button" className="pg-arrow right" onClick={()=>move(1)} aria-label="Ảnh sau">›</button></div>
     <div className="pg-thumbs">{photos.map((src,index)=><button type="button" className={index===active?'active':''} key={`${src}_${index}_thumb`} onClick={()=>setActive(index)} aria-label={`Xem ảnh ${index+1}`}><SafeImage src={src} fallback={fallback} alt=""/></button>)}</div>
    </div>
   </div>}
