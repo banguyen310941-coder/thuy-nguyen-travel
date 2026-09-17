@@ -14,7 +14,16 @@ export const TRAVEL_FALLBACKS={
 
 export function travelFallback(kind?:string){const k=(kind||'').toLowerCase();if(k.includes('villa')||k.includes('resort'))return TRAVEL_FALLBACKS.villa;if(k.includes('khách')||k.includes('hotel'))return TRAVEL_FALLBACKS.hotel;if(k.includes('thuyền')||k.includes('cruise'))return TRAVEL_FALLBACKS.cruise;if(k.includes('tour'))return TRAVEL_FALLBACKS.tour;if(k.includes('điểm')||k.includes('destination'))return TRAVEL_FALLBACKS.destination;return TRAVEL_FALLBACKS.default}
 
-function normalizeVisualSrc(src:string|undefined,backup:string){const s=String(src||'').trim();if(!s)return backup;if(s.includes('photo-1580974928064-f0aeef70895a'))return TRAVEL_FALLBACKS.default;if(s.includes('photo-1566847438217-76e82d383f84'))return TRAVEL_FALLBACKS.cruise;if(s.includes('dynamic-media-cdn.tripadvisor.com'))return TRAVEL_FALLBACKS.villa;return s}
+function driveFileId(value:string){
+ try{
+  const url=new URL(value);
+  if(url.hostname!=='drive.google.com'&&url.hostname!=='docs.google.com')return'';
+  const queryId=String(url.searchParams.get('id')||'').trim();if(queryId)return queryId;
+  const match=url.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/);return match?.[1]||'';
+ }catch{return''}
+}
+
+function normalizeVisualSrc(src:string|undefined,backup:string){const s=String(src||'').trim();if(!s)return backup;if(s.includes('photo-1580974928064-f0aeef70895a'))return TRAVEL_FALLBACKS.default;if(s.includes('photo-1566847438217-76e82d383f84'))return TRAVEL_FALLBACKS.cruise;if(s.includes('dynamic-media-cdn.tripadvisor.com'))return TRAVEL_FALLBACKS.villa;const driveId=driveFileId(s);if(driveId)return `/api/media/drive?id=${encodeURIComponent(driveId)}`;return s}
 
 export function SafeImage({src,fallback,alt='',className,loading='lazy',fetchPriority='auto',style}:Props){
  const backup=useMemo(()=>fallback||TRAVEL_FALLBACKS.default,[fallback]);
@@ -22,7 +31,7 @@ export function SafeImage({src,fallback,alt='',className,loading='lazy',fetchPri
  const [current,setCurrent]=useState(normalized);
  useEffect(()=>setCurrent(normalized),[normalized]);
  // CMS/partner media can come from arbitrary approved external hosts at runtime.
- // Keep one native image boundary so fallback-on-error works without a brittle Next.js remote-host allowlist.
+ // Google Drive media is routed through the same-origin image endpoint so every file ID resolves independently.
  // eslint-disable-next-line @next/next/no-img-element
  return <img src={current} alt={alt} className={className} loading={loading} fetchPriority={fetchPriority} decoding="async" style={style} onError={()=>{if(current!==backup)setCurrent(backup)}}/>;
 }
