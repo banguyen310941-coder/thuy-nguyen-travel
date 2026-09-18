@@ -5,7 +5,7 @@ import {getSiteUrl} from '@/lib/site-url';
 export function generateMetadata():Metadata{
  const canonical=`${getSiteUrl()}/gioi-thieu`;
  return{
-  title:'Giới thiệu HappyGo Travel - Nền tảng du lịch toàn quốc',
+  title:{absolute:'Giới thiệu HappyGo Travel | Du lịch toàn quốc'},
   description:'Tìm hiểu HappyGo Travel, hệ sinh thái tour, villa, resort, khách sạn và du thuyền toàn quốc với định hướng tư vấn minh bạch và hỗ trợ xuyên suốt hành trình.',
   alternates:{canonical},
   openGraph:{title:'Giới thiệu HappyGo Travel',description:'HappyGo Travel kết nối khách hàng với tour, lưu trú và du thuyền trên toàn quốc.',url:canonical,type:'website',locale:'vi_VN'},

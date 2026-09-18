@@ -5,7 +5,7 @@ import {getSiteUrl} from '@/lib/site-url';
 export function generateMetadata():Metadata{
  const canonical=`${getSiteUrl()}/lien-he`;
  return{
-  title:'Liên hệ HappyGo Travel - Tư vấn tour, villa, khách sạn, du thuyền',
+  title:{absolute:'Liên hệ HappyGo Travel | Tư vấn du lịch'},
   description:'Liên hệ HappyGo Travel để được tư vấn tour, villa, resort, khách sạn và du thuyền. Hỗ trợ khách hàng toàn quốc qua hotline, email và Zalo.',
   alternates:{canonical},
   openGraph:{title:'Liên hệ HappyGo Travel',description:'Tư vấn và hỗ trợ đặt dịch vụ du lịch toàn quốc.',url:canonical,type:'website',locale:'vi_VN'},

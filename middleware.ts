@@ -17,7 +17,7 @@ const DESTINATION_QUERY_SLUGS:Record<string,string>={
  'sa pa':'sa-pa','sapa':'sa-pa','sa-pa':'sa-pa',
 };
 const DESTINATION_SERVICE_PATHS:Record<string,string>={
- '/villa-resort':'villa-resort','/khach-san':'khach-san','/du-thuyen':'du-thuyen','/tour-du-lich':'tour-du-lich',
+ '/villa-resort':'villa','/khach-san':'khach-san-resort','/du-thuyen':'du-thuyen','/tour-du-lich':'tour-du-lich',
 };
 function destinationQuerySlug(value:string){return DESTINATION_QUERY_SLUGS[String(value||'').trim().toLowerCase()]||''}
 
@@ -52,7 +52,7 @@ function normalizePublicUrl(req:NextRequest){
  if(req.nextUrl.pathname!=='/luu-tru')return null;
  const type=(req.nextUrl.searchParams.get('type')||'').toLowerCase();
  if(type!=='villa'&&type!=='hotel')return null;
- const url=req.nextUrl.clone(),slug=destinationQuerySlug(url.searchParams.get('q')||''),target=type==='villa'?'villa-resort':'khach-san';
+ const url=req.nextUrl.clone(),slug=destinationQuerySlug(url.searchParams.get('q')||''),target=type==='villa'?'villa':'khach-san-resort';
  url.pathname=slug?`/diem-den/${slug}/${target}`:`/${target}`;
  url.searchParams.delete('type');if(slug)url.searchParams.delete('q');
  return NextResponse.redirect(url,308);
