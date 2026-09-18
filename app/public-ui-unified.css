@@ -245,3 +245,99 @@
  .product-gallery.pd-gallery{grid-template-rows:190px 82px!important}
  .pd-quick-info{grid-template-columns:1fr!important}
 }
+
+
+/* PRODUCT DETAIL READABILITY 2026-09 */
+.product-detail-v2{color:#183e5e!important}
+.product-detail-v2 .pd-breadcrumb{font-size:12px!important;color:#5d7488!important}
+.product-detail-v2 .pd-title p{font-size:14px!important;color:#4f6b82!important;font-weight:500!important}
+.product-detail-v2 .pd-type{font-size:10px!important}
+.product-detail-v2 .pd-summary-card>p,
+.product-detail-v2 .cms-preline,
+.product-detail-v2 .pd-block>p{font-size:15px!important;line-height:1.78!important;color:#405d73!important;font-weight:500!important}
+.product-detail-v2 .pd-summary-card h2{font-size:23px!important;color:#123f66!important}
+.product-detail-v2 .pd-quick-info span{font-size:12.5px!important;line-height:1.5!important;color:#294f6b!important;font-weight:700!important}
+.product-detail-v2 .pd-price-card small{font-size:11px!important;color:#536f84!important}
+.product-detail-v2 .pd-price-card p{font-size:13px!important;line-height:1.6!important;color:#536f84!important}
+.product-detail-v2 .pd-price-card a{font-size:13px!important}
+.product-detail-v2 .pd-tabs a{font-size:13px!important;color:#234d6b!important}
+.product-detail-v2 .pd-block h2,
+.product-detail-v2 .live-units-head h2,
+.product-detail-v2 .prc-head h2{font-size:22px!important;color:#123f66!important}
+.product-detail-v2 .pd-policy-grid b{font-size:14px!important;color:#173f61!important}
+.product-detail-v2 .pd-policy-grid p{font-size:13px!important;line-height:1.65!important;color:#4d687d!important}
+.product-detail-v2 .pd-amenity-icon-card b{font-size:13px!important;color:#173f61!important}
+.product-detail-v2 .pd-amenity-icon-card small{font-size:12px!important;line-height:1.5!important;color:#526d82!important}
+
+.product-detail-v2 .live-units-head p{font-size:13px!important;line-height:1.6!important;color:#4f687c!important}
+.product-detail-v2 .live-unit-main>div:first-child>b{font-size:18px!important;color:#123f66!important}
+.product-detail-v2 .live-unit-main>div:first-child>small{font-size:12px!important;color:#506b80!important}
+.product-detail-v2 .live-unit-info>span{font-size:12px!important;color:#245f83!important}
+.product-detail-v2 .selected-date-price small{font-size:11px!important;color:#4f7189!important}
+.product-detail-v2 .selected-date-price>b{font-size:19px!important}
+.product-detail-v2 .selected-date-price em,
+.product-detail-v2 .selected-date-price>span{font-size:11px!important;color:#536f84!important}
+.product-detail-v2 .live-unit-prices small{font-size:10.5px!important;color:#536f84!important}
+.product-detail-v2 .live-unit-prices b{font-size:12px!important;color:#0d5f9a!important}
+.product-detail-v2 .unit-public-status{font-size:11px!important;font-weight:800!important}
+.product-detail-v2 .live-unit-list article>a,
+.product-detail-v2 .unit-unavailable{font-size:12px!important}
+
+.product-detail-v2 .prc-head p{font-size:13px!important;line-height:1.6!important;color:#4f687c!important}
+.product-detail-v2 .prc-head label span{font-size:11px!important;color:#506b80!important;font-weight:800!important}
+.product-detail-v2 .prc-head select{font-size:13px!important;color:#234d6b!important;font-weight:700!important}
+.product-detail-v2 .prc-month b{font-size:16px!important;color:#123f66!important}
+.product-detail-v2 .prc-weekdays span{font-size:11px!important;color:#3d5c73!important;font-weight:800!important}
+.product-detail-v2 .prc-grid small{font-size:11px!important;color:#49677d!important}
+.product-detail-v2 .prc-grid b{font-size:14px!important}
+.product-detail-v2 .prc-grid em{font-size:10px!important;color:#526d82!important}
+.product-detail-v2 .prc-note{font-size:12px!important;line-height:1.55!important;color:#4f687c!important}
+
+.product-detail-v2 .inquiry-head-pro small{font-size:10px!important}
+.product-detail-v2 .inquiry-head-pro h3{font-size:22px!important;color:#123f66!important}
+.product-detail-v2 .inquiry-head-pro p{font-size:13px!important;line-height:1.55!important;color:#4e687d!important}
+.product-detail-v2 .inquiry-trust span{font-size:10.5px!important;color:#35634e!important}
+.product-detail-v2 .inquiry-step-title strong{font-size:14px!important;color:#173f61!important}
+.product-detail-v2 .inquiry-step-title small{font-size:11px!important;line-height:1.45!important;color:#5a7386!important}
+.product-detail-v2 .inquiry-no-unit b{font-size:12px!important;color:#294f6b!important}
+.product-detail-v2 .inquiry-no-unit small{font-size:11px!important;color:#5b7488!important}
+.product-detail-v2 .inquiry-pro label>span{font-size:12px!important;color:#3d5d74!important}
+.product-detail-v2 .inquiry-pro input,
+.product-detail-v2 .inquiry-pro textarea{font-size:13px!important;color:#183e5e!important}
+.product-detail-v2 .inquiry-primary-actions small{font-size:10.5px!important;color:#5b7488!important}
+.product-detail-v2 .inquiry-secondary-actions button,
+.product-detail-v2 .inquiry-secondary-actions a{font-size:11.5px!important}
+.product-detail-v2 .inquiry-support small{font-size:9.5px!important;color:#5b7488!important}
+.product-detail-v2 .inquiry-support b{font-size:12px!important;color:#294f6b!important}
+.product-detail-v2 .inquiry-pro .inquiry-call,
+.product-detail-v2 .inquiry-zalo{font-size:11px!important}
+
+@media(max-width:700px){
+ .product-detail-v2 .pd-breadcrumb{font-size:10.5px!important}
+ .product-detail-v2 .pd-title p{font-size:12.5px!important}
+ .product-detail-v2 .pd-summary-card h2{font-size:20px!important}
+ .product-detail-v2 .pd-summary-card>p,
+ .product-detail-v2 .cms-preline,
+ .product-detail-v2 .pd-block>p{font-size:13.5px!important;line-height:1.72!important}
+ .product-detail-v2 .pd-quick-info span{font-size:11.5px!important}
+ .product-detail-v2 .pd-tabs a{font-size:11px!important}
+ .product-detail-v2 .pd-block h2,
+ .product-detail-v2 .live-units-head h2,
+ .product-detail-v2 .prc-head h2{font-size:20px!important}
+ .product-detail-v2 .live-units-head p,
+ .product-detail-v2 .prc-head p{font-size:12px!important}
+ .product-detail-v2 .live-unit-main>div:first-child>b{font-size:17px!important}
+ .product-detail-v2 .live-unit-main>div:first-child>small,
+ .product-detail-v2 .live-unit-info>span{font-size:11px!important}
+ .product-detail-v2 .selected-date-price>b{font-size:18px!important}
+ .product-detail-v2 .live-unit-prices small{font-size:10px!important}
+ .product-detail-v2 .live-unit-prices b{font-size:11.5px!important}
+ .product-detail-v2 .prc-weekdays span{font-size:9.5px!important}
+ .product-detail-v2 .prc-grid small{font-size:10px!important}
+ .product-detail-v2 .prc-grid b{font-size:11px!important}
+ .product-detail-v2 .inquiry-head-pro h3{font-size:20px!important}
+ .product-detail-v2 .inquiry-head-pro p{font-size:12px!important}
+ .product-detail-v2 .inquiry-step-title strong{font-size:13px!important}
+ .product-detail-v2 .inquiry-step-title small,
+ .product-detail-v2 .inquiry-pro label>span{font-size:11px!important}
+}
