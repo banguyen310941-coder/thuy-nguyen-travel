@@ -18,7 +18,7 @@ const nav:NavItem[]=[
   {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/khach-san-resort'},
   {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/khach-san-resort'},
   {label:'Quy Nhơn',meta:'Gia Lai',href:'/khach-san-resort?q=Quy%20Nh%C6%A1n'},
-  {label:'Vĩnh Phúc',href:'/khach-san-resort?q=V%C4%A9nh%20Ph%C3%BAc'},
+  {label:'Phú Thọ',href:'/diem-den/phu-tho/khach-san-resort'},
  ]},
  {label:'Villa',href:'/villa',children:[
   {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/villa'},
