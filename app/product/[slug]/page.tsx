@@ -9,14 +9,20 @@ import {publicProductPath} from '@/lib/public-product-url';
 
 type Props={params:Promise<{slug:string}>};
 const clean=(value:string)=>value.replace(/\s+/g,' ').trim();
+function seoTitle(value:string){
+ const suffix=' | HappyGo',raw=clean(value).replace(/\s*\|\s*HappyGo(?: Travel)?\s*$/i,'');
+ const maxBase=60-suffix.length;if(raw.length<=maxBase)return `${raw}${suffix}`;
+ const clipped=raw.slice(0,maxBase+1).replace(/\s+\S*$/,'').replace(/[\s,:;|\-–—]+$/,'').trim();
+ return `${clipped||raw.slice(0,maxBase).trim()}${suffix}`;
+}
 const jsonLd=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c');
-function categoryFor(type:string,base:string){if(type==='Du thuyền')return{name:'Du thuyền',url:`${base}/du-thuyen`};if(type.includes('Tour'))return{name:'Tour du lịch',url:`${base}/tour-du-lich`};if(type==='Villa & Resort')return{name:'Villa & Resort',url:`${base}/villa-resort`};if(type==='Khách sạn')return{name:'Khách sạn',url:`${base}/khach-san`};return{name:'Lưu trú',url:`${base}/luu-tru`}}
+function categoryFor(type:string,base:string){if(type==='Du thuyền')return{name:'Du thuyền',url:`${base}/du-thuyen`};if(type.includes('Tour'))return{name:'Tour du lịch',url:`${base}/tour-du-lich`};if(type==='Villa & Resort')return{name:'Villa',url:`${base}/villa`};if(type==='Khách sạn')return{name:'Khách sạn & Resort',url:`${base}/khach-san-resort`};return{name:'Lưu trú',url:`${base}/luu-tru`}}
 
 export async function generateMetadata({params}:Props):Promise<Metadata>{
  const {slug}=await params;const product=await getPublishedProductSeo(slug);const base=getSiteUrl();const canonical=product?`${base}${publicProductPath(product.type,slug)}`:`${base}/san-pham/${encodeURIComponent(slug)}`;
  if(!product)return{title:{absolute:'Sản phẩm không tồn tại | HappyGo Travel'},robots:{index:false,follow:true},alternates:{canonical}};
  const description=clean(product.seoDescription||product.summary||`${product.name} tại ${product.place}. Xem hình ảnh, hạng phòng/dịch vụ, lịch giá theo ngày và gửi yêu cầu đặt dịch vụ tại HappyGo Travel.`).slice(0,160);
- const title=clean(product.seoTitle||`${product.name}${product.place?` - ${product.place}`:''} | HappyGo Travel`).slice(0,70);
+ const title=seoTitle(product.seoTitle||`${product.name}${product.place?` - ${product.place}`:''}`);
  const images=product.cover?[{url:product.cover,alt:product.name}]:undefined;
  return {title:{absolute:title},description,keywords:[product.name,product.type,product.category,product.place,'HappyGo Travel'].filter(Boolean),alternates:{canonical},robots:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1},openGraph:{type:'website',url:canonical,title,description,siteName:'HappyGo Travel',locale:'vi_VN',images},twitter:{card:'summary_large_image',title,description,images:product.cover?[product.cover]:undefined}};
 }
