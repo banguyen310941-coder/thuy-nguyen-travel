@@ -107,6 +107,9 @@ contains('components/UnifiedStayPublicDetail.tsx',"categoryHref=isVilla?'/villa'
 contains('app/product/[slug]/page.tsx',"if(type==='Villa & Resort')",'Schema breadcrumb sản phẩm phải phân biệt Villa');
 contains('app/product/[slug]/page.tsx',"if(type==='Khách sạn')",'Schema breadcrumb sản phẩm phải phân biệt Khách sạn');
 contains('app/product/[slug]/page.tsx','publicProductPath(product.type,slug)','Canonical chi tiết sản phẩm phải theo loại Hotel/Villa/Resort');
+contains('app/product/[slug]/page.tsx',"url:`${base}/villa`",'Schema breadcrumb Villa phải trỏ canonical /villa');
+contains('app/product/[slug]/page.tsx',"url:`${base}/khach-san-resort`",'Schema breadcrumb Khách sạn phải trỏ canonical /khach-san-resort');
+contains('app/product/[slug]/page.tsx','function seoTitle(value:string)','Title sản phẩm phải được rút gọn có kiểm soát');
 contains('app/villa/[slug]/page.tsx',"../../product/[slug]/page",'Villa phải có route chi tiết canonical');
 contains('app/khach-san-resort/[slug]/page.tsx',"../../product/[slug]/page",'Khách sạn & Resort phải có route chi tiết canonical');
 
