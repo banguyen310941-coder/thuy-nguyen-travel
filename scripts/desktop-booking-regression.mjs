@@ -34,7 +34,7 @@ contains('lib/booking-unit-selection.ts','if(selection.unitId)return list.find',
 
 contains('components/HomeCmsSections.tsx',"(x.type==='Khách sạn'||x.type==='Villa & Resort')",'Lưu trú nổi bật chỉ được lấy khách sạn, villa và resort');
 excludes('components/HomeCmsSections.tsx',"x.type!=='Du thuyền'&&!staticStaySlugs.has(x.slug)",'Lưu trú nổi bật không được dùng điều kiện loại trừ vì có thể lọt Tour');
-contains('components/HomeCmsSections.tsx','>Khách sạn</Link><Link href="/villa-resort">Resort</Link><Link href="/villa-resort">Villa</Link>','Thanh loại hình lưu trú nổi bật chỉ hiển thị Khách sạn, Resort, Villa');
+contains('components/HomeCmsSections.tsx','href="/khach-san-resort">Khách sạn & Resort</Link><Link href="/villa">Villa</Link>','Thanh loại hình lưu trú nổi bật phải dùng canonical Khách sạn & Resort và Villa');
 
 for(const needle of ['Chương trình tour','Ngày khởi hành & số khách','Dùng để xác nhận booking; chưa thu tiền ở bước này','✓ Giá theo lịch thật','Miễn phí gửi yêu cầu · chưa phát sinh thanh toán']){
  contains('components/TourBookingInquiry.tsx',needle,'Form đặt Tour phải đồng nhất cấu trúc và thông điệp với form booking chuẩn');
