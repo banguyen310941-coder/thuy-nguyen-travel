@@ -46,6 +46,7 @@ const nextConfig = {
       {source:'/guide/category/:slug',destination:'/cam-nang/danh-muc/:slug',permanent:true},
       {source:'/guide/read',destination:'/cam-nang/doc',permanent:true},
       {source:'/guide/:slug',destination:'/cam-nang/:slug',permanent:true},
+      {source:'/cam-nang/villa-flc-sam-son-kinh-nghiem-thue-gia-tot',destination:'/diem-den/sam-son/villa',permanent:true},
       {source:'/guide',destination:'/cam-nang',permanent:true},
       {source:'/product/:slug',destination:'/san-pham/:slug',permanent:true},
       {source:'/product',destination:'/san-pham',permanent:true},
