@@ -1,13 +1,24 @@
 import type {Metadata} from 'next';
-import {StayLandingPage} from '@/components/StayLandingPage';
+import {redirect} from 'next/navigation';
 import {getSiteUrl} from '@/lib/site-url';
-import {destinationSlug,getSeoDestination} from '@/data/seo-destinations';
 
-const path='/villa-resort';
 type PageProps={searchParams:Promise<Record<string,string|string[]|undefined>>};
-export async function generateMetadata({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}):Promise<Metadata>{
- const query=await searchParams,raw=Array.isArray(query.q)?String(query.q[0]||''):String(query.q||''),destination=getSeoDestination(raw)?.name||raw,slug=destinationSlug(destination),canonical=slug?`${getSiteUrl()}/diem-den/${slug}/villa-resort`:`${getSiteUrl()}/villa-resort`,title=destination?`Villa tại ${destination}`:'Villa toàn quốc',description=destination?`Tìm và đặt villa nguyên căn tại ${destination} cùng HappyGo Travel. Lọc theo ngày ở, số khách và nhu cầu chuyến đi.`:'Tìm và đặt villa nguyên căn toàn quốc cùng HappyGo Travel. Lọc theo điểm đến, ngày ở, số khách và tiện ích.';
- return{title,description,alternates:{canonical},openGraph:{title:`${title} | HappyGo Travel`,description,url:canonical,type:'website'},twitter:{card:'summary_large_image',title:`${title} | HappyGo Travel`,description}};
+
+export const metadata:Metadata={
+ title:"Villa | HappyGo Travel",
+ alternates:{canonical:`${getSiteUrl()}/villa`},
+ robots:{index:false,follow:true},
+};
+
+function appendQuery(base:string,query:Record<string,string|string[]|undefined>){
+ const params=new URLSearchParams();
+ for(const [key,value] of Object.entries(query)){
+  if(Array.isArray(value)){for(const item of value)if(item)params.append(key,String(item));}
+  else if(value!==undefined&&value!==null&&String(value)!=='')params.set(key,String(value));
+ }
+ const qs=params.toString();return qs?`${base}?${qs}`:base;
 }
 
-export default async function VillaResortPage({searchParams}:PageProps){return <StayLandingPage kind="villa" query={await searchParams}/>}
+export default async function LegacyStayPage({searchParams}:PageProps){
+ redirect(appendQuery("/villa",await searchParams));
+}
