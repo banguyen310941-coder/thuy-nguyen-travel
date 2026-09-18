@@ -7,6 +7,36 @@ export const runtime='nodejs';
 
 const DRIVE_ID=/^[A-Za-z0-9_-]{10,200}$/;
 
+async function publicDriveImage(id:string){
+ const urls=[
+  `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`,
+  `https://drive.google.com/uc?export=download&confirm=t&id=${encodeURIComponent(id)}`,
+ ];
+ for(const url of urls){
+  try{
+   const res=await fetch(url,{redirect:'follow',cache:'no-store',headers:{'User-Agent':'Mozilla/5.0 HappyGoImageProxy/1.0'}});
+   const type=String(res.headers.get('content-type')||'').toLowerCase();
+   if(res.ok&&type.startsWith('image/'))return res;
+  }catch{}
+ }
+ return null;
+}
+
+async function authenticatedDriveImage(id:string){
+ try{
+  const token=await getGoogleDriveAccessToken();
+  const res=await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`,{
+   headers:{Authorization:`Bearer ${token}`},
+   cache:'no-store',
+  });
+  const type=String(res.headers.get('content-type')||'').toLowerCase();
+  if(res.ok&&type.startsWith('image/'))return res;
+ }catch(error){
+  console.warn('public_drive_image_auth_fallback_unavailable',error instanceof Error?error.message:error);
+ }
+ return null;
+}
+
 export async function GET(req:NextRequest){
  const id=String(req.nextUrl.searchParams.get('id')||'').trim();
  if(!DRIVE_ID.test(id))return NextResponse.json({error:'Ảnh Google Drive không hợp lệ.'},{status:400});
@@ -16,15 +46,10 @@ export async function GET(req:NextRequest){
   const rows=await sql`select (exists(select 1 from products where data::text like ${needle}) or exists(select 1 from product_units where data::text like ${needle})) as ok`;
   if(!rows[0]?.ok)return NextResponse.json({error:'Ảnh không thuộc dữ liệu sản phẩm HappyGo.'},{status:404});
 
-  const token=await getGoogleDriveAccessToken();
-  const upstream=await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`,{
-   headers:{Authorization:`Bearer ${token}`},
-   cache:'no-store',
-  });
-  if(!upstream.ok)throw new Error(`DRIVE_IMAGE_${upstream.status}`);
-  const contentType=String(upstream.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('image/'))return NextResponse.json({error:'File Google Drive không phải ảnh.'},{status:415});
+  const upstream=await publicDriveImage(id)||await authenticatedDriveImage(id);
+  if(!upstream)throw new Error('DRIVE_IMAGE_UNAVAILABLE');
 
+  const contentType=String(upstream.headers.get('content-type')||'').toLowerCase();
   const headers=new Headers();
   headers.set('Content-Type',contentType);
   const length=upstream.headers.get('content-length');if(length)headers.set('Content-Length',length);
