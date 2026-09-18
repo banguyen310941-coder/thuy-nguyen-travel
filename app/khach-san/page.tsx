@@ -1,13 +1,24 @@
 import type {Metadata} from 'next';
-import {StayLandingPage} from '@/components/StayLandingPage';
+import {redirect} from 'next/navigation';
 import {getSiteUrl} from '@/lib/site-url';
-import {destinationSlug,getSeoDestination} from '@/data/seo-destinations';
 
-const path='/khach-san';
 type PageProps={searchParams:Promise<Record<string,string|string[]|undefined>>};
-export async function generateMetadata({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}):Promise<Metadata>{
- const query=await searchParams,raw=Array.isArray(query.q)?String(query.q[0]||''):String(query.q||''),destination=getSeoDestination(raw)?.name||raw,slug=destinationSlug(destination),canonical=slug?`${getSiteUrl()}/diem-den/${slug}/khach-san`:`${getSiteUrl()}/khach-san`,title=destination?`Khách sạn & Resort tại ${destination}`:'Khách sạn & Resort toàn quốc',description=destination?`Tìm và đặt khách sạn, resort tại ${destination} cùng HappyGo Travel. Lọc theo ngày ở, số khách và nhu cầu chuyến đi.`:'Tìm và đặt khách sạn, resort toàn quốc cùng HappyGo Travel. Lọc theo điểm đến, ngày ở, số khách, hạng phòng và nhu cầu chuyến đi.';
- return{title,description,alternates:{canonical},openGraph:{title:`${title} | HappyGo Travel`,description,url:canonical,type:'website'},twitter:{card:'summary_large_image',title:`${title} | HappyGo Travel`,description}};
+
+export const metadata:Metadata={
+ title:"Khách sạn & Resort | HappyGo Travel",
+ alternates:{canonical:`${getSiteUrl()}/khach-san-resort`},
+ robots:{index:false,follow:true},
+};
+
+function appendQuery(base:string,query:Record<string,string|string[]|undefined>){
+ const params=new URLSearchParams();
+ for(const [key,value] of Object.entries(query)){
+  if(Array.isArray(value)){for(const item of value)if(item)params.append(key,String(item));}
+  else if(value!==undefined&&value!==null&&String(value)!=='')params.set(key,String(value));
+ }
+ const qs=params.toString();return qs?`${base}?${qs}`:base;
 }
 
-export default async function HotelPage({searchParams}:PageProps){return <StayLandingPage kind="hotel" query={await searchParams}/>}
+export default async function LegacyStayPage({searchParams}:PageProps){
+ redirect(appendQuery("/khach-san-resort",await searchParams));
+}
