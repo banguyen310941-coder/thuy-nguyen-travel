@@ -21,7 +21,7 @@ function compactHomeProduct(value:unknown):HomeCmsProduct{
  return{
   id:text(item.id),type:text(item.type),name:text(item.name),slug:text(item.slug),place:text(item.place),price:text(item.price),status:text(item.status),summary:text(item.summary),cover:text(item.cover),rating:item.rating as string|number|undefined,duration:optionalText(item.duration),
   ...(serviceStars>0?{serviceStars}:{}),
-  units:rawUnits.map(value=>{const unit=object(value);return{weekdayPrice:optionalText(unit.weekdayPrice),weekendPrice:optionalText(unit.weekendPrice),holidayPrice:optionalText(unit.holidayPrice),lowWeekdayPrice:optionalText(unit.lowWeekdayPrice),lowWeekendPrice:optionalText(unit.lowWeekendPrice),highWeekdayPrice:optionalText(unit.highWeekdayPrice),highWeekendPrice:optionalText(unit.highWeekendPrice),status:optionalText(unit.status)}})
+  units:rawUnits.map(value=>{const unit=object(value);return{weekdayPrice:optionalText(unit.weekdayPrice),weekendPrice:optionalText(unit.weekendPrice),holidayPrice:optionalText(unit.holidayPrice),lowWeekdayPrice:optionalText(unit.lowWeekdayPrice),lowWeekendPrice:optionalText(unit.lowWeekendPrice),highWeekdayPrice:optionalText(unit.highWeekdayPrice),highWeekendPrice:optionalText(unit.highWeekendPrice),status:optionalText(unit.status),guestType:optionalText(unit.guestType)}})
  };
 }
 function compactHomeTour(value:unknown):HomeCmsTour{const item=object(value);return{id:text(item.id),name:text(item.name),slug:text(item.slug),cover:optionalText(item.cover),category:text(item.category),duration:text(item.duration),route:text(item.route),summary:text(item.summary),status:text(item.status),salePrice:optionalText(item.salePrice),gallery:optionalText(item.gallery)}}
