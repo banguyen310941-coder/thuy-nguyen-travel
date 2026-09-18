@@ -5,8 +5,8 @@ type PublicSection='tour'|'villa'|'hotel'|'cruise'|'destination'|'guide'|'stay';
 
 const items=[
  {id:'tour',label:'Tour du lịch',href:'/tour-du-lich'},
- {id:'villa',label:'Villa',href:'/villa-resort'},
- {id:'hotel',label:'Khách sạn & Resort',href:'/khach-san'},
+ {id:'villa',label:'Villa',href:'/villa'},
+ {id:'hotel',label:'Khách sạn & Resort',href:'/khach-san-resort'},
  {id:'cruise',label:'Du thuyền',href:'/du-thuyen'},
  {id:'destination',label:'Điểm đến',href:'/diem-den'},
  {id:'guide',label:'Cẩm nang',href:'/cam-nang'},
@@ -17,8 +17,8 @@ function contextualHref(item:(typeof items)[number],destination?:string){
  if(!place)return item.href;
  const slug=destinationSlug(place);
  if(slug&&item.id==='tour')return `/diem-den/${slug}/tour-du-lich`;
- if(slug&&item.id==='villa')return `/diem-den/${slug}/villa-resort`;
- if(slug&&item.id==='hotel')return `/diem-den/${slug}/khach-san`;
+ if(slug&&item.id==='villa')return `/diem-den/${slug}/villa`;
+ if(slug&&item.id==='hotel')return `/diem-den/${slug}/khach-san-resort`;
  if(slug&&item.id==='cruise')return `/diem-den/${slug}/du-thuyen`;
  if(['tour','villa','hotel','cruise'].includes(item.id))return `${item.href}?q=${encodeURIComponent(place)}`;
  if(item.id==='destination')return slug?`/diem-den/${slug}`:item.href
