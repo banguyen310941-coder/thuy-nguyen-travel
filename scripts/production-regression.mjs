@@ -79,8 +79,8 @@ for(const path of ['components/Header.tsx','components/Footer.tsx','components/H
 contains('components/SearchBar.tsx',"path='/villa'",'Tìm kiếm Villa phải trả về trang Villa canonical');
 contains('components/SearchBar.tsx',"path='/khach-san-resort'",'Tìm kiếm Khách sạn phải trả về trang Khách sạn & Resort canonical');
 contains('components/StayCatalog.tsx','/luu-tru/${stay.slug}','Card lưu trú tĩnh phải dùng URL public tiếng Việt');
-contains('components/StayCatalog.tsx','/san-pham/${encodeURIComponent(p.slug)}','Card CMS phải dùng URL sản phẩm public');
-contains('components/PartnerCategoryCards.tsx','/san-pham/${encodeURIComponent(p.slug)}','Card đối tác phải dùng URL sản phẩm public');
+contains('components/StayCatalog.tsx','publicProductPath(p.type,p.slug)','Card CMS phải dùng URL canonical theo loại lưu trú');
+contains('components/PartnerCategoryCards.tsx','publicProductPath(p.type,p.slug)','Card đối tác phải dùng URL canonical theo loại sản phẩm');
 contains('app/villa-resort/page.tsx','redirect(appendQuery("/villa"','Route Villa legacy phải chuyển sang canonical /villa');
 contains('app/khach-san/page.tsx','redirect(appendQuery("/khach-san-resort"','Route Khách sạn legacy phải chuyển sang canonical /khach-san-resort');
 contains('middleware.ts',"target=type==='villa'?'villa':'khach-san-resort'",'Link lưu trú legacy phải được chuẩn hóa về canonical hiện hành');
@@ -106,6 +106,9 @@ for(const path of ['components/TourDetailClient.tsx','components/CruiseDetailCli
 contains('components/UnifiedStayPublicDetail.tsx',"categoryHref=isVilla?'/villa':'/khach-san-resort'",'Breadcrumb lưu trú phải quay về canonical Villa hoặc Khách sạn & Resort');
 contains('app/product/[slug]/page.tsx',"if(type==='Villa & Resort')",'Schema breadcrumb sản phẩm phải phân biệt Villa');
 contains('app/product/[slug]/page.tsx',"if(type==='Khách sạn')",'Schema breadcrumb sản phẩm phải phân biệt Khách sạn');
+contains('app/product/[slug]/page.tsx','publicProductPath(product.type,slug)','Canonical chi tiết sản phẩm phải theo loại Hotel/Villa/Resort');
+contains('app/villa/[slug]/page.tsx',"../../product/[slug]/page",'Villa phải có route chi tiết canonical');
+contains('app/khach-san-resort/[slug]/page.tsx',"../../product/[slug]/page",'Khách sạn & Resort phải có route chi tiết canonical');
 
 contains('app/tours/[slug]/page.tsx','getPublishedTourSeo','Tour CMS phải có route slug public phía server');
 contains('app/tours/[slug]/page.tsx','<CmsTourDetail slug={slug}','Tour CMS phải render trên /tour-du-lich/{slug}');
