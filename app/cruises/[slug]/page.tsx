@@ -11,9 +11,9 @@ const canonicalUrl=(slug:string)=>`${getSiteUrl()}/du-thuyen/${encodeURIComponen
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params;const canonical=canonicalUrl(slug);const cms=await getPublishedProductSeo(slug);
  if(cms?.type==='Du thuyền'){
-  const title=cms.seoTitle||`${cms.name}${cms.place?` - ${cms.place}`:''}`;const description=cms.seoDescription||cms.summary;return{title,description,alternates:{canonical},robots:{index:true,follow:true},openGraph:{title:cms.name,description,url:canonical,type:'website',images:cms.cover?[{url:cms.cover,alt:cms.name}]:undefined},twitter:{card:'summary_large_image',title:cms.name,description,images:cms.cover?[cms.cover]:undefined}};
+  const title=cms.seoTitle||`${cms.name}${cms.place?` - ${cms.place}`:''}`;const description=cms.seoDescription||cms.summary;return{title:{absolute:title},description,alternates:{canonical},robots:{index:true,follow:true},openGraph:{title:cms.name,description,url:canonical,type:'website',images:cms.cover?[{url:cms.cover,alt:cms.name}]:undefined},twitter:{card:'summary_large_image',title:cms.name,description,images:cms.cover?[cms.cover]:undefined}};
  }
- return{title:'Du thuyền | HappyGo Travel',description:'Thông tin du thuyền, cabin, lịch giá và tình trạng chỗ tại HappyGo Travel.',alternates:{canonical}};
+ return{title:{absolute:'Du thuyền | HappyGo Travel'},description:'Thông tin du thuyền, cabin, lịch giá và tình trạng chỗ tại HappyGo Travel.',alternates:{canonical}};
 }
 
 export default async function CruiseDetailPage({params}:{params:Promise<{slug:string}>}){
