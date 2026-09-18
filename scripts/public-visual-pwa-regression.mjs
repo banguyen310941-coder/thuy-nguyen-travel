@@ -19,7 +19,7 @@ must('app/admin/manifest.webmanifest/route.ts',"id:'/admin/'",'Admin PWA phải 
 must('app/admin/manifest.webmanifest/route.ts',"start_url:'/admin/?source=pwa'",'Admin PWA phải luôn khởi động trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"scope:'/admin/'",'Admin PWA phải giới hạn scope trong /admin');
 must('app/admin/manifest.webmanifest/route.ts',"'Cache-Control':'no-store, max-age=0'",'Manifest Admin không được bị cache cũ');
-must('public/sw.js',"const CACHE='happygo-shell-v7'",'Service worker phải đổi cache version để xóa shell Admin cũ');
+must('public/sw.js',"const CACHE='happygo-shell-v9'",'Service worker phải dùng cache version hiện hành để xóa shell Admin cũ');
 mustNot('public/sw.js',"const SHELL=['/','/admin','/admin/','/admin/manifest.webmanifest'",'Service worker không được pre-cache manifest Admin');
 must('public/sw.js',"url.pathname.endsWith('/manifest.webmanifest')",'Service worker phải bypass cache cho mọi manifest');
 must('public/sw.js',"event.respondWith(fetch(req))",'Manifest phải được lấy trực tiếp từ network');
