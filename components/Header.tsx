@@ -14,16 +14,16 @@ type NavItem={label:string;href:string;children?:NavChild[]};
 
 const nav:NavItem[]=[
  {label:'Trang chủ',href:'/'},
- {label:'Khách sạn & Resort',href:'/khach-san',children:[
-  {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/khach-san'},
-  {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/khach-san'},
-  {label:'Quy Nhơn',meta:'Gia Lai',href:'/khach-san?q=Quy%20Nh%C6%A1n'},
-  {label:'Vĩnh Phúc',href:'/khach-san?q=V%C4%A9nh%20Ph%C3%BAc'},
+ {label:'Khách sạn & Resort',href:'/khach-san-resort',children:[
+  {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/khach-san-resort'},
+  {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/khach-san-resort'},
+  {label:'Quy Nhơn',meta:'Gia Lai',href:'/khach-san-resort?q=Quy%20Nh%C6%A1n'},
+  {label:'Vĩnh Phúc',href:'/khach-san-resort?q=V%C4%A9nh%20Ph%C3%BAc'},
  ]},
- {label:'Villa',href:'/villa-resort',children:[
-  {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/villa-resort'},
-  {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/villa-resort'},
-  {label:'Hội An',meta:'Đà Nẵng',href:'/villa-resort?q=H%E1%BB%99i%20An'},
+ {label:'Villa',href:'/villa',children:[
+  {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/villa'},
+  {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/villa'},
+  {label:'Hội An',meta:'Đà Nẵng',href:'/villa?q=H%E1%BB%99i%20An'},
  ]},
  {label:'Du thuyền',href:'/du-thuyen',children:[
   {label:'Vịnh Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/du-thuyen'},
@@ -34,6 +34,8 @@ const nav:NavItem[]=[
  {label:'Cẩm nang',href:'/cam-nang'},
 ];
 const internalAliases:Record<string,string[]>={
+ '/villa':['/villa-resort'],
+ '/khach-san-resort':['/khach-san'],
  '/tour-du-lich':['/tours'],
  '/du-thuyen':['/cruises'],
  '/diem-den':['/destinations'],
