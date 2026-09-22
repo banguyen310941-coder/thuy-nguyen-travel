@@ -21,6 +21,7 @@ const nav:NavItem[]=[
   {label:'Phú Thọ',href:'/diem-den/phu-tho/khach-san-resort'},
  ]},
  {label:'Villa',href:'/villa',children:[
+  {label:'Vân Đồn',meta:'Quảng Ninh',href:'/diem-den/van-don/villa'},
   {label:'Hạ Long',meta:'Quảng Ninh',href:'/diem-den/ha-long/villa'},
   {label:'Sầm Sơn',meta:'Thanh Hóa',href:'/diem-den/sam-son/villa'},
   {label:'Hội An',meta:'Đà Nẵng',href:'/villa?q=H%E1%BB%99i%20An'},
