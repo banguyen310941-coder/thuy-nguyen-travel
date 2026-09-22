@@ -19,11 +19,18 @@ function cleanId(value:unknown){return String(value||'').trim().slice(0,180)}
 function itemName(kind:Kind,item:any){return kind==='articles'?String(item?.title||'Bài viết'):String(item?.name||'Tour')}
 async function latest(key:string){const rows=await db()`select after_data,created_at from audit_logs where entity_type=${ENTITY} and entity_id=${key} order by created_at desc,id desc limit 1`;return rows[0]?{items:unwrap(rows[0].after_data),updatedAt:String(rows[0].created_at)}:{items:[],updatedAt:''}}
 async function articleBaseline(){
+ // The latest state is authoritative for intentional deletes. Historical recovery is
+ // only allowed for slugs that still exist in that state, so a deleted article is
+ // never resurrected by a later save.
+ const state=await latest(GUIDE_ARTICLE_STATE_KEY);
+ const liveSlugs=[...new Set(state.items.map((row:any)=>String(row?.slug||'').trim()).filter(Boolean))];
+ if(!liveSlugs.length)return[];
  const rows=await db()`with hist as (
   select id,created_at,case when jsonb_typeof(after_data)='object' and jsonb_typeof(after_data->'value')='array' then after_data->'value' when jsonb_typeof(after_data)='array' then after_data else '[]'::jsonb end items
   from audit_logs where entity_type=${ENTITY} and entity_id=${GUIDE_ARTICLE_STATE_KEY}
  ), expanded as (
-  select h.id,h.created_at,x.item from hist h cross join lateral jsonb_array_elements(h.items) x(item) where coalesce(x.item->>'slug','')<>''
+  select h.id,h.created_at,x.item from hist h cross join lateral jsonb_array_elements(h.items) x(item)
+  where coalesce(x.item->>'slug','')<>'' and (x.item->>'slug')=any(${liveSlugs}::text[])
  ), ranked as (
   select item,row_number() over(partition by item->>'slug' order by created_at desc,id desc) rn from expanded
  ) select item from ranked where rn=1`;
