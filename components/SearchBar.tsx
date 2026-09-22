@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
-const services = [['all','Tất cả'],['tour','Tour du lịch'],['villa','Villa'],['hotel','Khách sạn & Resort'],['cruise','Du thuyền']] as const;
+const services = [['all','Tất cả'],['villa','Villa'],['tour','Tour du lịch'],['hotel','Khách sạn & Resort'],['cruise','Du thuyền']] as const;
 type Service=(typeof services)[number][0];
 function Counter({label,value,min=0,onChange}:{label:string;value:number;min?:number;onChange:(n:number)=>void}){return <div className="guest-counter"><span>{label}</span><div><button type="button" onClick={()=>onChange(Math.max(min,value-1))}>−</button><b>{value}</b><button type="button" onClick={()=>onChange(value+1)}>+</button></div></div>}
 function serviceFromRoute(pathname:string,typeParam:string|null):Service{const segments=pathname.split('/').filter(Boolean);if(segments.includes('tour-du-lich')||segments.includes('tours'))return'tour';if(segments.includes('du-thuyen')||segments.includes('cruises'))return'cruise';if(segments.includes('villa')||segments.includes('villa-resort'))return'villa';if(segments.includes('khach-san-resort')||segments.includes('khach-san'))return'hotel';if(segments.includes('luu-tru')||segments.includes('stay')){if(typeParam==='villa')return'villa';if(typeParam==='hotel'||typeParam==='resort')return'hotel'}return'all'}
