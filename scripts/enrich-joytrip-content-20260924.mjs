@@ -4,7 +4,7 @@ import { neon } from '@neondatabase/serverless';
 const DATABASE_URL = String(process.env.DATABASE_URL || '').trim();
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
 
-const IMPORT_ID = 'joytrip-content-enrichment-20260924-v2';
+const IMPORT_ID = 'joytrip-content-enrichment-20260924-v3';
 const sql = neon(DATABASE_URL);
 
 const parsed = [];
@@ -73,6 +73,10 @@ const VISUALS = [
   { keys: ['bac kinh','van ly truong thanh'], ...GREAT_WALL },
   { keys: ['tan cuong','urumqi','kanas','hemu','yining','sayram','dushanzi'], ...GREAT_WALL, label: 'Tân Cương, Trung Quốc' },
   { keys: ['tay an','lac duong','khai phong','thieu lam'], ...visual('Terracotta army.jpg', 'Tây An, Trung Quốc') },
+  { keys: ['thanh do','dao thanh','a dinh','yading'], ...visual('Chengdu Giant panda.jpg', 'Thành Đô, Tứ Xuyên, Trung Quốc') },
+  { keys: ['cuu trai cau','jiuzhaigou','gau truc','lac son'], ...visual('Jiuzhaigou Valley 20260511.jpg', 'Cửu Trại Câu, Tứ Xuyên, Trung Quốc') },
+  { keys: ['trung khanh','chongqing','nam xuyen'], ...visual('SkylineOfChongqing.jpg', 'Trùng Khánh, Trung Quốc') },
+  { keys: ['cap nhi tan','harbin','lang tuyet'], ...visual('Harbin Ice & Snow Festival 2026.jpg', 'Cáp Nhĩ Tân, Trung Quốc') },
   { keys: ['lhasa','tibet','tay tang','shigatse'], ...visual('Potala PALACE.jpg', 'Lhasa, Tây Tạng') },
   { keys: ['dai loan','dai bac','taipei','cao hung','dai trung'], ...visual('晚霞下的台北101.jpg', 'Đài Bắc, Đài Loan') },
   { keys: ['han quoc','seoul','nami','everland','lotte','busan'], ...visual('Gyeongbokgung - Seoul, South Korea (50601272061).jpg', 'Seoul, Hàn Quốc') },
