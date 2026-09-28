@@ -7,7 +7,7 @@ import {getPublishedTourSeo} from '@/lib/public-tour-seo';
 import {getSiteUrl} from '@/lib/site-url';
 
 // Keep CMS/partner Tour metadata and JSON-LD fresh after gallery/content edits without requiring a redeploy.
-export const revalidate=60;
+export const revalidate=30;
 
 const amount=(v?:string)=>{const n=String(v||'').replace(/\D/g,'');return n?Number(n):undefined};
 export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
