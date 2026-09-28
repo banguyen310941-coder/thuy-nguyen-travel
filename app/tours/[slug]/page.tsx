@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {notFound} from 'next/navigation';
+import {notFound,redirect} from 'next/navigation';
 import {tours} from '@/data/catalog';
 import {TourDetailClient} from '@/components/TourDetailClient';
 import {CmsTourDetail} from '@/components/CmsTourDetail';
@@ -25,7 +25,8 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
  if(!cms)return{title:{absolute:'Tour không tồn tại | HappyGo Travel'},robots:{index:false,follow:true},alternates:{canonical}};
  const title=cms.seoTitle||`${cms.name}${cms.duration?` - ${cms.duration}`:''}`;
  const description=cms.seoDescription||cms.summary;
- return {title:{absolute:title},description,alternates:{canonical},robots:{index:true,follow:true},openGraph:{title,description,url:canonical,type:'website',images:cms.cover?[{url:cms.cover,alt:cms.name}]:undefined},twitter:{card:'summary_large_image',title,description,images:cms.cover?[cms.cover]:undefined}};
+ const cmsCanonical=`${base}/tour-du-lich/${encodeURIComponent(cms.slug)}`;
+ return {title:{absolute:title},description,alternates:{canonical:cmsCanonical},robots:{index:true,follow:true},openGraph:{title,description,url:canonical,type:'website',images:cms.cover?[{url:cms.cover,alt:cms.name}]:undefined},twitter:{card:'summary_large_image',title,description,images:cms.cover?[cms.cover]:undefined}};
 }
 export default async function TourDetailPage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
@@ -42,6 +43,7 @@ export default async function TourDetailPage({params}:{params:Promise<{slug:stri
  }
  const cms=await getPublishedTourSeo(slug);
  if(!cms)notFound();
+ if(cms.slug!==slug)redirect(`/tour-du-lich/${encodeURIComponent(cms.slug)}`);
  const url=`${base}/tour-du-lich/${encodeURIComponent(slug)}`;const price=amount(cms.price);
  const schema:any[]=[{"@context":"https://schema.org","@type":"TouristTrip","name":cms.name,"description":cms.summary,"image":[cms.cover,...cms.gallery].filter(Boolean),"url":url,"provider":{"@type":"TravelAgency","name":"HappyGo Travel","url":base,"telephone":"+84969973949"},...(price?{offers:{"@type":"Offer","priceCurrency":"VND","price":price,"url":url,"availability":"https://schema.org/InStock"}}:{})},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Trang chủ","item":base},{"@type":"ListItem","position":2,"name":"Tour du lịch","item":`${base}/tour-du-lich`},{"@type":"ListItem","position":3,"name":cms.name,"item":url}]}];
  const initialTour={id:`seo-${cms.slug}`,name:cms.name,slug:cms.slug,cover:cms.cover,category:cms.category,duration:cms.duration,departure:cms.departure,airline:cms.airline,route:cms.route,transport:cms.transport,summary:cms.summary,status:'published',price:cms.price,salePrice:cms.price,childPrice:cms.childPrice,singleCharge:cms.singleCharge,departures:cms.departures,gallery:cms.gallery.join('\n'),highlights:cms.highlights,days:cms.days,included:cms.included,excluded:cms.excluded,policies:cms.policies,promotion:cms.promotion,rating:cms.rating,reviewCount:cms.reviewCount,faq:cms.faq,content:cms.content,seoTitle:cms.seoTitle,seoDescription:cms.seoDescription};
