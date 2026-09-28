@@ -8,6 +8,8 @@ import {getSiteUrl} from '@/lib/site-url';
 
 // Keep CMS/partner Tour metadata and JSON-LD fresh after gallery/content edits without requiring a redeploy.
 export const revalidate=30;
+export const dynamicParams=true;
+export const dynamic='force-dynamic';
 
 const amount=(v?:string)=>{const n=String(v||'').replace(/\D/g,'');return n?Number(n):undefined};
 export function generateStaticParams(){return tours.map(t=>({slug:t.slug}))}
