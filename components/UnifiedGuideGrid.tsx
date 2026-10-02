@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import {useMemo} from 'react';
+import {useEffect,useMemo,useState} from 'react';
+import {CatalogPagination} from '@/components/CatalogPagination';
 import {usePublicGuideArticles,type PublicGuideArticle} from '@/components/usePublicGuideArticles';
 import {guideReadTime} from '@/lib/guide-publishing-standard';
 
@@ -20,6 +21,11 @@ export function mergeGuideFeed(staticItems:GuideFeedItem[],cmsItems:PublicGuideA
 export function UnifiedGuideGrid({staticItems,initialArticles=[],terms}:{staticItems:GuideFeedItem[];initialArticles?:PublicGuideArticle[];terms?:string[]}){
  const articles=usePublicGuideArticles(initialArticles);
  const items=useMemo(()=>mergeGuideFeed(staticItems,articles,terms),[staticItems,articles,terms]);
+ const PAGE_SIZE=30;const[page,setPage]=useState(1);const totalPages=Math.max(1,Math.ceil(items.length/PAGE_SIZE));const termsKey=(terms||[]).join('|');
+ useEffect(()=>setPage(1),[termsKey]);
+ useEffect(()=>setPage(current=>Math.min(current,totalPages)),[totalPages]);
+ const visible=useMemo(()=>items.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE),[items,page]);
+ const changePage=(value:number)=>{setPage(value);if(typeof window!=='undefined')window.scrollTo({top:0,behavior:'smooth'})};
  if(!items.length)return null;
- return <div className="guide-card-grid">{items.map(item=>{const href=`/cam-nang/${encodeURIComponent(item.slug)}`;return <article className="guide-pro-card" key={item.slug}><Link href={href} className="guide-pro-image" style={{backgroundImage:`url(${item.cover})`}} aria-label={item.title}><span>{item.category||'Cẩm nang du lịch'}</span></Link><div className="guide-pro-meta"><small>HappyGo Travel</small><small>{item.date||'Bài mới'}</small><small>{item.readTime||'Cẩm nang'}</small></div><div className="guide-pro-body"><h3><Link href={href}>{item.title}</Link></h3><p>{item.excerpt||'Xem kinh nghiệm và thông tin chi tiết trong bài viết.'}</p><Link className="guide-read" href={href}>Đọc bài viết →</Link></div></article>})}</div>;
+ return <><div className="guide-card-grid">{visible.map(item=>{const href=`/cam-nang/${encodeURIComponent(item.slug)}`;return <article className="guide-pro-card" key={item.slug}><Link href={href} className="guide-pro-image" style={{backgroundImage:`url(${item.cover})`}} aria-label={item.title}><span>{item.category||'Cẩm nang du lịch'}</span></Link><div className="guide-pro-meta"><small>HappyGo Travel</small><small>{item.date||'Bài mới'}</small><small>{item.readTime||'Cẩm nang'}</small></div><div className="guide-pro-body"><h3><Link href={href}>{item.title}</Link></h3><p>{item.excerpt||'Xem kinh nghiệm và thông tin chi tiết trong bài viết.'}</p><Link className="guide-read" href={href}>Đọc bài viết →</Link></div></article>})}</div><CatalogPagination page={page} totalPages={totalPages} onPageChange={changePage} label="Phân trang bài viết"/></>;
 }
