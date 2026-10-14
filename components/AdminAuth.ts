@@ -17,11 +17,23 @@ export function clearAdminSession(){sessionStorage.removeItem(ADMIN_SESSION_KEY)
 export function currentAuthenticatedStaff():AdminStaff|null{const s=readAdminSession();if(!s)return null;return readStaff().find(x=>x.id===s.staffId&&x.status!=='inactive'&&x.status!=='locked')||null}
 
 export async function checkAdminSession():Promise<AdminAuthResult>{
-  try{const r=await fetch('/api/admin/auth/me',{cache:'no-store'});if(r.ok){const data=await r.json();if(data.staff){writeAdminSession(data.staff);return{ok:true,staff:data.staff,message:'Phiên đăng nhập hợp lệ.'}}}sessionStorage.removeItem(ADMIN_SESSION_KEY);const status=await fetch('/api/admin/auth/status',{cache:'no-store'}).then(x=>x.json()).catch(()=>({}));return{ok:false,message:'Chưa đăng nhập.',needsBootstrap:Boolean(status?.needsBootstrap)}}catch{return{ok:false,message:'Không kết nối được hệ thống đăng nhập.'}}
+  try{
+    const r=await fetch('/api/admin/auth/me',{cache:'no-store'});
+    if(r.ok){const data=await r.json();if(data.staff){writeAdminSession(data.staff);return{ok:true,staff:data.staff,message:'Phiên đăng nhập hợp lệ.'}}}
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    const statusResponse=await fetch('/api/admin/auth/status',{cache:'no-store'});
+    const status=await statusResponse.json().catch(()=>({}));
+    return{ok:false,message:status?.error||'Chưa đăng nhập.',needsBootstrap:Boolean(status?.needsBootstrap)};
+  }catch{return{ok:false,message:'Không kết nối được hệ thống đăng nhập.'}}
 }
 
 export async function loginAdmin(email:string,password:string):Promise<AdminAuthResult>{
-  try{const r=await fetch('/api/admin/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const data=await r.json().catch(()=>({}));if(!r.ok)return{ok:false,message:data.error||'Email hoặc mật khẩu không đúng.'};writeAdminSession(data.staff);return{ok:true,staff:data.staff,message:'Đăng nhập thành công.'}}catch{return{ok:false,message:'Không kết nối được hệ thống đăng nhập.'}}
+  try{
+    const r=await fetch('/api/admin/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)return{ok:false,message:data.error||'Email hoặc mật khẩu không đúng.'};
+    writeAdminSession(data.staff);return{ok:true,staff:data.staff,message:'Đăng nhập thành công.'};
+  }catch{return{ok:false,message:'Không kết nối được hệ thống đăng nhập.'}}
 }
 
 export async function bootstrapAdmin(input:{adminKey:string;name:string;email:string;password:string}):Promise<AdminAuthResult>{
