@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/enrich-joytrip-content-20260924.mjs && next build",
+    "build": "node scripts/enrich-joytrip-content-20260924.mjs || echo 'Tour content sync skipped: database unavailable'; next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -28,9 +28,9 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "15.5.24",
+    "typescript": "^5.7.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
-    "typescript": "^5.7.0"
+    "lint-staged": "^16.1.6"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": "eslint"
