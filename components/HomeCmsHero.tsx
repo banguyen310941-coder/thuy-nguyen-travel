@@ -61,7 +61,7 @@ export function HomeCmsHero({initialCms=defaultHomeCms,refreshOnMount=true}:{ini
     <div className="mock-hero-overlay" />
     <div className="container mock-hero-content">
       <p className="mock-eyebrow">{data.eyebrow}</p>
-      <h1>{data.title}</h1>
+      <h1><span className="home-hero-title-desktop">{data.title}</span><span className="home-hero-title-mobile">ĐẶT VILLA, KHÁCH SẠN, TOUR DU LỊCH &amp; DU THUYỀN TOÀN QUỐC</span></h1>
       <p>{data.subtitle}</p>
       <div className="home-hero-quicklinks" aria-label="Dịch vụ nổi bật">{quickLinks.map(([icon,label,href])=><Link href={href} key={href}><span>{icon}</span>{label}</Link>)}</div>
       <div className="mock-hero-note"><span>✈</span><div>{data.noteTitle}<br/><b>{data.noteText}</b></div></div>

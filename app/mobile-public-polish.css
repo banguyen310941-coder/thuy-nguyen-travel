@@ -230,3 +230,21 @@
     font-size: clamp(15px, 4.5vw, 18px) !important;
   }
 }
+
+/* Mobile-only hero treatment; keep the desktop CMS title and photograph. */
+.home-hero-title-mobile { display: none; }
+@media (max-width: 760px) {
+  .home-premium .mock-hero {
+    background-image: linear-gradient(118deg, #0b3d7c 0%, #0d5fbd 60%, #1676cf 100%) !important;
+  }
+  .home-premium .mock-hero-overlay { background: none !important; }
+  .home-premium .home-hero-title-desktop { display: none; }
+  .home-premium .home-hero-title-mobile { display: inline; }
+  .home-premium .mock-hero h1 {
+    text-transform: uppercase;
+    font-size: clamp(27px, 7.5vw, 34px) !important;
+    line-height: 1.18 !important;
+    letter-spacing: -.5px !important;
+    text-wrap: balance;
+  }
+}
