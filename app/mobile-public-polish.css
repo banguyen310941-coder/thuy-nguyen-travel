@@ -248,3 +248,6 @@
     text-wrap: balance;
   }
 }
+
+/* Uppercase the existing desktop hero heading as requested. */
+.home-premium .mock-hero h1 { text-transform: uppercase; }
