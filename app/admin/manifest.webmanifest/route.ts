@@ -17,6 +17,6 @@ export function GET(){
     lang:'vi',
     categories:['business','productivity'],
     prefer_related_applications:false,
-    icons:[{src:'/icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any maskable'}]
+    icons:[{src:'/icon.svg?v=20261024',sizes:'any',type:'image/svg+xml',purpose:'any maskable'}]
   },{headers:{'Content-Type':'application/manifest+json; charset=utf-8','Cache-Control':'no-store, max-age=0'}});
 }

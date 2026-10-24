@@ -66,6 +66,8 @@ import {PublicPriceNormalizer} from '@/components/PublicPriceNormalizer';
 import {db,hasDatabase} from '@/lib/db';
 import {getSiteUrl} from '@/lib/site-url';
 
+import './brand-original.css';
+
 export const viewport:Viewport={width:'device-width',initialScale:1,maximumScale:5,viewportFit:'cover',themeColor:'#0d47a1',colorScheme:'light'};
 
 const DEFAULT_DESCRIPTION='Đặt tour, khách sạn, villa, resort và du thuyền toàn quốc cùng HappyGo Travel. Giá minh bạch, tư vấn nhanh, hành trình hạnh phúc.';
@@ -89,7 +91,7 @@ export async function generateMetadata():Promise<Metadata>{
  const image=String(seo?.ogImage||'');
  return {
   metadataBase:new URL(base),title:{default:title,template:`%s | ${brand}`},description,applicationName:brand,
-  authors:[{name:brand,url:base}],creator:brand,publisher:brand,category:'travel',keywords,alternates:{canonical:'/'},icons:{icon:'/icon.svg',apple:'/icon.svg'},appleWebApp:{capable:true,statusBarStyle:'default',title:brand.slice(0,20)},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
+  authors:[{name:brand,url:base}],creator:brand,publisher:brand,category:'travel',keywords,alternates:{canonical:'/'},icons:{icon:'/icon.svg?v=20261024',apple:'/icon.svg?v=20261024'},appleWebApp:{capable:true,statusBarStyle:'default',title:brand.slice(0,20)},formatDetection:{email:false,address:false,telephone:false},robots:{index:true,follow:true,googleBot:{index:true,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1}},
   openGraph:{title,description,type:'website',locale:'vi_VN',siteName:brand,url:base,...(image?{images:[{url:image}]}:{})},
   twitter:{card:'summary_large_image',title,description,...(image?{images:[image]}:{})},other:{'mobile-web-app-capable':'yes','x-ui-version':'happygo-public-sanitized-20260906-prod'}
  };
@@ -97,7 +99,7 @@ export async function generateMetadata():Promise<Metadata>{
 
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
  const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
- const logoUrl=new URL('/icon.svg',siteUrl).toString();
+ const logoUrl=new URL('/brand/happygo-logo-20261024.jpg',siteUrl).toString();
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,alternateName:'HappyGo Travel',url:siteUrl,logo:{'@type':'ImageObject',url:logoUrl},image:logoUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
  const website={'@context':'https://schema.org','@type':'WebSite','@id':`${siteUrl}/#website`,url:siteUrl,name:brand,publisher:{'@id':`${siteUrl}/#organization`},potentialAction:{'@type':'SearchAction',target:{'@type':'EntryPoint',urlTemplate:`${siteUrl}/tim-kiem?q={search_term_string}`},'query-input':'required name=search_term_string'}};
  return <html lang="vi"><body id="top" data-ui-version="happygo-public-sanitized-20260906-prod"><script dangerouslySetInnerHTML={{__html:"(function(){try{var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);var standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;var legacy=/happygo-travel\\.vercel\\.app$/i.test(location.hostname);if(!ios||!standalone||!legacy)return;var key='happygo_ios_pwa_repair_20260916';if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');var jobs=[];if('caches'in window)jobs.push(caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return /^happygo-shell-v/.test(k)}).map(function(k){return caches.delete(k)}))}));if('serviceWorker'in navigator)jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.update().catch(function(){})}))}));Promise.all(jobs).finally(function(){location.reload()})}catch(e){}})();"}}/><script type="application/ld+json">{JSON.stringify([organization,website])}</script><Script src="https://www.googletagmanager.com/gtag/js?id=AW-17595657212" strategy="afterInteractive"/><Script id="google-ads-aw-17595657212" strategy="afterInteractive">{`window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-17595657212');`}</Script><MarketingAttributionCapture/><PwaRegister/><PublicPriceNormalizer/><SiteChrome initialSettings={site}>{children}</SiteChrome></body></html>;

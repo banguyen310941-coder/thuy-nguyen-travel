@@ -1,4 +1,5 @@
 'use client';
+import {HappyGoLogo} from '@/components/HappyGoLogo';
 
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
@@ -110,7 +111,7 @@ export function AffiliateDashboard(){
 
  return <main className="affiliate-shell">
   <header className="affiliate-topbar">
-   <div><div className="affiliate-logo small">HG</div><div><small>HAPPYGO TRAVEL · CTV</small><b>{a.name}</b><span>Mã giới thiệu: {a.referralCode}</span></div></div>
+   <div><div className="affiliate-logo small original-brand"><HappyGoLogo compact/></div><div><small>HAPPYGO TRAVEL · CTV</small><b>{a.name}</b><span>Mã giới thiệu: {a.referralCode}</span></div></div>
    <button onClick={()=>void logout()}>Đăng xuất</button>
   </header>
   <div className="affiliate-content">

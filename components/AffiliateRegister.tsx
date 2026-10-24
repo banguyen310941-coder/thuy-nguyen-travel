@@ -1,4 +1,5 @@
 'use client';
+import {HappyGoLogo} from '@/components/HappyGoLogo';
 
 import Link from 'next/link';
 import {FormEvent,useState} from 'react';
@@ -16,7 +17,7 @@ export function AffiliateRegister(){
  }
  return <main className="affiliate-register-shell">
   <section className="affiliate-register-intro">
-   <div className="affiliate-logo">HG</div>
+   <div className="affiliate-logo original-brand"><HappyGoLogo/></div>
    <small>HAPPYGO TRAVEL · ĐĂNG KÝ CTV</small>
    <h1>Đăng ký một lần, chia sẻ sản phẩm trên toàn hệ thống</h1>
    <p>Sau khi HappyGo duyệt, bạn sẽ có mã giới thiệu riêng, dashboard theo dõi click, booking, hoa hồng và yêu cầu rút tiền.</p>

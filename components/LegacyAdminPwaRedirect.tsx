@@ -1,4 +1,5 @@
 'use client';
+import {HappyGoLogo} from '@/components/HappyGoLogo';
 
 import {useEffect,useState} from 'react';
 
@@ -66,7 +67,7 @@ export function LegacyAdminPwaRedirect(){
 
   return <div role="dialog" aria-modal="true" aria-label="Chọn chế độ ứng dụng HappyGo" style={{position:'fixed',inset:0,zIndex:2147483647,background:'rgba(4,31,63,.72)',display:'grid',placeItems:'center',padding:20}}>
     <div style={{width:'min(92vw,420px)',background:'#fff',borderRadius:24,padding:24,boxShadow:'0 24px 70px rgba(0,0,0,.28)',textAlign:'center'}}>
-      <div style={{width:58,height:58,borderRadius:18,margin:'0 auto 12px',display:'grid',placeItems:'center',background:'#0d47a1',color:'#fff',fontWeight:900,fontSize:22}}>HG</div>
+      <div style={{margin:'0 auto 12px',maxWidth:260}}><HappyGoLogo/></div>
       <small style={{fontWeight:800,letterSpacing:1,color:'#5d7693'}}>HAPPYGO TRAVEL</small>
       <h2 style={{margin:'8px 0 10px',fontSize:24,color:'#073b78'}}>Bạn muốn mở ứng dụng nào?</h2>
       <p style={{margin:'0 0 18px',color:'#60758c',lineHeight:1.5}}>Biểu tượng này được tạo từ phiên bản cũ trên iPhone. Chọn một lần, HappyGo sẽ ghi nhớ cho những lần mở sau.</p>

@@ -1,4 +1,5 @@
 'use client';
+import {HappyGoLogo} from '@/components/HappyGoLogo';
 import {useEffect,useState} from 'react';
 
 type InstallPrompt=Event&{
@@ -44,7 +45,7 @@ export function AdminInstallApp(){
   <button type="button" className="admin-install-trigger" onClick={install} title="Cài HappyGo Admin lên điện thoại">⬇ <span>Cài ứng dụng</span></button>
   {show&&<div className="admin-install-overlay" onClick={()=>setShow(false)}><div className="admin-install-sheet" onClick={e=>e.stopPropagation()}>
    <button className="admin-install-close" onClick={()=>setShow(false)}>×</button>
-   <div className="admin-install-logo">HG</div><small>HAPPYGO TRAVEL ADMIN</small><h3>Cài ứng dụng quản trị HappyGo</h3>
+   <div className="admin-install-logo original-brand"><HappyGoLogo/></div><small>HAPPYGO TRAVEL ADMIN</small><h3>Cài ứng dụng quản trị HappyGo</h3>
    {ios?<p>Trên iPhone/iPad: mở trang <b>/admin</b> bằng Safari → bấm <b>Chia sẻ</b> → chọn <b>Thêm vào Màn hình chính</b> → giữ bật <b>Mở dưới dạng ứng dụng web</b> → bấm <b>Thêm</b>.</p>:<p>Trên Android/Chrome: tại trang <b>/admin</b>, mở menu <b>⋮</b> → chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b> → xác nhận.</p>}
    <div className="admin-install-tip">Ứng dụng Admin lấy manifest trực tiếp từ HTML của <b>/admin</b> và luôn mở lại khu vực quản trị. HappyGo cũng ghi dấu mục tiêu Admin vào phiên cài đặt để iPhone không tái dùng đường dẫn Trang chủ của biểu tượng cũ.</div>
    <button className="admin-primary" onClick={()=>setShow(false)}>Đã hiểu</button>

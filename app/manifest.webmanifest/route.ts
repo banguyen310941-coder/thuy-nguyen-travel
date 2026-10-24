@@ -15,6 +15,6 @@ export function GET(){
     theme_color:'#0d47a1',
     lang:'vi',
     categories:['travel','tourism','booking'],
-    icons:[{src:'/icon.svg',sizes:'any',type:'image/svg+xml',purpose:'maskable'}],
+    icons:[{src:'/icon.svg?v=20261024',sizes:'any',type:'image/svg+xml',purpose:'maskable'}],
   },{headers:{'Content-Type':'application/manifest+json; charset=utf-8','Cache-Control':'no-store, max-age=0'}});
 }

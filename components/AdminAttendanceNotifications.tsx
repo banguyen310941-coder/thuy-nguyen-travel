@@ -95,7 +95,7 @@ export function AdminAttendanceNotifications({
       try {
         new Notification(created.title, {
           body: created.text,
-          icon: "/thuy-nguyen-travel/icon.svg",
+          icon: "/icon.svg?v=20261024",
           tag: created.id,
         });
       } catch {
