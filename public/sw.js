@@ -1,5 +1,5 @@
-const CACHE='happygo-shell-v9';
-const SHELL=['/','/admin','/admin/','/icon.svg'];
+const CACHE='happygo-shell-v10-brand-20261024';
+const SHELL=['/','/admin','/admin/','/icon.svg?v=20261024'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -69,7 +69,7 @@ self.addEventListener('push',event=>{
   let data={};
   try{data=event.data?event.data.json():{}}catch{data={body:event.data?event.data.text():''}}
   const title=data.title||'HappyGo Travel';
-  const options={body:data.body||'Bạn có thông báo mới cần xử lý.',icon:'/icon.svg',badge:'/icon.svg',tag:data.tag||'happygo-admin-alert',renotify:true,requireInteraction:true,silent:false,vibrate:[180,80,220,100,320],data:{url:data.url||'/admin/'}};
+  const options={body:data.body||'Bạn có thông báo mới cần xử lý.',icon:'/icon.svg?v=20261024',badge:'/icon.svg?v=20261024',tag:data.tag||'happygo-admin-alert',renotify:true,requireInteraction:true,silent:false,vibrate:[180,80,220,100,320],data:{url:data.url||'/admin/'}};
   event.waitUntil(self.registration.showNotification(title,options));
 });
 
