@@ -202,3 +202,31 @@
   .floating-actions a,.booking-cart-badge{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}
   .booking-cart-badge{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 102px)!important}
 }
+
+/* Equal destination tiles: six squares, with two columns on phones. */
+.home-premium .mock-destination-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+}
+.home-premium .mock-destination-grid > .mock-destination-card:nth-child(n) {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  min-width: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+}
+.home-premium .mock-destination-grid .mock-destination-image {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+.home-premium .mock-destination-grid .mock-destination-image h3 {
+  font-size: 21px !important;
+}
+@media (max-width: 700px) {
+  .home-premium .mock-destination-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .home-premium .mock-destination-grid .mock-destination-image h3 {
+    font-size: clamp(15px, 4.5vw, 18px) !important;
+  }
+}
