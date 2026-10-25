@@ -16,7 +16,7 @@ export type HomeCmsData={
 
 export const defaultHomeCms:HomeCmsData={
   eyebrow:'HAPPYGO TRAVEL',
-  title:'Đặt tour du lịch, khách sạn, villa & du thuyền toàn quốc',
+  title:'Đặt villa, khách sạn, tour du lịch & du thuyền toàn quốc',
   subtitle:'Khách sạn · Villa & Resort · Du thuyền · Tour – chọn hành trình phù hợp, xem giá rõ ràng và được HappyGo hỗ trợ từ lúc tìm kiếm đến khi khởi hành.',
   noteTitle:'Kỳ nghỉ của bạn',
   noteText:'Bắt đầu bằng một điểm đến',
@@ -36,7 +36,7 @@ function migrateHome(value:Partial<HomeCmsData>|null|undefined):HomeCmsData{
  const next={...defaultHomeCms,...(value||{})};
  if(/th[uú]y\s*nguy[eê]n/i.test(next.eyebrow||''))next.eyebrow='HAPPYGO TRAVEL';
  if(/th[uú]y\s*nguy[eê]n/i.test(next.ctaEyebrow||''))next.ctaEyebrow='HAPPYGO TRAVEL';
- if(!String(next.title||'').trim()||next.title==='Khám phá Việt Nam theo cách của bạn')next.title=defaultHomeCms.title;
+ if(!String(next.title||'').trim()||next.title==='Khám phá Việt Nam theo cách của bạn'||next.title==='Đặt tour du lịch, khách sạn, villa & du thuyền toàn quốc')next.title=defaultHomeCms.title;
  return next;
 }
 
@@ -61,7 +61,7 @@ export function HomeCmsHero({initialCms=defaultHomeCms,refreshOnMount=true}:{ini
     <div className="mock-hero-overlay" />
     <div className="container mock-hero-content">
       <p className="mock-eyebrow">{data.eyebrow}</p>
-      <h1><span className="home-hero-title-desktop">{data.title}</span><span className="home-hero-title-mobile">ĐẶT VILLA, KHÁCH SẠN, TOUR DU LỊCH &amp; DU THUYỀN TOÀN QUỐC</span></h1>
+      <h1>{data.title}</h1>
       <p>{data.subtitle}</p>
       <div className="home-hero-quicklinks" aria-label="Dịch vụ nổi bật">{quickLinks.map(([icon,label,href])=><Link href={href} key={href}><span>{icon}</span>{label}</Link>)}</div>
       <div className="mock-hero-note"><span>✈</span><div>{data.noteTitle}<br/><b>{data.noteText}</b></div></div>
