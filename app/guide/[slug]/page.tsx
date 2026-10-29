@@ -30,7 +30,7 @@ export default async function GuideArticle({params}:{params:Promise<{slug:string
  const post=getGuide(slug);if(!post)notFound();
  const allImages=[guideImage(post.image),...post.gallery.map(item=>guideImage(item.src))];
  const schema=[
-  {'@context':'https://schema.org','@type':'Article',headline:post.title,description:post.excerpt,image:allImages,datePublished:'2026-09-05',dateModified:'2026-09-05',mainEntityOfPage:{'@type':'WebPage','@id':url},inLanguage:'vi-VN',author:{'@type':'Organization',name:'HappyGo Travel',url:base,logo:{'@type':'ImageObject',url:logo}},publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:base,telephone:'+84969973949'}},
+  {'@context':'https://schema.org','@type':'Article',headline:post.title,description:post.excerpt,image:allImages,datePublished:'2026-09-05',dateModified:'2026-09-05',mainEntityOfPage:{'@type':'WebPage','@id':url},inLanguage:'vi-VN',author:{'@type':'Organization',name:'HappyGo Travel',url:base,logo:{'@type':'ImageObject',url:logo}},publisher:{'@type':'TravelAgency',name:'HappyGo Travel',url:base,telephone:'+84966493998'}},
   {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Trang chủ',item:base},{'@type':'ListItem',position:2,name:'Cẩm nang',item:`${base}/cam-nang`},{'@type':'ListItem',position:3,name:post.title,item:url}]},
   {'@context':'https://schema.org','@type':'FAQPage',mainEntity:post.faq.map(item=>({'@type':'Question',name:item.q,acceptedAnswer:{'@type':'Answer',text:item.a}}))}
  ];

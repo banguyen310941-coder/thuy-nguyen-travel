@@ -26,7 +26,7 @@ export const defaultHomeCms:HomeCmsData={
   productsEnabled:true,productsTitle:'Lưu trú nổi bật',
   cruisesEnabled:true,cruisesTitle:'Du thuyền Hạ Long & Lan Hạ',cruisesSubtitle:'Những hải trình đáng nhớ trên vịnh di sản',
   toursEnabled:true,toursTitle:'Tour được quan tâm',
-  ctaEnabled:true,ctaEyebrow:'HAPPYGO TRAVEL',ctaTitle:'Hành trình hạnh phúc, kết nối yêu thương',ctaText:'Liên hệ HappyGo Travel để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0969973949',zalo:'0969973949'
+  ctaEnabled:true,ctaEyebrow:'HAPPYGO TRAVEL',ctaTitle:'Hành trình hạnh phúc, kết nối yêu thương',ctaText:'Liên hệ HappyGo Travel để được tư vấn tour, villa, khách sạn và du thuyền phù hợp.',hotline:'0966493998',zalo:'0966493998'
 };
 
 const API_BASE=process.env.NEXT_PUBLIC_API_BASE_URL||'';

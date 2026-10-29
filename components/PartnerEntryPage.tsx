@@ -54,7 +54,7 @@ export function PartnerEntryPage(){
     <PortalWorkspaceBar scope="partner" status={checking?'Đang kiểm tra phiên':'Production'}/>
     <header className="partner-entry-topbar">
       <Link href="/" className="partner-entry-brand" aria-label="Về website HappyGo Travel"><HappyGoLogo compact/><span>CỔNG ĐỐI TÁC</span></Link>
-      <div className="partner-entry-top-actions"><a href="mailto:info@happygo.vn">info@happygo.vn</a><a href="tel:0969973949">0969 973 949</a><Link href="/">Về website</Link></div>
+      <div className="partner-entry-top-actions"><a href="mailto:info@happygo.vn">info@happygo.vn</a><a href="tel:0966493998">0966 493 998</a><Link href="/">Về website</Link></div>
     </header>
 
     <div className="partner-entry-grid">
@@ -111,7 +111,7 @@ export function PartnerEntryPage(){
           <p className="partner-entry-switch">Đã có tài khoản? <button type="button" onClick={()=>{setMode('login');setMessage('')}}>Đăng nhập</button></p>
         </form>}
 
-        <footer className="partner-entry-support"><span>Cần hỗ trợ đăng nhập hoặc đăng ký?</span><div><a href="tel:0969973949">☎ 0969 973 949</a><a href="mailto:info@happygo.vn">✉ info@happygo.vn</a></div></footer>
+        <footer className="partner-entry-support"><span>Cần hỗ trợ đăng nhập hoặc đăng ký?</span><div><a href="tel:0966493998">☎ 0966 493 998</a><a href="mailto:info@happygo.vn">✉ info@happygo.vn</a></div></footer>
       </aside>
     </div>
 

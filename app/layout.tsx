@@ -98,7 +98,7 @@ export async function generateMetadata():Promise<Metadata>{
 }
 
 export default async function RootLayout({children}:Readonly<{children:React.ReactNode}>){
- const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0969973949').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
+ const {seo,site}=await productionConfig();const brand=String(site?.brand||seo?.organizationName||'HappyGo Travel');const siteUrl=getSiteUrl();const email=String(site?.email||'info@happygo.vn');const hotline=String(site?.hotline||'0966493998').replace(/\D/g,'');const international=hotline.startsWith('0')?`+84${hotline.slice(1)}`:hotline;
  const logoUrl=new URL('/brand/happygo-logo-20261024.jpg',siteUrl).toString();
  const organization={'@context':'https://schema.org','@type':['TravelAgency','Organization'],'@id':`${siteUrl}/#organization`,name:brand,alternateName:'HappyGo Travel',url:siteUrl,logo:{'@type':'ImageObject',url:logoUrl},image:logoUrl,email,telephone:international,areaServed:{'@type':'Country',name:'Vietnam'},contactPoint:{'@type':'ContactPoint',telephone:international,contactType:'customer service',areaServed:'VN',availableLanguage:'Vietnamese'}};
  const website={'@context':'https://schema.org','@type':'WebSite','@id':`${siteUrl}/#website`,url:siteUrl,name:brand,publisher:{'@id':`${siteUrl}/#organization`},potentialAction:{'@type':'SearchAction',target:{'@type':'EntryPoint',urlTemplate:`${siteUrl}/tim-kiem?q={search_term_string}`},'query-input':'required name=search_term_string'}};

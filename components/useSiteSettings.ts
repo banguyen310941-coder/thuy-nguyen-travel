@@ -3,7 +3,7 @@
 import {useEffect,useState} from 'react';
 
 export type SiteSettings={brand:string;hotline:string;email:string;zalo:string;facebookUrl:string;youtubeUrl:string;tiktokUrl:string};
-export const defaultSiteSettings:SiteSettings={brand:'HappyGo Travel',hotline:'0969973949',email:'info@happygo.vn',zalo:'0969973949',facebookUrl:'',youtubeUrl:'',tiktokUrl:''};
+export const defaultSiteSettings:SiteSettings={brand:'HappyGo Travel',hotline:'0966493998',email:'info@happygo.vn',zalo:'0966493998',facebookUrl:'',youtubeUrl:'',tiktokUrl:''};
 
 export function normalizeSiteSettings(value:Partial<SiteSettings>|null|undefined):SiteSettings{
  const current={...defaultSiteSettings,...(value||{})};
